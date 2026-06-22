@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-lg-center hero-row g-4">
+            <div class="col-lg-6 hero-content">
+                <div class="hero-badge">
+                    <i class="bi bi-shield-check"></i> Fully insured &amp; professional
+                </div>
+                <h1>{{ SITE_NAME }}</h1>
+                <p class="hero-tagline mb-3">{{ SITE_TAGLINE }}</p>
+                <p class="lead mb-3">Professional Oven &amp; Appliance Cleaning Services</p>
+                <p class="text-secondary mb-4">Restore your appliances to showroom condition with our expert cleaning team. Eco-friendly products, flexible booking, and results you can see.</p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{% url 'bookings:create' %}" class="btn btn-primary btn-lg">Book Now</a>
+                    <a href="#contact" class="btn btn-outline-primary btn-lg">Get Quote</a>
+                </div>
+                <div class="hero-trust">
+                    <div class="hero-trust-item"><i class="bi bi-check-circle-fill"></i> Same-day slots</div>
+                    <div class="hero-trust-item"><i class="bi bi-check-circle-fill"></i> No hidden fees</div>
+                    <div class="hero-trust-item"><i class="bi bi-check-circle-fill"></i> 5-star service</div>
+                </div>
+            </div>
+            <div class="col-lg-6 hero-image mt-5 mt-lg-0">
+                <div class="hero-comparison rounded-4" id="heroComparison" data-split="50">
+                    <img
+                        class="hero-comparison-img hero-comparison-dirty"
+                        src="{% static 'img/oven-before.jpg' %}"
+                        alt="Dirty oven before cleaning"
+                        loading="eager"
+                    >
+                    <div class="hero-comparison-clean-wrap" id="heroComparisonClean">
+                        <img
+                            class="hero-comparison-img"
+                            src="{% static 'img/oven-after.jpg' %}"
+                            alt="Clean oven after professional cleaning"
+                            loading="eager"
+                        >
+                    </div>
+                    <div class="hero-comparison-handle" id="heroComparisonHandle" aria-hidden="true">
+                        <div class="hero-comparison-line"></div>
+                        <div class="hero-comparison-knob">
+                            <i class="bi bi-chevron-left"></i>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </div>
+                    <span class="hero-comparison-badge hero-comparison-badge-before">Before</span>
+                    <span class="hero-comparison-badge hero-comparison-badge-after">After</span>
+                </div>
+                <p class="hero-comparison-hint text-center mt-3 mb-0">
+                    <i class="bi bi-arrows-expand me-1"></i> Drag or scroll sideways to compare
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="about" class="section-padding bg-soft">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <span class="section-eyebrow">About Us</span>
+                <h2 class="section-title">Your trusted appliance cleaning specialists</h2>
+                <p class="section-subtitle mx-auto">{{ SITE_NAME }} provides professional appliance cleaning services, restoring ovens and appliances to showroom condition. Our experienced team uses eco-friendly products and proven techniques to deliver outstanding results every time.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="services" class="section-padding">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-eyebrow">What We Offer</span>
+            <h2 class="section-title">Our Services</h2>
+            <p class="section-subtitle">Professional cleaning for every appliance — transparent pricing, exceptional results.</p>
+        </div>
+        <div class="row g-4 mb-2">
+            <div class="col-12">
+                <h3 class="h5 fw-bold mb-3">Oven Cleaning</h3>
+            </div>
+            {% for service in oven_services %}
+            <div class="col-md-6 col-lg-4">
+                <div class="service-card">
+                    <div class="service-icon"><i class="bi bi-fire"></i></div>
+                    <h4>{{ service.name }}</h4>
+                    <p class="text-muted">{{ service.description }}</p>
+                    <p class="price-tag">&pound;{{ service.price }}</p>
+                    <a href="{% url 'bookings:create' %}?service={{ service.pk }}" class="btn btn-primary w-100">Book Now</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if addon_services %}
+        <div class="row g-4">
+            <div class="col-12">
+                <h3 class="h5 fw-bold mb-3">Add-ons <span class="text-muted fs-6 fw-normal">— combine with any oven type</span></h3>
+            </div>
+            {% for service in addon_services %}
+            <div class="col-md-6 col-lg-4">
+                <div class="service-card">
+                    <div class="service-icon"><i class="bi bi-plus-circle"></i></div>
+                    <h4>{{ service.name }}</h4>
+                    <p class="text-muted">{{ service.description }}</p>
+                    <p class="price-tag">&pound;{{ service.price }}</p>
+                    <a href="{% url 'bookings:create' %}?service={{ service.pk }}" class="btn btn-outline-primary w-100">Add to Booking</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if not oven_services and not addon_services %}
+            <div class="col-12 text-center text-muted">Services coming soon.</div>
+        {% endif %}
+    </div>
+</section>
+
+<section id="why-us" class="section-padding bg-soft">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-eyebrow">Why Choose Us</span>
+            <h2 class="section-title">The Spot On difference</h2>
+            <p class="section-subtitle">We combine expert craftsmanship with friendly, reliable service you can count on.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-item">
+                    <div class="feature-icon-wrap"><i class="bi bi-shield-check"></i></div>
+                    <h5>Fully Insured</h5>
+                    <p class="text-muted">Complete peace of mind with full public liability insurance.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-item">
+                    <div class="feature-icon-wrap"><i class="bi bi-clock-history"></i></div>
+                    <h5>Reliable Service</h5>
+                    <p class="text-muted">Punctual, dependable appointments you can count on.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-item">
+                    <div class="feature-icon-wrap"><i class="bi bi-tag"></i></div>
+                    <h5>Affordable Prices</h5>
+                    <p class="text-muted">Competitive rates with no hidden charges.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-item">
+                    <div class="feature-icon-wrap"><i class="bi bi-calendar-check"></i></div>
+                    <h5>Flexible Booking</h5>
+                    <p class="text-muted">Convenient slots to fit your schedule.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-item">
+                    <div class="feature-icon-wrap"><i class="bi bi-emoji-smile"></i></div>
+                    <h5>Friendly Professionals</h5>
+                    <p class="text-muted">Courteous, skilled technicians who treat your home with care.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="reviews" class="section-padding">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-eyebrow">Testimonials</span>
+            <h2 class="section-title">Customer Reviews</h2>
+            <p class="section-subtitle">Don't just take our word for it — hear from our happy customers.</p>
+        </div>
+        <div class="testimonial-slider">
+            <div class="testimonial-track">
+                {% for testimonial in testimonials %}
+                <div class="testimonial-slide">
+                    <div class="testimonial-card">
+                        <div class="stars mb-3">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= testimonial.rating %}<i class="bi bi-star-fill text-warning"></i>{% else %}<i class="bi bi-star text-warning"></i>{% endif %}
+                            {% endfor %}
+                        </div>
+                        <p class="review-text">{{ testimonial.review }}</p>
+                        <p class="review-author mb-0">{{ testimonial.customer_name }}</p>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="testimonial-slide">
+                    <div class="testimonial-card text-center text-muted">
+                        <p>Customer reviews coming soon.</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if testimonials.count > 1 %}
+            <div class="testimonial-controls text-center mt-4">
+                <button class="btn btn-outline-primary btn-sm me-2" id="prevTestimonial" aria-label="Previous review"><i class="bi bi-chevron-left"></i></button>
+                <button class="btn btn-outline-primary btn-sm" id="nextTestimonial" aria-label="Next review"><i class="bi bi-chevron-right"></i></button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section id="contact" class="section-padding bg-soft">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-eyebrow">Get In Touch</span>
+            <h2 class="section-title">Contact Us</h2>
+            <p class="section-subtitle">Have a question or need a quote? We'd love to hear from you.</p>
+        </div>
+        <div class="row g-4 g-lg-5">
+            <div class="col-lg-5">
+                <div class="contact-info-card">
+                    <div class="contact-item">
+                        <div class="contact-icon"><i class="bi bi-telephone-fill"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Phone</h6>
+                            <a href="tel:{{ SITE_PHONE }}" class="text-muted text-decoration-none">{{ SITE_PHONE }}</a>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon"><i class="bi bi-envelope-fill"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Email</h6>
+                            <a href="mailto:{{ SITE_EMAIL }}" class="text-muted text-decoration-none">{{ SITE_EMAIL }}</a>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Service Area</h6>
+                            <p class="text-muted mb-0">{{ SITE_ADDRESS }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <form method="post" action="{% url 'website:contact' %}" class="contact-form">
+                    {% csrf_token %}
+                    {% for field in contact_form %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

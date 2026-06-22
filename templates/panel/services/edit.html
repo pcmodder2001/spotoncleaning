@@ -1,0 +1,64 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Edit Service{% endblock %}
+
+{% block panel_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="panel-card card border-0">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Name</label>
+                            <input type="text" name="name" value="{{ edit_service.name }}" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Price (&pound;)</label>
+                            <input type="number" name="price" value="{{ edit_service.price }}" step="0.01" min="0" class="form-control" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="3" required>{{ edit_service.description }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Type</label>
+                            <select name="service_type" class="form-select">
+                                <option value="oven" {% if edit_service.service_type == 'oven' %}selected{% endif %}>Oven (pick one per booking)</option>
+                                <option value="addon" {% if edit_service.service_type == 'addon' %}selected{% endif %}>Add-on (can combine)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Duration (minutes on site)</label>
+                            <input type="number" name="duration_minutes" value="{{ edit_service.duration_minutes }}" class="form-control" min="15" step="15" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sort order</label>
+                            <input type="number" name="sort_order" value="{{ edit_service.sort_order }}" class="form-control" min="0">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" {% if edit_service.active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">Active (visible on website and booking form)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a href="{% url 'panel:service_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+                <form method="post" action="{% url 'panel:service_delete' edit_service.pk %}" class="mt-3"
+                      data-confirm="This cannot be undone."
+                      data-confirm-title="Delete {{ edit_service.name }}?"
+                      data-confirm-yes="Yes, delete"
+                      data-confirm-danger="true">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger">Delete Service</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

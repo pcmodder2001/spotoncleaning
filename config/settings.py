@@ -1,0 +1,167 @@
+"""
+Django settings for Spot On Appliance Cleaning.
+"""
+
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-s6-+f0#1+s++zze3s!t3&37pbc$oh9)0*0hpp5v7)id!%r%9%3',
+)
+
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
+
+# TEMP: show travel-time scheduling debug on booking page (set False to hide)
+SCHEDULE_DEBUG = os.environ.get('SCHEDULE_DEBUG', 'True').lower() in ('true', '1', 'yes')
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get(
+        'DJANGO_ALLOWED_HOSTS',
+        'localhost,127.0.0.1,spoton.vehiclecare.online,192.168.0.93,spotonappliancecleaning.co.uk,www.spotonappliancecleaning.co.uk',
+    ).split(',')
+    if host.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        'DJANGO_CSRF_TRUSTED_ORIGINS',
+        'https://spoton.vehiclecare.online,https://spotonappliancecleaning.co.uk,https://www.spotonappliancecleaning.co.uk,http://localhost,http://127.0.0.1,http://192.168.0.93:8000',
+    ).split(',')
+    if origin.strip()
+]
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'accounts',
+    'services',
+    'bookings',
+    'website',
+    'panel',
+]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+ROOT_URLCONF = 'config.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'website.context_processors.site_settings',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'config.wsgi.application'
+
+if os.environ.get('DB_ENGINE') == 'postgresql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'spoton_cleaning'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.environ.get('SQLITE_PATH', str(BASE_DIR / 'db.sqlite3')),
+        }
+    }
+
+AUTH_USER_MODEL = 'accounts.CustomUser'
+
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+LANGUAGE_CODE = 'en-gb'
+TIME_ZONE = 'Europe/London'
+USE_I18N = True
+USE_TZ = True
+
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT', str(BASE_DIR / 'media'))
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'accounts:dashboard'
+LOGOUT_REDIRECT_URL = 'website:home'
+
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get(
+    'DEFAULT_FROM_EMAIL',
+    'Spot On Appliance Cleaning <noreply@spotonappliancecleaning.co.uk>',
+)
+
+SITE_NAME = 'Spot On Appliance Cleaning'
+SITE_TAGLINE = 'Appliance shine, Every time.'
+SITE_PHONE = '07123 456789'
+SITE_EMAIL = 'info@spotonappliancecleaning.co.uk'
+SITE_ADDRESS = 'Serving customers across the local area'
+
+# Smart scheduling — travel time between jobs
+USE_OSRM_ROUTING = os.environ.get('USE_OSRM_ROUTING', 'True').lower() in ('true', '1', 'yes')
+OSRM_BASE_URL = os.environ.get('OSRM_BASE_URL', 'https://router.project-osrm.org/route/v1/driving')
+DEFAULT_JOB_DURATION_MINUTES = int(os.environ.get('DEFAULT_JOB_DURATION_MINUTES', '60'))
+DEFAULT_TRAVEL_MINUTES = int(os.environ.get('DEFAULT_TRAVEL_MINUTES', '30'))
+MIN_TRAVEL_MINUTES = int(os.environ.get('MIN_TRAVEL_MINUTES', '5'))
+TRAVEL_BUFFER_MINUTES = int(os.environ.get('TRAVEL_BUFFER_MINUTES', '5'))
+ROAD_DISTANCE_FACTOR = float(os.environ.get('ROAD_DISTANCE_FACTOR', '1.35'))
+AVERAGE_DRIVING_SPEED_KMH = float(os.environ.get('AVERAGE_DRIVING_SPEED_KMH', '45'))
+BUSINESS_BASE_POSTCODE = os.environ.get('BUSINESS_BASE_POSTCODE', '')

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Terms & Conditions - {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="legal-content">
+                    <span class="section-eyebrow">Legal</span>
+                    <h1>Terms &amp; Conditions</h1>
+                    <p class="text-muted mb-4">Last updated: {% now "F Y" %}</p>
+                    <p>By using the {{ SITE_NAME }} website and booking services, you agree to these terms and conditions.</p>
+                    <h4>Bookings</h4>
+                    <p>All bookings are subject to availability and confirmation. We reserve the right to reschedule appointments with reasonable notice.</p>
+                    <h4>Cancellation</h4>
+                    <p>Please provide at least 24 hours notice if you need to cancel or reschedule your appointment.</p>
+                    <h4>Liability</h4>
+                    <p>We are fully insured. Our liability is limited to the value of the service provided.</p>
+                    <h4>Contact</h4>
+                    <p class="mb-0">For questions about these terms, contact us at <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

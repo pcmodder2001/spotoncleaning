@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book Appointment - {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <h1 class="fw-bold">Book an Appointment</h1>
+        <p class="text-muted mb-0">Choose your service, pick a date, and confirm your details</p>
+    </div>
+</div>
+
+<div class="container py-4 py-lg-5">
+    <div class="row g-4 g-lg-5">
+        <div class="col-lg-8">
+            <div class="booking-wizard app-card card border-0">
+                <div class="booking-steps" id="bookingSteps">
+                    <div class="booking-step active" data-step="1">
+                        <span class="step-num">1</span>
+                        <span class="step-label">Service</span>
+                    </div>
+                    <div class="booking-step-line"></div>
+                    <div class="booking-step" data-step="2">
+                        <span class="step-num">2</span>
+                        <span class="step-label">Date &amp; Time</span>
+                    </div>
+                    <div class="booking-step-line"></div>
+                    <div class="booking-step" data-step="3">
+                        <span class="step-num">3</span>
+                        <span class="step-label">Details</span>
+                    </div>
+                </div>
+
+                <form method="post" id="bookingForm" class="booking-form" novalidate>
+                    {% csrf_token %}
+                    {{ form.date }}
+                    {{ form.time_slot }}
+                    <div id="servicesInputs" aria-hidden="true"></div>
+
+                    {% if form.non_field_errors %}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            showAppToast("{{ form.non_field_errors.0|escapejs }}", 'error');
+                        });
+                    </script>
+                    {% endif %}
+
+                    <!-- Step 1: Service -->
+                    <div class="booking-panel active" data-panel="1">
+                        <div class="booking-panel-body">
+                            <h2 class="booking-panel-title">What would you like cleaned?</h2>
+                            <p class="booking-panel-desc">Choose one oven type, then add hob or extractor if needed.</p>
+
+                            <h3 class="service-group-title">Oven type <span class="text-muted fw-normal">(choose one)</span></h3>
+                            <div class="service-picker service-picker-oven">
+                                {% for service in oven_services %}
+                                <button type="button" class="service-pick service-pick-oven{% if selected_service and selected_service.pk == service.pk %} selected{% endif %}" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="oven">
+                                    <span class="service-pick-icon"><i class="bi bi-fire"></i></span>
+                                    <span class="service-pick-info">
+                                        <strong>{{ service.name }}</strong>
+                                        <small>{{ service.description|truncatewords:12 }}</small>
+                                    </span>
+                                    <span class="service-pick-price">&pound;{{ service.price }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
+
+                            <h3 class="service-group-title mt-4">Add-ons <span class="text-muted fw-normal">(optional)</span></h3>
+                            <div class="service-picker service-picker-addon">
+                                {% for service in addon_services %}
+                                <button type="button" class="service-pick service-pick-addon" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="">
+                                    <span class="service-pick-icon"><i class="bi bi-plus-circle"></i></span>
+                                    <span class="service-pick-info">
+                                        <strong>{{ service.name }}</strong>
+                                        <small>{{ service.description|truncatewords:12 }}</small>
+                                    </span>
+                                    <span class="service-pick-price">&pound;{{ service.price }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
+
+                            {% if form.services.errors %}
+                            <div class="text-danger small mt-2">{{ form.services.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="booking-panel-footer">
+                            <button type="button" class="btn btn-primary btn-next" data-next="2">Continue</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Postcode, Calendar & Time -->
+                    <div class="booking-panel" data-panel="2">
+                        <div class="booking-panel-body">
+                            <h2 class="booking-panel-title">When works for you?</h2>
+                            <p class="booking-panel-desc">Enter your postcode first so we can calculate travel time between jobs and show accurate availability.</p>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="id_postcode">Postcode</label>
+                                    {{ form.postcode }}
+                                    {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
+                                    <div class="form-text">We use this to work out driving time from other appointments that day.</div>
+                                </div>
+                            </div>
+
+                            <div id="calendarSection" class="booking-calendar-wrap" hidden>
+                                <div class="booking-calendar-header">
+                                    <button type="button" class="btn btn-sm btn-light calendar-nav" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+                                    <h3 class="calendar-month-label" id="calMonthLabel"></h3>
+                                    <button type="button" class="btn btn-sm btn-light calendar-nav" id="calNext" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+                                </div>
+                                <div class="booking-calendar">
+                                    <div class="calendar-weekdays">
+                                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                                    </div>
+                                    <div class="calendar-grid" id="calGrid"></div>
+                                </div>
+                                <p class="calendar-legend">
+                                    <span class="legend-dot available"></span> Available
+                                    <span class="legend-dot unavailable"></span> Unavailable
+                                </p>
+                            </div>
+
+                            <div class="time-slots-section" id="timeSlotsSection" hidden>
+                                <h3 class="time-slots-title">Available times <span id="selectedDateLabel"></span></h3>
+                                <div class="time-slots-grid" id="timeSlotsGrid"></div>
+                                <p class="time-slots-empty text-muted" id="timeSlotsEmpty" hidden>No times available for this date — try another day or check your postcode.</p>
+                                <p class="time-slots-note text-muted small" id="timeSlotsNote" hidden></p>
+                            </div>
+
+                            {% if form.date.errors %}<div class="text-danger small">{{ form.date.errors.0 }}</div>{% endif %}
+                            {% if form.time_slot.errors %}<div class="text-danger small">{{ form.time_slot.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="booking-panel-footer">
+                            <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="1">Back</button>
+                            <button type="button" class="btn btn-primary btn-next" data-next="3">Continue</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Address & Confirm -->
+                    <div class="booking-panel" data-panel="3">
+                        <div class="booking-panel-body">
+                            <h2 class="booking-panel-title">Where should we visit?</h2>
+                            <p class="booking-panel-desc">Enter your address and any special instructions.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Address Line 1</label>
+                                    {{ form.address_line_1 }}
+                                    {% if form.address_line_1.errors %}<div class="text-danger small">{{ form.address_line_1.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Address Line 2 <span class="text-muted fw-normal">(optional)</span></label>
+                                    {{ form.address_line_2 }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">City</label>
+                                    {{ form.city }}
+                                    {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Postcode</label>
+                                    <input type="text" class="form-control" id="postcodeDisplay" readonly>
+                                    <div class="form-text">Set on the previous step</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Additional Notes <span class="text-muted fw-normal">(optional)</span></label>
+                                    {{ form.notes }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="booking-panel-footer">
+                            <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="2">Back</button>
+                            <button type="submit" class="btn btn-primary btn-lg">Confirm Booking</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="booking-summary-card" id="bookingSummary">
+                <div class="summary-header">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Your Booking</span>
+                </div>
+                <div class="summary-body">
+                    <div class="summary-row">
+                        <span class="summary-label">Services</span>
+                        <span class="summary-value" id="summaryService">{% if selected_service %}{{ selected_service.name }}{% else %}—{% endif %}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Date</span>
+                        <span class="summary-value" id="summaryDate">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Time</span>
+                        <span class="summary-value" id="summaryTime">—</span>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-row summary-total">
+                        <span class="summary-label">Total</span>
+                        <span class="summary-value" id="summaryPrice">{% if selected_service %}&pound;{{ selected_service.price }}{% else %}—{% endif %}</span>
+                    </div>
+                </div>
+                <div class="summary-footer">
+                    <small class="text-muted"><i class="bi bi-shield-check me-1"></i> Fully insured service</small>
+                </div>
+            </div>
+
+            {% if schedule_debug %}
+            <div class="schedule-debug-panel mt-4" id="scheduleDebugPanel">
+                <div class="schedule-debug-header">
+                    <div>
+                        <strong><i class="bi bi-bug me-1"></i> Schedule debug</strong>
+                        <span class="badge bg-warning text-dark ms-1">TEMP</span>
+                    </div>
+                    <small id="scheduleDebugStatus" class="text-muted">Starting…</small>
+                </div>
+                <div id="scheduleDebugContent" class="schedule-debug-content">
+                    <p class="text-muted mb-0">Waiting for input…</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.bookingConfig = {
+        datesUrl: "{% url 'bookings:available_dates' %}",
+        slotsUrl: "{% url 'bookings:available_slots' %}",
+        initialService: "{{ selected_service.pk|default:'' }}",
+        initialServices: [{% if form.initial.services %}{% for id in form.initial.services %}"{{ id }}"{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}],
+        initialDate: "{{ form.date.value|default:'' }}",
+        initialTimeSlot: "{{ form.time_slot.value|default:'' }}",
+        hasErrors: {{ form.errors|yesno:"true,false" }},
+        errorStep: {% if form.date.errors or form.time_slot.errors or form.postcode.errors %}2{% elif form.services.errors %}1{% elif form.address_line_1.errors or form.city.errors %}3{% else %}1{% endif %},
+        showScheduleDebug: {{ schedule_debug|yesno:"true,false" }}
+    };
+</script>
+<script src="{% static 'js/booking.js' %}?v=4"></script>
+{% if schedule_debug %}
+<script src="{% static 'js/schedule-debug.js' %}?v=5"></script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Dashboard{% endblock %}
+
+{% block panel_content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat">
+            <h3>{{ stats.total_users }}</h3>
+            <p>Total Users</p>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat">
+            <h3>{{ stats.total_bookings }}</h3>
+            <p>Total Bookings</p>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat">
+            <h3>{{ stats.today_bookings }}</h3>
+            <p>Today's Bookings</p>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat">
+            <h3>{{ stats.pending_bookings }}</h3>
+            <p>Pending</p>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat">
+            <h3>{{ stats.confirmed_bookings }}</h3>
+            <p>Confirmed</p>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat">
+            <h3>{{ stats.completed_jobs }}</h3>
+            <p>Completed</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="panel-card card border-0">
+            <div class="card-header">Recent Bookings</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Date</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for booking in recent_bookings %}
+                        <tr>
+                            <td><a href="{% url 'panel:booking_edit' booking.pk %}">#{{ booking.pk }}</a></td>
+                            <td>{{ booking.user.full_name }}</td>
+                            <td>{{ booking.service_summary }}</td>
+                            <td>{{ booking.date|date:"d M Y" }}</td>
+                            <td><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-muted text-center py-4">No bookings yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="panel-card card border-0">
+            <div class="card-header">Recent Registrations</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Name</th><th>Email</th><th>Joined</th></tr></thead>
+                    <tbody>
+                        {% for u in recent_users %}
+                        <tr>
+                            <td>{{ u.full_name }}</td>
+                            <td>{{ u.email }}</td>
+                            <td>{{ u.date_joined|date:"d M Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted text-center py-4">No users yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if unread_messages %}
+        <div class="panel-info-note mt-3">
+            <i class="bi bi-envelope me-2"></i>{{ unread_messages }} unread enquir{{ unread_messages|pluralize:"y,ies" }}
+            <a href="{% url 'panel:enquiry_list' %}" class="ms-1">View</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

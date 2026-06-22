@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <h1 class="fw-bold">Welcome, {{ user.first_name }}!</h1>
+        <p class="text-muted mb-0">Manage your bookings and profile</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-calendar-event"></i></div>
+                <div>
+                    <h3 class="mb-0">{{ upcoming_bookings|length }}</h3>
+                    <p class="text-muted mb-0">Upcoming Bookings</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-success-subtle text-success"><i class="bi bi-check-circle"></i></div>
+                <div>
+                    <h3 class="mb-0">{{ completed_count }}</h3>
+                    <p class="text-muted mb-0">Completed Bookings</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-info-subtle text-info"><i class="bi bi-list-check"></i></div>
+                <div>
+                    <h3 class="mb-0">{{ total_bookings }}</h3>
+                    <p class="text-muted mb-0">Total Bookings</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="app-card card border-0">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Upcoming Bookings</span>
+                    <a href="{% url 'accounts:my_bookings' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if upcoming_bookings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in upcoming_bookings %}
+                                <tr>
+                                    <td>{{ booking.service_summary }}</td>
+                                    <td>{{ booking.date|date:"d M Y" }}</td>
+                                    <td>{{ booking.time_slot.time|time:"H:i" }}</td>
+                                    <td><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-x fs-1"></i>
+                        <p class="mt-2">No upcoming bookings</p>
+                        <a href="{% url 'bookings:create' %}" class="btn btn-primary">Book Now</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="app-card card border-0">
+                <div class="card-header">Quick Actions</div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'bookings:create' %}" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>New Booking</a>
+                        <a href="{% url 'accounts:my_bookings' %}" class="btn btn-outline-primary"><i class="bi bi-list me-2"></i>My Bookings</a>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary"><i class="bi bi-person me-2"></i>Edit Profile</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

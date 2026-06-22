@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body_class %}page-panel{% endblock %}
+{% block title %}Admin Panel - {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="panel-layout">
+    <aside class="panel-sidebar">
+        <div class="panel-brand">
+            {% url 'panel:dashboard' as panel_dashboard_url %}
+            {% include 'includes/site_brand.html' with brand_url=panel_dashboard_url brand_class='site-brand-panel' %}
+            <span class="site-brand-panel-label">Admin Panel</span>
+        </div>
+        <nav class="panel-nav">
+            <a href="{% url 'panel:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-grid me-2"></i>Dashboard
+            </a>
+            <a href="{% url 'panel:booking_list' %}" class="{% if 'booking' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-calendar-check me-2"></i>Bookings
+            </a>
+            <a href="{% url 'panel:user_list' %}" class="{% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-people me-2"></i>Users
+            </a>
+            <a href="{% url 'panel:availability' %}" class="{% if request.resolver_match.url_name == 'availability' %}active{% endif %}">
+                <i class="bi bi-clock me-2"></i>Availability
+            </a>
+            <a href="{% url 'panel:service_list' %}" class="{% if 'service' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-tools me-2"></i>Services
+            </a>
+            <a href="{% url 'panel:enquiry_list' %}" class="{% if 'enquiry' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-envelope me-2"></i>Enquiries
+            </a>
+            <hr class="border-secondary mx-3">
+            <a href="{% url 'website:home' %}"><i class="bi bi-house me-2"></i>View Site</a>
+            <a href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a>
+        </nav>
+    </aside>
+    <div class="panel-main">
+        <div class="panel-topbar">
+            <h1 class="h4 mb-0 fw-bold">{% block panel_title %}Admin{% endblock %}</h1>
+        </div>
+        <div class="panel-content">
+            {% block panel_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

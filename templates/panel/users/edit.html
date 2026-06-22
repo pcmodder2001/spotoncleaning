@@ -1,0 +1,61 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Edit User{% endblock %}
+
+{% block panel_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="panel-card card border-0">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" name="first_name" value="{{ edit_user.first_name }}" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" name="last_name" value="{{ edit_user.last_name }}" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" value="{{ edit_user.email }}" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" name="phone_number" value="{{ edit_user.phone_number }}" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" {% if edit_user.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_staff" class="form-check-input" id="is_staff" {% if edit_user.is_staff %}checked{% endif %}>
+                                <label class="form-check-label" for="is_staff">Staff</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="{% url 'panel:user_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+                {% if edit_user != request.user %}
+                <form method="post" action="{% url 'panel:user_delete' edit_user.pk %}" class="mt-3"
+                      data-confirm="All data for this user will be permanently removed."
+                      data-confirm-title="Delete this user?"
+                      data-confirm-yes="Yes, delete"
+                      data-confirm-danger="true">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger">Delete User</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

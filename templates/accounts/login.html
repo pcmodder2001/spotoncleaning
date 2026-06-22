@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In - {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="auth-page auth-page-signin">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-9">
+                <div class="auth-split-card">
+                    <div class="auth-split-aside">
+                        <div class="auth-split-aside-inner">
+                            {% include 'includes/site_brand.html' with brand_class='auth-brand' %}
+                            <h1 class="auth-aside-title">Welcome back</h1>
+                            <p class="auth-aside-text">Sign in to manage your bookings, track appointments, and update your profile.</p>
+                            <ul class="auth-aside-list">
+                                <li><i class="bi bi-calendar-check"></i> View upcoming appointments</li>
+                                <li><i class="bi bi-clock-history"></i> Track booking status</li>
+                                <li><i class="bi bi-person-gear"></i> Update your details anytime</li>
+                            </ul>
+                            <a href="{% url 'website:home' %}#services" class="btn btn-outline-light btn-sm mt-auto d-none d-lg-inline-flex">
+                                View our services <i class="bi bi-arrow-right ms-2"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="auth-split-main">
+                        <div class="auth-split-main-inner">
+                            <div class="auth-form-header">
+                                <h2 class="auth-form-title">Sign in</h2>
+                                <p class="auth-form-subtitle">Enter your email and password to continue.</p>
+                            </div>
+
+                            <form method="post" class="auth-form" novalidate>
+                                {% csrf_token %}
+                                {% if request.GET.next %}
+                                <input type="hidden" name="next" value="{{ request.GET.next }}">
+                                {% endif %}
+                                {% if form.non_field_errors %}
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', function () {
+                                        showAppToast("{{ form.non_field_errors.0|escapejs }}", 'error');
+                                    });
+                                </script>
+                                {% endif %}
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="{{ form.username.id_for_label }}">Email address</label>
+                                    <div class="input-group auth-input-group">
+                                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                        {{ form.username }}
+                                    </div>
+                                    {% if form.username.errors %}
+                                    <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+                                    <div class="input-group auth-input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                        {{ form.password }}
+                                        <button type="button" class="btn btn-outline-secondary auth-password-toggle" aria-label="Show password" data-target="{{ form.password.id_for_label }}">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    {% if form.password.errors %}
+                                    <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div class="form-check mb-0">
+                                        {{ form.remember_me }}
+                                        <label class="form-check-label" for="{{ form.remember_me.id_for_label }}">Remember me</label>
+                                    </div>
+                                    <a href="{% url 'accounts:password_reset' %}" class="auth-link-small">Forgot password?</a>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-lg w-100 auth-submit-btn">
+                                    Sign in <i class="bi bi-arrow-right ms-2"></i>
+                                </button>
+                            </form>
+
+                            <div class="auth-form-footer">
+                                <p class="mb-0">Don't have an account?
+                                    <a href="{% url 'accounts:register' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}" class="fw-semibold">Create one free</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('.auth-password-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const input = document.getElementById(btn.dataset.target);
+            if (!input) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.querySelector('i').className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+            btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Availability Management{% endblock %}
+
+{% block panel_content %}
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="panel-card card border-0 mb-4">
+            <div class="card-header">Available Days</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="weekly">
+                    {% for schedule in weekly_schedule %}
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="day_{{ schedule.day_of_week }}" class="form-check-input" id="day{{ schedule.day_of_week }}" {% if schedule.is_available %}checked{% endif %}>
+                        <label class="form-check-label" for="day{{ schedule.day_of_week }}">{{ schedule.get_day_of_week_display }}</label>
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary mt-2">Save Schedule</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="panel-card card border-0">
+            <div class="card-header">Block Dates</div>
+            <div class="card-body">
+                <form method="post" class="row g-2 mb-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="block_date">
+                    <div class="col-md-5">
+                        <input type="date" name="date" class="form-control" required>
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" name="reason" class="form-control" placeholder="Reason (optional)">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Block</button>
+                    </div>
+                </form>
+                <ul class="list-group list-group-flush">
+                    {% for blocked in blocked_dates %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span>{{ blocked.date|date:"d M Y" }}{% if blocked.reason %} — {{ blocked.reason }}{% endif %}</span>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="unblock_date">
+                            <input type="hidden" name="blocked_id" value="{{ blocked.pk }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                        </form>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted px-0">No blocked dates</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="panel-card card border-0">
+            <div class="card-header">Time Slots</div>
+            <div class="card-body">
+                <form method="post" class="row g-2 mb-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_slot">
+                    <div class="col-8">
+                        <input type="time" name="time" class="form-control" required>
+                    </div>
+                    <div class="col-4">
+                        <button type="submit" class="btn btn-primary w-100">Add Slot</button>
+                    </div>
+                </form>
+                <ul class="list-group list-group-flush">
+                    {% for slot in time_slots %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span>{{ slot.time|time:"H:i" }} {% if slot.active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</span>
+                        <div class="d-flex gap-1">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle_slot">
+                                <input type="hidden" name="slot_id" value="{{ slot.pk }}">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Toggle</button>
+                            </form>
+                            <form method="post"
+                                  data-confirm="This time slot will be removed from the schedule."
+                                  data-confirm-title="Delete this slot?"
+                                  data-confirm-yes="Yes, delete"
+                                  data-confirm-danger="true">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_slot">
+                                <input type="hidden" name="slot_id" value="{{ slot.pk }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted px-0">No time slots configured</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

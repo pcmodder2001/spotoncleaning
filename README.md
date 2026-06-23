@@ -4,7 +4,7 @@ Django booking website for Spot On Appliance Cleaning.
 
 ## Run with Docker (recommended)
 
-Uses **PostgreSQL** by default.
+Uses **PostgreSQL on the Ubuntu host** (same as your Vehiclecare setup). Docker only runs the **web app**.
 
 ### Ubuntu server setup
 
@@ -20,9 +20,9 @@ sudo usermod -aG docker $USER
 git clone https://github.com/pcmodder2001/spotoncleaning.git
 cd spotoncleaning
 cp .env.example .env
-nano .env   # set DJANGO_SECRET_KEY, DB_PASSWORD, and your domain(s)
+nano .env   # set DJANGO_SECRET_KEY, DB_PASSWORD, DB_HOST=host.docker.internal
 
-# Build and start (web + postgres)
+# Build and start (web app only — no Docker Postgres)
 docker compose up -d --build
 
 # Load services, time slots, and sample data (first time only)
@@ -38,11 +38,17 @@ Open `http://192.168.0.50:8999` (or your domain if proxied).
 
 ```bash
 docker compose logs -f web          # View app logs
-docker compose logs -f db           # View postgres logs
 docker compose restart web          # Restart app
 docker compose down                 # Stop containers
 docker compose up -d --build        # Rebuild after git pull
 docker compose exec web python manage.py migrate
+```
+
+Optional bundled Postgres (only if you do NOT have Postgres on the host):
+
+```bash
+docker compose --profile bundled-db up -d --build
+# then set DB_HOST=db in .env
 ```
 
 ## Local development (Windows / without Docker)
@@ -78,8 +84,8 @@ python manage.py runserver 8999
 
 See `.env.example` for all supported settings.
 
-**Docker note:** use `DB_HOST=db` (the docker service name).  
-**Local dev note:** use `DB_HOST=192.168.0.50` (the server IP).
+**Docker on Ubuntu:** use `DB_HOST=host.docker.internal` (connects to Postgres on the host).  
+**Local Windows dev:** use `DB_HOST=192.168.0.50` (the server IP).
 
 ### Postgres: `no pg_hba.conf entry` from your dev PC
 
@@ -143,4 +149,4 @@ Then restart Postgres:
 sudo systemctl restart postgresql
 ```
 
-For Docker-only Postgres, pull latest and `docker compose up -d --build` (uses `docker/postgres/pg_hba.conf`).
+For Docker-only Postgres, use `docker compose --profile bundled-db up -d --build` (uses port 5433 on the host to avoid conflicting with system Postgres).

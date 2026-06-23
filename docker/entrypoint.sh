@@ -4,7 +4,7 @@ set -e
 mkdir -p /app/media /app/staticfiles
 
 if [ "$DB_ENGINE" = "postgresql" ]; then
-    echo "Waiting for PostgreSQL at ${DB_HOST:-db}:${DB_PORT:-5432}..."
+    echo "Waiting for PostgreSQL at ${DB_HOST:-host.docker.internal}:${DB_PORT:-5432}..."
     python <<'PY'
 import os
 import sys
@@ -12,7 +12,7 @@ import time
 
 import psycopg2
 
-host = os.environ.get("DB_HOST", "db")
+host = os.environ.get("DB_HOST", "host.docker.internal")
 port = int(os.environ.get("DB_PORT", "5432"))
 name = os.environ.get("DB_NAME", "spotoncleaning")
 user = os.environ.get("DB_USER", "spoton")

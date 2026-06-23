@@ -8,11 +8,10 @@ services:
       - .env
     environment:
       APP_PORT: ${APP_PORT:-8999}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - app_media:/app/media
-    depends_on:
-      db:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('APP_PORT', '8999') + '/')"]
       interval: 30s
@@ -20,11 +19,14 @@ services:
       retries: 3
       start_period: 60s
 
+  # Optional — only if you do NOT have Postgres on the Ubuntu host already.
+  # Start with: docker compose --profile bundled-db up -d
   db:
+    profiles: ["bundled-db"]
     image: postgres:16-alpine
     restart: unless-stopped
     ports:
-      - "${DB_PUBLISH_PORT:-5432}:5432"
+      - "${DB_PUBLISH_PORT:-5433}:5432"
     environment:
       POSTGRES_DB: ${DB_NAME:-spotoncleaning}
       POSTGRES_USER: ${DB_USER:-spoton}

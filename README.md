@@ -30,7 +30,7 @@ docker compose exec web python manage.py setup_initial_data
 docker compose exec web python manage.py createsuperuser
 ```
 
-Open `http://YOUR_SERVER_IP:8000` (or your domain if proxied).
+Open `http://YOUR_SERVER_IP:8999` (or your domain if proxied).
 
 ### Useful commands
 
@@ -58,7 +58,7 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py setup_initial_data
-python manage.py runserver
+python manage.py runserver 8999
 ```
 
 ## Environment variables

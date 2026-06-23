@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -65,10 +66,14 @@ def user_edit_view(request, pk):
     if request.method == 'POST':
         user.first_name = request.POST.get('first_name', user.first_name)
         user.last_name = request.POST.get('last_name', user.last_name)
-        user.email = request.POST.get('email', user.email)
+        if not user.is_sysadmin:
+            user.email = request.POST.get('email', user.email)
+            user.is_active = request.POST.get('is_active') == 'on'
+            user.is_staff = request.POST.get('is_staff') == 'on'
+        else:
+            user.is_active = True
+            user.is_staff = True
         user.phone_number = request.POST.get('phone_number', user.phone_number)
-        user.is_active = request.POST.get('is_active') == 'on'
-        user.is_staff = request.POST.get('is_staff') == 'on'
         user.save()
         messages.success(request, f'User {user.email} updated successfully.')
         return redirect('panel:user_list')
@@ -82,8 +87,15 @@ def user_delete_view(request, pk):
     if user == request.user:
         messages.error(request, 'You cannot delete your own account.')
         return redirect('panel:user_list')
+    if user.is_sysadmin:
+        messages.error(request, 'The system administrator account cannot be deleted.')
+        return redirect('panel:user_list')
     email = user.email
-    user.delete()
+    try:
+        user.delete()
+    except PermissionDenied:
+        messages.error(request, 'The system administrator account cannot be deleted.')
+        return redirect('panel:user_list')
     messages.success(request, f'User {email} deleted.')
     return redirect('panel:user_list')
 

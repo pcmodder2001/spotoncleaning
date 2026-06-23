@@ -9,6 +9,12 @@
             <div class="card-body p-4">
                 <form method="post">
                     {% csrf_token %}
+                    {% if edit_user.is_sysadmin %}
+                    <div class="alert alert-info py-2 mb-3">
+                        <i class="bi bi-shield-lock me-1"></i>
+                        System administrator — this account cannot be deleted or deactivated.
+                    </div>
+                    {% endif %}
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">First Name</label>
@@ -20,7 +26,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" value="{{ edit_user.email }}" class="form-control">
+                            <input type="email" name="email" value="{{ edit_user.email }}" class="form-control"{% if edit_user.is_sysadmin %} readonly{% endif %}>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Phone</label>
@@ -28,13 +34,13 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-check">
-                                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" {% if edit_user.is_active %}checked{% endif %}>
+                                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" {% if edit_user.is_active %}checked{% endif %}{% if edit_user.is_sysadmin %} disabled{% endif %}>
                                 <label class="form-check-label" for="is_active">Active</label>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-check">
-                                <input type="checkbox" name="is_staff" class="form-check-input" id="is_staff" {% if edit_user.is_staff %}checked{% endif %}>
+                                <input type="checkbox" name="is_staff" class="form-check-input" id="is_staff" {% if edit_user.is_staff %}checked{% endif %}{% if edit_user.is_sysadmin %} disabled{% endif %}>
                                 <label class="form-check-label" for="is_staff">Staff</label>
                             </div>
                         </div>
@@ -44,7 +50,7 @@
                         <a href="{% url 'panel:user_list' %}" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </form>
-                {% if edit_user != request.user %}
+                {% if edit_user != request.user and not edit_user.is_sysadmin %}
                 <form method="post" action="{% url 'panel:user_delete' edit_user.pk %}" class="mt-3"
                       data-confirm="All data for this user will be permanently removed."
                       data-confirm-title="Delete this user?"

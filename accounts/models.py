@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.utils import timezone
 
@@ -47,3 +49,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     @property
     def full_name(self):
         return f'{self.first_name} {self.last_name}'.strip()
+
+    @property
+    def is_sysadmin(self):
+        return self.email.lower().strip() in settings.SYSADMIN_EMAILS
+
+    def delete(self, using=None, keep_parents=False):
+        if self.is_sysadmin:
+            raise PermissionDenied('This system administrator account cannot be deleted.')
+        super().delete(using=using, keep_parents=keep_parents)

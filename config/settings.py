@@ -30,7 +30,7 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
         'DJANGO_CSRF_TRUSTED_ORIGINS',
-        'https://spoton.vehiclecare.online,https://spotonappliancecleaning.co.uk,https://www.spotonappliancecleaning.co.uk,http://localhost,http://127.0.0.1,http://192.168.0.93:8000',
+        'https://spoton.vehiclecare.online,https://spotonappliancecleaning.co.uk,https://www.spotonappliancecleaning.co.uk,http://localhost,http://127.0.0.1,http://localhost:8999,http://127.0.0.1:8999,http://192.168.0.93:8999',
     ).split(',')
     if origin.strip()
 ]
@@ -154,6 +154,16 @@ SITE_TAGLINE = 'Appliance shine, Every time.'
 SITE_PHONE = '07123 456789'
 SITE_EMAIL = 'info@spotonappliancecleaning.co.uk'
 SITE_ADDRESS = 'Serving customers across the local area'
+
+# System administrator accounts — cannot be deleted (comma-separated emails)
+SYSADMIN_EMAILS = [
+    email.strip().lower()
+    for email in os.environ.get(
+        'SYSADMIN_EMAILS',
+        'brad.crampton2001@gmail.com',
+    ).split(',')
+    if email.strip()
+]
 
 # Smart scheduling — travel time between jobs
 USE_OSRM_ROUTING = os.environ.get('USE_OSRM_ROUTING', 'True').lower() in ('true', '1', 'yes')

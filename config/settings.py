@@ -21,7 +21,7 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
         'DJANGO_ALLOWED_HOSTS',
-        'localhost,127.0.0.1,spoton.vehiclecare.online,192.168.0.93,spotonappliancecleaning.co.uk,www.spotonappliancecleaning.co.uk',
+        'localhost,127.0.0.1,spoton.vehiclecare.online,192.168.0.50,spotonappliancecleaning.co.uk,www.spotonappliancecleaning.co.uk',
     ).split(',')
     if host.strip()
 ]
@@ -30,7 +30,7 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
         'DJANGO_CSRF_TRUSTED_ORIGINS',
-        'https://spoton.vehiclecare.online,https://spotonappliancecleaning.co.uk,https://www.spotonappliancecleaning.co.uk,http://localhost,http://127.0.0.1,http://localhost:8999,http://127.0.0.1:8999,http://192.168.0.93:8999',
+        'https://spoton.vehiclecare.online,https://spotonappliancecleaning.co.uk,https://www.spotonappliancecleaning.co.uk,http://localhost,http://127.0.0.1,http://localhost:8999,http://127.0.0.1:8999,http://192.168.0.50:8999',
     ).split(',')
     if origin.strip()
 ]
@@ -81,12 +81,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-if os.environ.get('DB_ENGINE') == 'postgresql':
+if os.environ.get('DB_ENGINE', '').lower() in ('postgresql', 'postgres'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'spoton_cleaning'),
-            'USER': os.environ.get('DB_USER', 'postgres'),
+            'NAME': os.environ.get('DB_NAME', 'spotoncleaning'),
+            'USER': os.environ.get('DB_USER', 'spoton'),
             'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': os.environ.get('DB_HOST', 'localhost'),
             'PORT': os.environ.get('DB_PORT', '5432'),
@@ -175,3 +175,29 @@ TRAVEL_BUFFER_MINUTES = int(os.environ.get('TRAVEL_BUFFER_MINUTES', '5'))
 ROAD_DISTANCE_FACTOR = float(os.environ.get('ROAD_DISTANCE_FACTOR', '1.35'))
 AVERAGE_DRIVING_SPEED_KMH = float(os.environ.get('AVERAGE_DRIVING_SPEED_KMH', '45'))
 BUSINESS_BASE_POSTCODE = os.environ.get('BUSINESS_BASE_POSTCODE', '')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'django.security.DisallowedHost': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}

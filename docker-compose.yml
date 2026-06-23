@@ -9,36 +9,41 @@ services:
     environment:
       APP_PORT: ${APP_PORT:-8999}
     volumes:
-      - app_data:/app/data
       - app_media:/app/media
     depends_on:
       db:
         condition: service_healthy
-        required: false
     healthcheck:
       test: ["CMD", "python", "-c", "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('APP_PORT', '8999') + '/')"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
   db:
-    profiles: ["postgres"]
     image: postgres:16-alpine
     restart: unless-stopped
+    ports:
+      - "${DB_PUBLISH_PORT:-5432}:5432"
     environment:
-      POSTGRES_DB: ${DB_NAME:-spoton_cleaning}
+      POSTGRES_DB: ${DB_NAME:-spotoncleaning}
       POSTGRES_USER: ${DB_USER:-spoton}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    command:
+      - postgres
+      - -c
+      - listen_addresses=*
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-spoton} -d ${DB_NAME:-spoton_cleaning}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-spoton} -d ${DB_NAME:-spotoncleaning}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  app_data:
   app_media:
   postgres_data:

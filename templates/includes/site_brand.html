@@ -1,7 +1,7 @@
-{% load static %}
+{% load static_version %}
 <a href="{% if brand_url %}{{ brand_url }}{% else %}{% url 'website:home' %}{% endif %}" class="site-brand{% if brand_class %} {{ brand_class }}{% endif %}">
     <img
-        src="{% static 'img/logo.png' %}"
+        src="{% static_v 'img/logo.png' %}"
         alt="{{ SITE_NAME }}"
         class="site-brand-logo"
         width="120"

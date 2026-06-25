@@ -132,6 +132,16 @@ STORAGES = {
     },
 }
 
+from config.static_utils import build_static_cache_versions  # noqa: E402
+
+STATIC_CACHE_VERSIONS = build_static_cache_versions(
+    'img/logo.png',
+    'img/logo-alt.png',
+    'img/oven-before.jpg',
+    'img/oven-after.jpg',
+    'css/style.css',
+)
+
 MEDIA_URL = 'media/'
 MEDIA_ROOT = os.environ.get('MEDIA_ROOT', str(BASE_DIR / 'media'))
 

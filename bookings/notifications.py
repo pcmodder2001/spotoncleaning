@@ -5,6 +5,8 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
+from config.static_utils import versioned_static_url
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,7 +18,7 @@ def get_email_context(**extra):
         'site_url': site_url,
         'site_email': settings.SITE_EMAIL,
         'site_phone': settings.SITE_PHONE,
-        'logo_url': f'{site_url}/static/img/logo.png',
+        'logo_url': versioned_static_url('img/logo.png', absolute=True),
         **extra,
     }
 

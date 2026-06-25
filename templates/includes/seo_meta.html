@@ -1,4 +1,4 @@
-{% load static %}
+{% load static_version %}
 <meta name="description" content="{% block meta_description %}{{ SITE_DESCRIPTION }}{% endblock %}">
 <meta name="keywords" content="{% block meta_keywords %}{{ SITE_KEYWORDS }}{% endblock %}">
 <meta name="author" content="{{ SITE_NAME }}">
@@ -11,11 +11,11 @@
 <meta property="og:description" content="{% block og_description %}{{ SITE_DESCRIPTION }}{% endblock %}">
 <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
 <meta property="og:locale" content="en_GB">
-<meta property="og:image" content="{% block og_image %}{{ SITE_URL }}{% static 'img/logo.png' %}{% endblock %}">
+<meta property="og:image" content="{% block og_image %}{{ SITE_URL }}{% static_v 'img/logo.png' %}{% endblock %}">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{% block twitter_title %}{{ SITE_DEFAULT_SEO_TITLE }}{% endblock %}">
 <meta name="twitter:description" content="{% block twitter_description %}{{ SITE_DESCRIPTION }}{% endblock %}">
-<meta name="twitter:image" content="{% block twitter_image %}{{ SITE_URL }}{% static 'img/logo.png' %}{% endblock %}">
+<meta name="twitter:image" content="{% block twitter_image %}{{ SITE_URL }}{% static_v 'img/logo.png' %}{% endblock %}">
 
 <meta name="theme-color" content="#0e7490">

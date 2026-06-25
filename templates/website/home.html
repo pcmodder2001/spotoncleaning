@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static static_version %}
 
 {% block title %}Oven & Appliance Cleaning {{ SITE_LOCAL_AREA }} | {{ SITE_NAME }}{% endblock %}
 {% block meta_description %}Book professional oven, hob and extractor cleaning in {{ SITE_LOCAL_AREA }}. {{ SITE_TAGLINE }} Eco-friendly products, online booking, fully insured.{% endblock %}
@@ -19,7 +19,7 @@
   "url": "{{ SITE_URL }}",
   "email": "{{ SITE_EMAIL }}",
   "telephone": "{{ SITE_PHONE }}",
-  "image": "{{ SITE_URL }}{% static 'img/logo.png' %}",
+  "image": "{{ SITE_URL }}{% static_v 'img/logo.png' %}",
   "priceRange": "££",
   "areaServed": "{{ SITE_LOCAL_AREA|escapejs }}",
   "address": {
@@ -57,14 +57,14 @@
                 <div class="hero-comparison rounded-4" id="heroComparison" data-split="50">
                     <img
                         class="hero-comparison-img hero-comparison-dirty"
-                        src="{% static 'img/oven-before.jpg' %}"
+                        src="{% static_v 'img/oven-before.jpg' %}"
                         alt="Dirty oven before cleaning"
                         loading="eager"
                     >
                     <div class="hero-comparison-clean-wrap" id="heroComparisonClean">
                         <img
                             class="hero-comparison-img"
-                            src="{% static 'img/oven-after.jpg' %}"
+                            src="{% static_v 'img/oven-after.jpg' %}"
                             alt="Clean oven after professional cleaning"
                             loading="eager"
                         >

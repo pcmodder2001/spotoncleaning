@@ -1,0 +1,7 @@
+$DeployGitHubUser = "pcmodder2001"
+$DeployGitHubToken = "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"
+$DeployGitBranch = "main"
+$DeploySshUser = "brad"
+$DeploySshHost = "192.168.0.50"
+$DeployRemotePath = "/home/brad/spotoncleaning"
+$DeployDockerBuildArgs = ""

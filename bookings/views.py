@@ -5,24 +5,29 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
-from bookings.forms import BookingForm
+from bookings.address_lookup import get_address_lookup_api_key
+from bookings.forms import BookingForm, GuestBookingForm
 from bookings.models import Booking
 from bookings.notifications import send_booking_created_email
 from bookings.utils import cancel_booking, get_available_dates_in_month, get_available_slots_for_date
+from services.catalog import split_addon_services
 from services.models import Service, ServiceType
 
 
-@login_required
 def create_booking_view(request):
+    form_class = BookingForm if request.user.is_authenticated else GuestBookingForm
     if request.method == 'POST':
-        form = BookingForm(request.POST)
+        form = form_class(request.POST)
         if form.is_valid():
-            booking = form.save(commit=False)
-            booking.user = request.user
-            service_ids = [s.pk for s in form.cleaned_data['services']]
-            booking.save()
-            booking.services.set(form.cleaned_data['services'])
-            booking.geocode_and_set_duration(service_ids)
+            if request.user.is_authenticated:
+                booking = form.save(commit=False)
+                booking.user = request.user
+                service_ids = [s.pk for s in form.cleaned_data['services']]
+                booking.save()
+                booking.services.set(form.cleaned_data['services'])
+                booking.geocode_and_set_duration(service_ids)
+            else:
+                booking = form.save()
             if send_booking_created_email(booking):
                 messages.success(
                     request,
@@ -34,13 +39,15 @@ def create_booking_view(request):
                     'Your booking has been submitted successfully! '
                     'We could not send a confirmation email, but your booking is saved.',
                 )
-            return redirect('accounts:my_bookings')
+            if request.user.is_authenticated:
+                return redirect('accounts:my_bookings')
+            return redirect('bookings:thank_you')
     else:
         initial = {}
         service_id = request.GET.get('service')
         if service_id:
             initial['services'] = [service_id]
-        form = BookingForm(initial=initial)
+        form = form_class(initial=initial)
 
     selected_service = None
     service_id = request.GET.get('service')
@@ -50,13 +57,23 @@ def create_booking_view(request):
     services = Service.objects.filter(active=True)
     oven_services = services.filter(service_type=ServiceType.OVEN)
     addon_services = services.filter(service_type=ServiceType.ADDON)
+    standard_addon_services, additional_addon_services = split_addon_services(addon_services)
     return render(request, 'bookings/create.html', {
         'form': form,
         'selected_service': selected_service,
         'oven_services': oven_services,
-        'addon_services': addon_services,
+        'standard_addon_services': standard_addon_services,
+        'additional_addon_services': additional_addon_services,
         'schedule_debug': settings.SCHEDULE_DEBUG,
+        'is_guest_booking': not request.user.is_authenticated,
+        'address_lookup_enabled': (
+            settings.ADDRESS_LOOKUP_ENABLED and bool(get_address_lookup_api_key())
+        ),
     })
+
+
+def thank_you_view(request):
+    return render(request, 'bookings/thank_you.html')
 
 
 @login_required
@@ -82,7 +99,19 @@ def _parse_service_ids(request):
     return [int(pk) for pk in ids if str(pk).strip().isdigit()]
 
 
-@login_required
+@require_GET
+def address_lookup_api(request):
+    from bookings.address_lookup import lookup_addresses
+
+    if not settings.ADDRESS_LOOKUP_ENABLED:
+        return JsonResponse({'addresses': [], 'error': 'disabled', 'manual_entry': True})
+
+    postcode = request.GET.get('postcode', '').strip()
+    if not postcode:
+        return JsonResponse({'addresses': [], 'error': 'postcode_required'})
+    return JsonResponse(lookup_addresses(postcode))
+
+
 @require_GET
 def available_dates_api(request):
     try:
@@ -105,7 +134,6 @@ def available_dates_api(request):
     return JsonResponse({'available': available, 'year': year, 'month': month})
 
 
-@login_required
 @require_GET
 def available_slots_api(request):
     date_str = request.GET.get('date')

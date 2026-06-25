@@ -53,7 +53,7 @@
                         {% for booking in recent_bookings %}
                         <tr>
                             <td><a href="{% url 'panel:booking_edit' booking.pk %}">#{{ booking.pk }}</a></td>
-                            <td>{{ booking.user.full_name }}</td>
+                            <td>{{ booking.contact_full_name }}</td>
                             <td>{{ booking.service_summary }}</td>
                             <td>{{ booking.date|date:"d M Y" }}</td>
                             <td><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>

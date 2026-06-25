@@ -76,3 +76,31 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
+
+
+class CompleteAccountFromBookingForm(forms.Form):
+    password1 = forms.CharField(
+        label='Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'new-password',
+        }),
+    )
+    password2 = forms.CharField(
+        label='Confirm password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'new-password',
+        }),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError('Passwords do not match.')
+        if password1:
+            from django.contrib.auth.password_validation import validate_password
+            validate_password(password1)
+        return cleaned_data

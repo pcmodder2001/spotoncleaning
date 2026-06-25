@@ -122,12 +122,12 @@
             </div>
             {% endfor %}
         </div>
-        {% if addon_services %}
+        {% if standard_addon_services %}
         <div class="row g-4">
             <div class="col-12">
                 <h3 class="h5 fw-bold mb-3">Add-ons <span class="text-muted fs-6 fw-normal">— combine with any oven type</span></h3>
             </div>
-            {% for service in addon_services %}
+            {% for service in standard_addon_services %}
             <div class="col-md-6 col-lg-4">
                 <div class="service-card">
                     <div class="service-icon"><i class="bi bi-plus-circle"></i></div>
@@ -140,7 +140,25 @@
             {% endfor %}
         </div>
         {% endif %}
-        {% if not oven_services and not addon_services %}
+        {% if additional_addon_services %}
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <h3 class="h5 fw-bold mb-3">Additional add-ons</h3>
+            </div>
+            {% for service in additional_addon_services %}
+            <div class="col-md-6 col-lg-4">
+                <div class="service-card">
+                    <div class="service-icon"><i class="bi bi-plus-circle"></i></div>
+                    <h4>{{ service.name }}</h4>
+                    <p class="text-muted">{{ service.description }}</p>
+                    <p class="price-tag">&pound;{{ service.price }}</p>
+                    <a href="{% url 'bookings:create' %}?service={{ service.pk }}" class="btn btn-outline-primary w-100">Add to Booking</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if not oven_services and not standard_addon_services and not additional_addon_services %}
             <div class="col-12 text-center text-muted">Services coming soon.</div>
         {% endif %}
     </div>

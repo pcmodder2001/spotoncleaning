@@ -5,6 +5,7 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 
+from services.catalog import split_addon_services
 from services.models import Service, ServiceType
 from website.forms import ContactForm
 from website.models import Testimonial
@@ -14,11 +15,13 @@ def home_view(request):
     services = Service.objects.filter(active=True)
     oven_services = services.filter(service_type=ServiceType.OVEN)
     addon_services = services.filter(service_type=ServiceType.ADDON)
+    standard_addon_services, additional_addon_services = split_addon_services(addon_services)
     testimonials = Testimonial.objects.filter(active=True)
     contact_form = ContactForm()
     return render(request, 'website/home.html', {
         'oven_services': oven_services,
-        'addon_services': addon_services,
+        'standard_addon_services': standard_addon_services,
+        'additional_addon_services': additional_addon_services,
         'testimonials': testimonials,
         'contact_form': contact_form,
     })

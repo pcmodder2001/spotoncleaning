@@ -14,13 +14,25 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+
 import logging
 
+from bookings.guest import attach_guest_bookings_to_user
 from bookings.models import Booking, BookingStatus
 from bookings.notifications import send_branded_email, send_registration_email
+from bookings.tokens import booking_from_account_token
 
-from .forms import CustomPasswordChangeForm, LoginForm, ProfileForm, RegistrationForm
+from .forms import (
+    CompleteAccountFromBookingForm,
+    CustomPasswordChangeForm,
+    LoginForm,
+    ProfileForm,
+    RegistrationForm,
+)
 
+User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
@@ -70,6 +82,54 @@ def logout_view(request):
     logout(request)
     messages.info(request, 'You have been logged out.')
     return redirect('website:home')
+
+
+def complete_account_from_booking_view(request, token):
+    booking = booking_from_account_token(token)
+    if not booking:
+        messages.error(
+            request,
+            'This account setup link is invalid or has expired. Please contact us if you need help.',
+        )
+        return redirect('accounts:login')
+
+    if User.objects.filter(email__iexact=booking.guest_email).exists():
+        messages.info(
+            request,
+            'An account already exists for this email. Log in to view your bookings.',
+        )
+        return redirect(f'{reverse("accounts:login")}?next={reverse("accounts:my_bookings")}')
+
+    if request.method == 'POST':
+        form = CompleteAccountFromBookingForm(request.POST)
+        if form.is_valid():
+            user = User.objects.create_user(
+                email=booking.guest_email,
+                password=form.cleaned_data['password1'],
+                first_name=booking.guest_first_name,
+                last_name=booking.guest_last_name,
+                phone_number=booking.guest_phone,
+            )
+            attach_guest_bookings_to_user(user, booking.guest_email)
+            if not send_registration_email(user):
+                messages.warning(
+                    request,
+                    'Your account was created, but we could not send the welcome email. '
+                    'You can still use your account.',
+                )
+            login(request, user)
+            messages.success(
+                request,
+                'Your account is ready. You can now view and manage your bookings.',
+            )
+            return redirect('accounts:my_bookings')
+    else:
+        form = CompleteAccountFromBookingForm()
+
+    return render(request, 'accounts/complete_booking_account.html', {
+        'form': form,
+        'booking': booking,
+    })
 
 
 @login_required

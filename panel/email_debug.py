@@ -58,9 +58,41 @@ class SampleBooking:
         return self._services
 
     @property
+    def is_guest(self):
+        return self.user is None
+
+    @property
+    def contact_email(self):
+        if self.user:
+            return self.user.email
+        return getattr(self, 'guest_email', 'guest@example.com')
+
+    @property
+    def contact_first_name(self):
+        if self.user:
+            return self.user.first_name
+        return getattr(self, 'guest_first_name', 'Guest')
+
+    @property
+    def contact_last_name(self):
+        if self.user:
+            return self.user.last_name
+        return getattr(self, 'guest_last_name', '')
+
+    @property
+    def contact_full_name(self):
+        return f'{self.contact_first_name} {self.contact_last_name}'.strip()
+
+    @property
+    def contact_phone(self):
+        if self.user:
+            return getattr(self.user, 'phone_number', '')
+        return getattr(self, 'guest_phone', '')
+
+    @property
     def service_summary(self):
         names = list(self._services.values_list('name', flat=True))
-        return ', '.join(names) if names else 'Standard Oven (with Grill)'
+        return ', '.join(names) if names else 'Single Oven'
 
     @property
     def total_price(self):
@@ -113,7 +145,7 @@ def get_sample_booking(status=BookingStatus.PENDING):
     if not services:
         services = [
             Service(
-                name='Standard Oven (with Grill)',
+                name='Single Oven',
                 description='Sample service',
                 price=59,
                 active=True,
@@ -237,10 +269,20 @@ def send_test_email(email_type_id):
     }
 
     booking = get_sample_booking(status=status_map[email_type_id])
+    context = {'booking': booking}
+    if email_type_id == 'booking_created' and getattr(booking, 'is_guest', False):
+        from bookings.tokens import make_booking_account_token
+
+        token = make_booking_account_token(booking) if booking.pk else 'sample-token'
+        from django.urls import reverse
+        context['account_setup_url'] = (
+            f'{settings.SITE_URL.rstrip("/")}'
+            f'{reverse("accounts:complete_account", kwargs={"token": token})}'
+        )
     results = send_test_emails(
         subject_map[email_type_id],
         email_type['template'],
-        {'booking': booking},
+        context,
         recipients,
     )
     return email_type, results

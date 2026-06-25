@@ -13,6 +13,13 @@
     <div class="container">
         <h1 class="fw-bold">Book an Appointment</h1>
         <p class="text-muted mb-0">Choose your service, pick a date, and confirm your details</p>
+        {% if is_guest_booking %}
+        <p class="mb-0 mt-2 small">
+            Already have an account?
+            <a href="{% url 'accounts:login' %}?next={% url 'bookings:create' %}">Sign in</a>
+            to book faster next time.
+        </p>
+        {% endif %}
     </div>
 </div>
 
@@ -55,9 +62,9 @@
                     <div class="booking-panel active" data-panel="1">
                         <div class="booking-panel-body">
                             <h2 class="booking-panel-title">What would you like cleaned?</h2>
-                            <p class="booking-panel-desc">Choose one oven type, then add hob or extractor if needed.</p>
+                            <p class="booking-panel-desc">Choose one oven type, then add any optional extras.</p>
 
-                            <h3 class="service-group-title">Oven type <span class="text-muted fw-normal">(choose one)</span></h3>
+                            <h3 class="service-group-title">Oven cleaning <span class="text-muted fw-normal">(choose one)</span></h3>
                             <div class="service-picker service-picker-oven">
                                 {% for service in oven_services %}
                                 <button type="button" class="service-pick service-pick-oven{% if selected_service and selected_service.pk == service.pk %} selected{% endif %}" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="oven">
@@ -73,7 +80,22 @@
 
                             <h3 class="service-group-title mt-4">Add-ons <span class="text-muted fw-normal">(optional)</span></h3>
                             <div class="service-picker service-picker-addon">
-                                {% for service in addon_services %}
+                                {% for service in standard_addon_services %}
+                                <button type="button" class="service-pick {% if service.exclusive_group %}service-pick-exclusive{% else %}service-pick-addon{% endif %}" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="{{ service.exclusive_group }}">
+                                    <span class="service-pick-icon"><i class="bi bi-plus-circle"></i></span>
+                                    <span class="service-pick-info">
+                                        <strong>{{ service.name }}</strong>
+                                        <small>{{ service.description|truncatewords:12 }}</small>
+                                    </span>
+                                    <span class="service-pick-price">&pound;{{ service.price }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
+
+                            {% if additional_addon_services %}
+                            <h3 class="service-group-title mt-4">Additional add-ons <span class="text-muted fw-normal">(optional)</span></h3>
+                            <div class="service-picker service-picker-addon">
+                                {% for service in additional_addon_services %}
                                 <button type="button" class="service-pick service-pick-addon" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="">
                                     <span class="service-pick-icon"><i class="bi bi-plus-circle"></i></span>
                                     <span class="service-pick-info">
@@ -84,6 +106,7 @@
                                 </button>
                                 {% endfor %}
                             </div>
+                            {% endif %}
 
                             {% if form.services.errors %}
                             <div class="text-danger small mt-2">{{ form.services.errors.0 }}</div>
@@ -143,11 +166,52 @@
                         </div>
                     </div>
 
-                    <!-- Step 3: Address & Confirm -->
+                    <!-- Step 3: Contact, Address & Confirm -->
                     <div class="booking-panel" data-panel="3">
                         <div class="booking-panel-body">
+                            {% if is_guest_booking %}
+                            <h2 class="booking-panel-title">Your contact details</h2>
+                            <p class="booking-panel-desc">We'll use these to confirm your appointment and send updates.</p>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">First name</label>
+                                    {{ form.guest_first_name }}
+                                    {% if form.guest_first_name.errors %}<div class="text-danger small">{{ form.guest_first_name.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Last name</label>
+                                    {{ form.guest_last_name }}
+                                    {% if form.guest_last_name.errors %}<div class="text-danger small">{{ form.guest_last_name.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email</label>
+                                    {{ form.guest_email }}
+                                    {% if form.guest_email.errors %}<div class="text-danger small">{{ form.guest_email.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone <span class="text-muted fw-normal">(optional)</span></label>
+                                    {{ form.guest_phone }}
+                                </div>
+                            </div>
+                            {% endif %}
+
                             <h2 class="booking-panel-title">Where should we visit?</h2>
-                            <p class="booking-panel-desc">Enter your address and any special instructions.</p>
+                            <p class="booking-panel-desc">Select your address from the list, or enter it manually below.</p>
+
+                            {% if address_lookup_enabled %}
+                            <div class="mb-4" id="addressLookupSection">
+                                <label class="form-label" for="addressLookupSelect">Select your address</label>
+                                <select id="addressLookupSelect" class="form-select" disabled>
+                                    <option value="">Enter your postcode on step 2 first…</option>
+                                </select>
+                                <div class="form-text" id="addressLookupStatus"></div>
+                                <button type="button" class="btn btn-link btn-sm px-0 mt-1" id="addressManualToggle" hidden>
+                                    My address isn't listed — enter manually
+                                </button>
+                            </div>
+                            {% endif %}
+
+                            <div id="addressManualFields">
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Address Line 1</label>
@@ -172,6 +236,7 @@
                                     <label class="form-label">Additional Notes <span class="text-muted fw-normal">(optional)</span></label>
                                     {{ form.notes }}
                                 </div>
+                            </div>
                             </div>
                         </div>
                         <div class="booking-panel-footer">
@@ -242,11 +307,13 @@
         initialDate: "{{ form.date.value|default:'' }}",
         initialTimeSlot: "{{ form.time_slot.value|default:'' }}",
         hasErrors: {{ form.errors|yesno:"true,false" }},
-        errorStep: {% if form.date.errors or form.time_slot.errors or form.postcode.errors %}2{% elif form.services.errors %}1{% elif form.address_line_1.errors or form.city.errors %}3{% else %}1{% endif %},
-        showScheduleDebug: {{ schedule_debug|yesno:"true,false" }}
+        errorStep: {% if form.date.errors or form.time_slot.errors or form.postcode.errors %}2{% elif form.services.errors %}1{% elif form.address_line_1.errors or form.city.errors or form.guest_email.errors or form.guest_first_name.errors or form.guest_last_name.errors %}3{% else %}1{% endif %},
+        showScheduleDebug: {{ schedule_debug|yesno:"true,false" }},
+        addressesUrl: "{% url 'bookings:address_lookup' %}",
+        addressLookupEnabled: {{ address_lookup_enabled|yesno:"true,false" }}
     };
 </script>
-<script src="{% static 'js/booking.js' %}?v=4"></script>
+<script src="{% static 'js/booking.js' %}?v=6"></script>
 {% if schedule_debug %}
 <script src="{% static 'js/schedule-debug.js' %}?v=5"></script>
 {% endif %}

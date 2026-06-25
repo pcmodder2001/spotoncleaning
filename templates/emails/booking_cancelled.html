@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.user.first_name }},</p>
+<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.contact_first_name }},</p>
 <p style="margin: 0 0 8px; font-size: 15px; color: #334155;">
     Your booking for <strong>{{ booking.service_summary }}</strong> on {{ booking.date|date:"l, d F Y" }} at {{ booking.time_slot.time|time:"H:i" }} has been cancelled.
 </p>

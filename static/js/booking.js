@@ -29,6 +29,9 @@
         const scheduleDebugPanel = document.getElementById('scheduleDebugPanel');
         const scheduleDebugContent = document.getElementById('scheduleDebugContent');
         const showScheduleDebug = cfg.showScheduleDebug === true;
+        const addressLookupSelect = document.getElementById('addressLookupSelect');
+        const addressLookupStatus = document.getElementById('addressLookupStatus');
+        const addressManualToggle = document.getElementById('addressManualToggle');
 
         let currentStep = 1;
         let viewYear, viewMonth;
@@ -38,6 +41,8 @@
         let selectedTimeLabel = '';
         let selectedServices = {};
         let postcodeDebounce = null;
+        let loadedAddresses = [];
+        let addressLookupLoadedFor = '';
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -47,6 +52,7 @@
         bindNavigation();
         bindCalendarNav();
         bindPostcodeInput();
+        bindAddressLookup();
         initFromConfig();
 
         async function initFromConfig() {
@@ -102,6 +108,7 @@
 
         async function onPostcodeChanged() {
             syncPostcodeDisplay();
+            resetAddressLookup();
             const postcode = getPostcode();
             if (postcode.length < 5) {
                 calendarSection.hidden = true;
@@ -120,6 +127,99 @@
                 showDebugWaiting('Postcode <strong>' + escapeHtml(postcode) + '</strong> set. Now <strong>click a date</strong> on the calendar to load travel time debug for each slot.');
             }
             await renderCalendar();
+        }
+
+        function resetAddressLookup() {
+            loadedAddresses = [];
+            addressLookupLoadedFor = '';
+            if (!addressLookupSelect) return;
+            addressLookupSelect.innerHTML = '<option value="">Enter your postcode on step 2 first…</option>';
+            addressLookupSelect.disabled = true;
+            addressLookupSelect.value = '';
+            if (addressLookupStatus) addressLookupStatus.textContent = '';
+            if (addressManualToggle) addressManualToggle.hidden = true;
+        }
+
+        function bindAddressLookup() {
+            if (!cfg.addressLookupEnabled || !addressLookupSelect) return;
+            addressLookupSelect.addEventListener('change', function () {
+                if (!this.value) return;
+                applySelectedAddress(this.value);
+            });
+            if (addressManualToggle) {
+                addressManualToggle.addEventListener('click', function () {
+                    addressLookupSelect.value = '';
+                    const line1 = document.getElementById('id_address_line_1');
+                    if (line1) line1.focus();
+                });
+            }
+        }
+
+        function applySelectedAddress(index) {
+            const addr = loadedAddresses[parseInt(index, 10)];
+            if (!addr) return;
+            const line1 = document.getElementById('id_address_line_1');
+            const line2 = document.getElementById('id_address_line_2');
+            if (line1) line1.value = addr.line_1 || '';
+            if (line2) line2.value = addr.line_2 || '';
+            if (cityInput) cityInput.value = addr.city || '';
+            if (postcodeInput && addr.postcode) {
+                postcodeInput.value = addr.postcode;
+                syncPostcodeDisplay();
+            }
+        }
+
+        async function loadAddressLookup() {
+            if (!cfg.addressLookupEnabled || !cfg.addressesUrl || !addressLookupSelect) return;
+
+            const postcode = getPostcode();
+            if (!postcode || postcode.length < 5) {
+                resetAddressLookup();
+                return;
+            }
+            if (addressLookupLoadedFor === postcode) return;
+
+            addressLookupSelect.disabled = true;
+            addressLookupSelect.innerHTML = '<option value="">Loading addresses…</option>';
+            if (addressLookupStatus) addressLookupStatus.textContent = 'Looking up addresses for ' + postcode + '…';
+            if (addressManualToggle) addressManualToggle.hidden = true;
+
+            try {
+                const params = new URLSearchParams({ postcode: postcode });
+                const res = await fetch(cfg.addressesUrl + '?' + params.toString());
+                if (!res.ok) throw new Error('Server returned ' + res.status);
+                const data = await res.json();
+
+                loadedAddresses = data.addresses || [];
+                addressLookupLoadedFor = postcode;
+                addressLookupSelect.innerHTML = '<option value="">— Select your address —</option>';
+                loadedAddresses.forEach(function (addr, index) {
+                    const option = document.createElement('option');
+                    option.value = String(index);
+                    option.textContent = addr.label;
+                    addressLookupSelect.appendChild(option);
+                });
+                addressLookupSelect.disabled = false;
+
+                if (addressLookupStatus) {
+                    if (data.error === 'postcode_not_found') {
+                        addressLookupStatus.textContent = 'No addresses found for this postcode. Enter your address manually below.';
+                    } else if (loadedAddresses.length) {
+                        addressLookupStatus.textContent = loadedAddresses.length + ' address(es) found — select yours from the list.';
+                    } else {
+                        addressLookupStatus.textContent = 'Enter your address manually below.';
+                    }
+                }
+                if (addressManualToggle) {
+                    addressManualToggle.hidden = loadedAddresses.length === 0;
+                }
+            } catch (err) {
+                addressLookupSelect.innerHTML = '<option value="">Could not load addresses</option>';
+                addressLookupSelect.disabled = true;
+                if (addressLookupStatus) {
+                    addressLookupStatus.textContent = 'Address lookup unavailable — enter your details manually below.';
+                }
+            }
         }
 
         function showDebugWaiting(message) {
@@ -147,9 +247,10 @@
         }
 
         function bindServicePicker() {
-            document.querySelectorAll('.service-pick-oven').forEach(function (btn) {
+            document.querySelectorAll('.service-pick-oven, .service-pick-exclusive').forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    document.querySelectorAll('.service-pick-oven').forEach(function (b) {
+                    const group = btn.dataset.exclusiveGroup;
+                    document.querySelectorAll('.service-pick[data-exclusive-group="' + group + '"]').forEach(function (b) {
                         b.classList.remove('selected');
                         delete selectedServices[b.dataset.serviceId];
                     });
@@ -260,7 +361,10 @@
                 s.classList.toggle('active', n === step);
                 s.classList.toggle('completed', n < step);
             });
-            if (step === 3) syncPostcodeDisplay();
+            if (step === 3) {
+                syncPostcodeDisplay();
+                loadAddressLookup();
+            }
             window.scrollTo({ top: form.offsetTop - 100, behavior: 'smooth' });
         }
 

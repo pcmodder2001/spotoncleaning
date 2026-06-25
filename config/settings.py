@@ -209,6 +209,10 @@ ROAD_DISTANCE_FACTOR = float(os.environ.get('ROAD_DISTANCE_FACTOR', '1.35'))
 AVERAGE_DRIVING_SPEED_KMH = float(os.environ.get('AVERAGE_DRIVING_SPEED_KMH', '45'))
 BUSINESS_BASE_POSTCODE = os.environ.get('BUSINESS_BASE_POSTCODE', '')
 
+# UK address lookup (Ideal Postcodes — https://ideal-postcodes.co.uk)
+IDEAL_POSTCODES_API_KEY = os.environ.get('IDEAL_POSTCODES_API_KEY', '')
+ADDRESS_LOOKUP_ENABLED = os.environ.get('ADDRESS_LOOKUP_ENABLED', 'True').lower() in ('true', '1', 'yes')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

@@ -75,7 +75,13 @@ class Booking(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='bookings',
+        null=True,
+        blank=True,
     )
+    guest_email = models.EmailField(blank=True)
+    guest_first_name = models.CharField(max_length=150, blank=True)
+    guest_last_name = models.CharField(max_length=150, blank=True)
+    guest_phone = models.CharField(max_length=20, blank=True)
     service = models.ForeignKey(
         'services.Service',
         on_delete=models.PROTECT,
@@ -106,9 +112,46 @@ class Booking(models.Model):
         ordering = ['-date', '-time_slot__time']
 
     def __str__(self):
-        return f'Booking #{self.pk} - {self.user.email} - {self.date}'
+        return f'Booking #{self.pk} - {self.contact_email} - {self.date}'
 
     @property
+    def is_guest(self):
+        return self.user_id is None
+
+    @property
+    def contact_email(self):
+        if self.user_id:
+            return self.user.email
+        return self.guest_email
+
+    @property
+    def contact_first_name(self):
+        if self.user_id:
+            return self.user.first_name
+        return self.guest_first_name
+
+    @property
+    def contact_last_name(self):
+        if self.user_id:
+            return self.user.last_name
+        return self.guest_last_name
+
+    @property
+    def contact_full_name(self):
+        return f'{self.contact_first_name} {self.contact_last_name}'.strip()
+
+    @property
+    def contact_phone(self):
+        if self.user_id:
+            return self.user.phone_number
+        return self.guest_phone
+
+    def clear_guest_fields(self):
+        self.guest_email = ''
+        self.guest_first_name = ''
+        self.guest_last_name = ''
+        self.guest_phone = ''
+
     def full_address(self):
         parts = [self.address_line_1]
         if self.address_line_2:

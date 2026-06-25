@@ -78,7 +78,7 @@ def _job_debug_info(job):
         'busy_until': _format_time(job.end),
         'duration_minutes': job.duration,
         'postcode': job.booking.postcode,
-        'address': job.booking.full_address,
+        'address': job.booking.full_address(),
         'coords': [float(job.coords[0]), float(job.coords[1])] if job.coords else None,
         'services': job.booking.service_summary,
     }

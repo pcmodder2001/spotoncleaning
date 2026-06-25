@@ -79,6 +79,10 @@ class BookingForm(forms.ModelForm):
         if len(oven_services) > 1:
             raise forms.ValidationError('Please select only one oven type.')
 
+        hob_services = [s for s in services if s.exclusive_group == 'hob']
+        if len(hob_services) > 1:
+            raise forms.ValidationError('Please select only one hob size.')
+
         return services
 
     def clean_date(self):
@@ -125,6 +129,47 @@ class BookingForm(forms.ModelForm):
         return booking
 
 
+class GuestBookingForm(BookingForm):
+    guest_first_name = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    guest_last_name = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    guest_email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'form-control'}),
+    )
+    guest_phone = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+
+    def clean_guest_email(self):
+        email = self.cleaned_data['guest_email'].lower().strip()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError(
+                'An account already exists with this email. Please log in to book.'
+            )
+        return email
+
+    def save(self, commit=True):
+        booking = super().save(commit=False)
+        booking.user = None
+        booking.guest_email = self.cleaned_data['guest_email']
+        booking.guest_first_name = self.cleaned_data['guest_first_name']
+        booking.guest_last_name = self.cleaned_data['guest_last_name']
+        booking.guest_phone = self.cleaned_data.get('guest_phone', '')
+        if commit:
+            booking.save()
+            booking.services.set(self.cleaned_data['services'])
+            service_ids = [s.pk for s in self.cleaned_data['services']]
+            booking.geocode_and_set_duration(service_ids)
+        return booking
+
+
 class AdminBookingForm(forms.ModelForm):
     services = forms.ModelMultipleChoiceField(
         queryset=Service.objects.none(),
@@ -152,6 +197,7 @@ class AdminBookingForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['user'].queryset = User.objects.order_by('first_name', 'last_name', 'email')
+        self.fields['user'].required = False
 
         selected_ids = []
         if self.instance.pk:
@@ -209,6 +255,9 @@ class AdminBookingForm(forms.ModelForm):
         oven_services = [s for s in services if s.exclusive_group == 'oven']
         if len(oven_services) > 1:
             raise forms.ValidationError('Only one oven type allowed per booking.')
+        hob_services = [s for s in services if s.exclusive_group == 'hob']
+        if len(hob_services) > 1:
+            raise forms.ValidationError('Only one hob size allowed per booking.')
         return services
 
     def clean(self):

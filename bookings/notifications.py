@@ -4,6 +4,7 @@ from email.mime.image import MIMEImage
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.html import strip_tags
 
 from config.static_utils import versioned_static_url
@@ -94,12 +95,25 @@ def send_registration_email(user):
     )
 
 
+def get_booking_email_context(booking):
+    context = {'booking': booking}
+    if booking.is_guest:
+        from bookings.tokens import make_booking_account_token
+
+        token = make_booking_account_token(booking)
+        context['account_setup_url'] = (
+            f'{settings.SITE_URL.rstrip("/")}'
+            f'{reverse("accounts:complete_account", kwargs={"token": token})}'
+        )
+    return context
+
+
 def send_booking_email(booking, template, subject):
     return send_notification_email(
         subject=subject,
         template_name=template,
-        context={'booking': booking},
-        recipient=booking.user.email,
+        context=get_booking_email_context(booking),
+        recipient=booking.contact_email,
     )
 
 

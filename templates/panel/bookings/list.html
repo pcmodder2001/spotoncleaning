@@ -42,7 +42,7 @@
                 {% for booking in bookings %}
                 <tr>
                     <td>#{{ booking.pk }}</td>
-                    <td>{{ booking.user.full_name }}<br><small class="text-muted">{{ booking.user.email }}</small></td>
+                    <td>{{ booking.contact_full_name }}<br><small class="text-muted">{{ booking.contact_email }}</small></td>
                     <td>{{ booking.service_summary }}</td>
                     <td>{{ booking.date|date:"d M Y" }}</td>
                     <td>{{ booking.time_slot.time|time:"H:i" }}</td>

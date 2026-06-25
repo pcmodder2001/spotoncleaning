@@ -57,6 +57,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'config.middleware.CanonicalHostMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -171,7 +172,13 @@ SITE_TAGLINE = 'Appliance shine, Every time.'
 SITE_PHONE = '07123 456789'
 SITE_EMAIL = 'info@spotonappliancecleaning.co.uk'
 SITE_ADDRESS = 'Serving customers across the local area'
-SITE_URL = os.environ.get('SITE_URL', 'https://spotonappliancecleaning.co.uk').rstrip('/')
+SITE_URL = os.environ.get('SITE_URL', 'https://www.spotonappliancecleaning.co.uk').rstrip('/')
+# Bare domain (spotonappliancecleaning.co.uk) may not reach the app via Cloudflare — use www in SITE_URL.
+CANONICAL_HOST = os.environ.get('CANONICAL_HOST', 'www.spotonappliancecleaning.co.uk').strip()
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
 SITE_DESCRIPTION = os.environ.get(
     'SITE_DESCRIPTION',
     'Professional oven and appliance cleaning across West Yorkshire. Book online for oven, hob '

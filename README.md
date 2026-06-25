@@ -34,6 +34,8 @@ docker compose exec web python manage.py createsuperuser
 
 Open `http://192.168.0.50:8999` (or your domain if proxied).
 
+**Production domain:** set `SITE_URL=https://www.spotonappliancecleaning.co.uk` in the server `.env`. Email links and booking use this URL. The bare domain (`spotonappliancecleaning.co.uk` without `www`) may show a static homepage on Cloudflare instead of the Django app — always use **www** in `SITE_URL`. In Cloudflare, add a redirect rule: `spotonappliancecleaning.co.uk/*` → `https://www.spotonappliancecleaning.co.uk/$1`.
+
 ### Useful commands
 
 ```bash

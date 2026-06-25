@@ -23,11 +23,17 @@ def create_booking_view(request):
             booking.save()
             booking.services.set(form.cleaned_data['services'])
             booking.geocode_and_set_duration(service_ids)
-            send_booking_created_email(booking)
-            messages.success(
-                request,
-                'Your booking has been submitted successfully! You will receive a confirmation email shortly.',
-            )
+            if send_booking_created_email(booking):
+                messages.success(
+                    request,
+                    'Your booking has been submitted successfully! You will receive a confirmation email shortly.',
+                )
+            else:
+                messages.success(
+                    request,
+                    'Your booking has been submitted successfully! '
+                    'We could not send a confirmation email, but your booking is saved.',
+                )
             return redirect('accounts:my_bookings')
     else:
         initial = {}

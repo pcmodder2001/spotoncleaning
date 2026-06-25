@@ -1,0 +1,37 @@
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 20px 0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+    <tr>
+        <td colspan="2" style="background-color: #ecfeff; padding: 12px 16px; font-size: 13px; font-weight: 600; color: #155e75; text-transform: uppercase; letter-spacing: 0.04em;">
+            Booking details
+        </td>
+    </tr>
+    <tr style="background-color: #ffffff;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; width: 35%; border-top: 1px solid #f1f5f9;">Services</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e293b; font-weight: 600; border-top: 1px solid #f1f5f9;">{{ booking.service_summary }}</td>
+    </tr>
+    <tr style="background-color: #fafafa;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">Date</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e293b; border-top: 1px solid #f1f5f9;">{{ booking.date|date:"l, d F Y" }}</td>
+    </tr>
+    <tr style="background-color: #ffffff;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">Time</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e293b; border-top: 1px solid #f1f5f9;">{{ booking.time_slot.time|time:"H:i" }}</td>
+    </tr>
+    <tr style="background-color: #fafafa;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">Address</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e293b; border-top: 1px solid #f1f5f9;">{{ booking.full_address }}</td>
+    </tr>
+    <tr style="background-color: #ffffff;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">Total</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #0e7490; font-weight: 700; border-top: 1px solid #f1f5f9;">&pound;{{ booking.total_price }}</td>
+    </tr>
+    {% if show_status %}
+    <tr style="background-color: #fafafa;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">Status</td>
+        <td style="padding: 12px 16px; font-size: 14px; border-top: 1px solid #f1f5f9;">
+            <span style="display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background-color: {{ status_bg|default:'#fef3c7' }}; color: {{ status_color|default:'#92400e' }};">
+                {{ booking.get_status_display }}
+            </span>
+        </td>
+    </tr>
+    {% endif %}
+</table>

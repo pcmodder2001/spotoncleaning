@@ -17,7 +17,13 @@ from bookings.models import (
 )
 from bookings.utils import cancel_booking
 from bookings.notifications import send_booking_status_email
-from panel.decorators import staff_required
+from panel.decorators import staff_required, sysadmin_required
+from panel.email_debug import (
+    EMAIL_TEST_TYPES,
+    get_email_config_summary,
+    get_sysadmin_recipients,
+    send_test_email,
+)
 from services.models import Service, ServiceType
 from website.models import ContactMessage
 
@@ -325,3 +331,47 @@ def service_delete_view(request, pk):
     service.delete()
     messages.success(request, f'Service {name} deleted.')
     return redirect('panel:service_list')
+
+
+@sysadmin_required
+def debug_view(request):
+    return render(request, 'panel/debug.html', {
+        'email_tests': EMAIL_TEST_TYPES,
+        'email_config': get_email_config_summary(),
+        'sysadmin_recipients': get_sysadmin_recipients(),
+    })
+
+
+@sysadmin_required
+@require_POST
+def debug_send_email_view(request, email_type):
+    email_meta, results = send_test_email(email_type)
+    if email_meta is None:
+        messages.error(request, 'Unknown email type.')
+        return redirect('panel:debug')
+
+    if not results:
+        messages.error(request, 'No sysadmin recipients configured in SYSADMIN_EMAILS.')
+        return redirect('panel:debug')
+
+    sent = [email for email, ok in results if ok]
+    failed = [email for email, ok in results if not ok]
+
+    if sent and not failed:
+        messages.success(
+            request,
+            f"Test email '{email_meta['name']}' sent to {', '.join(sent)}.",
+        )
+    elif sent and failed:
+        messages.warning(
+            request,
+            f"Partially sent '{email_meta['name']}' — succeeded: {', '.join(sent)}; "
+            f"failed: {', '.join(failed)}.",
+        )
+    else:
+        messages.error(
+            request,
+            f"Failed to send '{email_meta['name']}' to {', '.join(failed)}. Check server logs.",
+        )
+
+    return redirect('panel:debug')

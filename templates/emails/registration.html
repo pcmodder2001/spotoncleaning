@@ -1,13 +1,26 @@
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: Inter, Arial, sans-serif; line-height: 1.6; color: #333;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #0d6efd;">Welcome to {{ site_name }}!</h2>
-        <p>Hi {{ user.first_name }},</p>
-        <p>Thank you for registering with {{ site_name }}. Your account has been created successfully.</p>
-        <p>You can now book appliance cleaning appointments online through your dashboard.</p>
-        <p>Best regards,<br>The {{ site_name }} Team</p>
-    </div>
-</body>
-</html>
+{% extends 'emails/base_email.html' %}
+
+{% block email_title %}Welcome to {{ site_name }}{% endblock %}
+
+{% block email_heading %}
+<h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">Welcome aboard!</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #64748b;">Your account is ready to go.</p>
+{% endblock %}
+
+{% block email_content %}
+<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ user.first_name }},</p>
+<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">
+    Thank you for registering with <strong>{{ site_name }}</strong>. You can now book professional oven and appliance cleaning online at a time that suits you.
+</p>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 28px 0;">
+    <tr>
+        <td style="border-radius: 8px; background-color: #0e7490;">
+            <a href="{{ site_url }}/bookings/book/" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">Book a clean</a>
+        </td>
+    </tr>
+</table>
+<p style="margin: 0; font-size: 15px; color: #334155;">
+    If you have any questions, reply to this email or contact us at
+    <a href="mailto:{{ site_email }}" style="color: #0e7490; text-decoration: none;">{{ site_email }}</a>.
+</p>
+{% endblock %}

@@ -1,14 +1,24 @@
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: Inter, Arial, sans-serif; line-height: 1.6; color: #333;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #198754;">Booking Confirmed</h2>
-        <p>Hi {{ booking.user.first_name }},</p>
-        <p>Great news! Your booking has been confirmed.</p>
-        <p><strong>{{ booking.service_summary }}</strong> on {{ booking.date|date:"l, d F Y" }} at {{ booking.time_slot.time|time:"H:i" }}.</p>
-        <p>Address: {{ booking.full_address }}</p>
-        <p>Best regards,<br>The {{ site_name }} Team</p>
-    </div>
-</body>
-</html>
+{% extends 'emails/base_email.html' %}
+
+{% block email_title %}Booking Confirmed — {{ site_name }}{% endblock %}
+{% block accent_color %}#059669{% endblock %}
+
+{% block email_heading %}
+<h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">You're all booked in</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #64748b;">Your appointment has been confirmed.</p>
+{% endblock %}
+
+{% block email_content %}
+<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.user.first_name }},</p>
+<p style="margin: 0 0 8px; font-size: 15px; color: #334155;">
+    Great news — your booking with {{ site_name }} is confirmed. We'll see you at the time below.
+</p>
+
+{% include 'emails/includes/booking_details.html' with show_status=True status_bg='#d1fae5' status_color='#065f46' %}
+
+<p style="margin: 0; font-size: 14px; color: #64748b;">
+    Need to make a change? Contact us at
+    <a href="mailto:{{ site_email }}" style="color: #0e7490; text-decoration: none;">{{ site_email }}</a>
+    {% if site_phone %} or call <a href="tel:{{ site_phone }}" style="color: #0e7490; text-decoration: none;">{{ site_phone }}</a>{% endif %}.
+</p>
+{% endblock %}

@@ -73,6 +73,20 @@ python manage.py setup_initial_data
 python manage.py runserver 192.168.0.93:8999
 ```
 
+**Email in local dev:** copy `.env.example` to `.env` (or use the included `.env`) and set your Zoho app password:
+
+```env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.zoho.eu
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=info@spotonappliancecleaning.co.uk
+EMAIL_HOST_PASSWORD=your-zoho-app-password
+DEFAULT_FROM_EMAIL=Spot On Appliance Cleaning <info@spotonappliancecleaning.co.uk>
+```
+
+Restart `runserver` after editing `.env`. Test from `/panel/debug/`.
+
 Or use SQLite locally (no postgres env vars):
 
 ```bash

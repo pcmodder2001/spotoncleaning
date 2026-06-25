@@ -1,0 +1,91 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Debug{% endblock %}
+
+{% block panel_content %}
+{% if not user.is_sysadmin %}
+<div class="alert alert-danger mb-0">Access denied. This page is restricted to system administrators.</div>
+{% else %}
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="panel-card card border-0 h-100">
+            <div class="card-body">
+                <h2 class="h5 fw-bold mb-3">Email configuration</h2>
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-4">Backend</dt>
+                    <dd class="col-sm-8"><code>{{ email_config.backend }}</code></dd>
+                    <dt class="col-sm-4">SMTP host</dt>
+                    <dd class="col-sm-8"><code>{{ email_config.host }}:{{ email_config.port }}</code></dd>
+                    <dt class="col-sm-4">TLS / SSL</dt>
+                    <dd class="col-sm-8">{{ email_config.use_tls|yesno:"TLS,No TLS" }}{% if email_config.use_ssl %} / SSL{% endif %}</dd>
+                    <dt class="col-sm-4">From address</dt>
+                    <dd class="col-sm-8"><code>{{ email_config.from_email }}</code></dd>
+                    <dt class="col-sm-4">SMTP user</dt>
+                    <dd class="col-sm-8"><code>{{ email_config.host_user }}</code></dd>
+                    <dt class="col-sm-4">Test recipients</dt>
+                    <dd class="col-sm-8">
+                        {% if sysadmin_recipients %}
+                            {% for email in sysadmin_recipients %}
+                                <span class="badge bg-secondary me-1">{{ email }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-danger">No SYSADMIN_EMAILS configured</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel-card card border-0 h-100">
+            <div class="card-body">
+                <h2 class="h5 fw-bold mb-3">About this page</h2>
+                <p class="text-muted mb-2">
+                    Send sample versions of each site email to all addresses in
+                    <code>SYSADMIN_EMAILS</code>. Subjects are prefixed with <code>[TEST]</code>.
+                </p>
+                <p class="text-muted mb-0">
+                    Booking emails use your latest real booking when available, otherwise sample data.
+                    Password reset links in test emails are not valid.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel-card card border-0">
+    <div class="card-body">
+        <h2 class="h5 fw-bold mb-3">Email tests</h2>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Template</th>
+                        <th>When sent</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for email_test in email_tests %}
+                    <tr>
+                        <td class="fw-semibold">{{ email_test.name }}</td>
+                        <td><code class="small">{{ email_test.template }}</code></td>
+                        <td class="text-muted">{{ email_test.description }}</td>
+                        <td class="text-end">
+                            <form method="post" action="{% url 'panel:debug_send_email' email_test.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-envelope me-1"></i>Send test email
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

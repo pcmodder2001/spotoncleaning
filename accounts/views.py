@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from bookings.models import Booking, BookingStatus
-from bookings.notifications import send_registration_email
+from bookings.notifications import send_registration_email, get_email_context
 
 from .forms import CustomPasswordChangeForm, LoginForm, ProfileForm, RegistrationForm
 
@@ -27,9 +27,15 @@ def register_view(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            send_registration_email(user)
+            if not send_registration_email(user):
+                messages.warning(
+                    request,
+                    'Your account was created, but we could not send the welcome email. '
+                    'You can still log in and use the site.',
+                )
+            else:
+                messages.success(request, 'Your account has been created successfully. Welcome!')
             login(request, user)
-            messages.success(request, 'Your account has been created successfully. Welcome!')
             post_next = request.POST.get('next') or next_url
             return redirect(post_next or 'accounts:dashboard')
     else:
@@ -125,9 +131,10 @@ def profile_view(request):
 class CustomPasswordResetView(PasswordResetView):
     template_name = 'accounts/password_reset.html'
     email_template_name = 'accounts/password_reset_email.html'
+    html_email_template_name = 'emails/password_reset.html'
     subject_template_name = 'accounts/password_reset_subject.txt'
     success_url = reverse_lazy('accounts:password_reset_done')
-    extra_email_context = {'site_name': settings.SITE_NAME}
+    extra_email_context = get_email_context()
 
 
 class CustomPasswordResetDoneView(PasswordResetDoneView):

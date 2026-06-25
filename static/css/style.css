@@ -1974,6 +1974,11 @@ body.page-panel .site-footer {
     font-size: 0.9375rem;
 }
 
+.enquiry-message {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .panel-info-note {
     display: flex;
     align-items: center;

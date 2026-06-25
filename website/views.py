@@ -1,5 +1,8 @@
+from django.conf import settings
 from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 
 from services.models import Service, ServiceType
@@ -38,3 +41,19 @@ def privacy_policy_view(request):
 
 def terms_view(request):
     return render(request, 'website/terms.html')
+
+
+def zoho_domain_verification_view(request):
+    verification_path = settings.BASE_DIR / 'verification' / 'zoho-domain-verification.html'
+    content = verification_path.read_text(encoding='utf-8').strip()
+    return HttpResponse(content, content_type='text/html')
+
+
+def robots_txt_view(request):
+    content = render_to_string('website/robots.txt', {'SITE_URL': settings.SITE_URL}, request=request)
+    return HttpResponse(content, content_type='text/plain')
+
+
+def sitemap_xml_view(request):
+    content = render_to_string('website/sitemap.xml', {'SITE_URL': settings.SITE_URL}, request=request)
+    return HttpResponse(content, content_type='application/xml')

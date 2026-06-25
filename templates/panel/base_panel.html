@@ -2,7 +2,8 @@
 {% load static %}
 
 {% block body_class %}page-panel{% endblock %}
-{% block title %}Admin Panel - {{ SITE_NAME }}{% endblock %}
+{% block title %}Admin Panel | {{ SITE_NAME }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
 
 {% block content %}
 <div class="panel-layout">

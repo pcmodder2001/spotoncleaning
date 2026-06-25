@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /panel/
+Disallow: /accounts/
+Disallow: /admin/
+
+Sitemap: {{ SITE_URL }}/sitemap.xml

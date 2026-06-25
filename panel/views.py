@@ -224,13 +224,22 @@ def enquiry_list_view(request):
 
 
 @staff_required
+def enquiry_detail_view(request, pk):
+    enquiry = get_object_or_404(ContactMessage, pk=pk)
+    if not enquiry.is_read:
+        enquiry.is_read = True
+        enquiry.save(update_fields=['is_read'])
+    return render(request, 'panel/enquiries/detail.html', {'enquiry': enquiry})
+
+
+@staff_required
 @require_POST
 def enquiry_mark_read_view(request, pk):
     enquiry = get_object_or_404(ContactMessage, pk=pk)
     enquiry.is_read = True
     enquiry.save()
     messages.success(request, 'Enquiry marked as read.')
-    return redirect('panel:enquiry_list')
+    return redirect('panel:enquiry_detail', pk=pk)
 
 
 @staff_required

@@ -1,0 +1,60 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Enquiry from {{ enquiry.name }}{% endblock %}
+
+{% block panel_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="panel-card card border-0">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+                    <div>
+                        <h2 class="h5 fw-bold mb-1">{{ enquiry.name }}</h2>
+                        <p class="text-muted mb-0">{{ enquiry.created_at|date:"l, j F Y" }} at {{ enquiry.created_at|time:"H:i" }}</p>
+                    </div>
+                    {% if enquiry.is_read %}
+                    <span class="badge bg-secondary">Read</span>
+                    {% else %}
+                    <span class="badge bg-primary">Unread</span>
+                    {% endif %}
+                </div>
+
+                <dl class="row mb-4">
+                    <dt class="col-sm-3 text-muted">Email</dt>
+                    <dd class="col-sm-9">
+                        <a href="mailto:{{ enquiry.email }}">{{ enquiry.email }}</a>
+                    </dd>
+                    <dt class="col-sm-3 text-muted">Phone</dt>
+                    <dd class="col-sm-9">
+                        {% if enquiry.phone %}
+                        <a href="tel:{{ enquiry.phone }}">{{ enquiry.phone }}</a>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </dd>
+                </dl>
+
+                <div class="mb-4">
+                    <h3 class="h6 text-muted text-uppercase mb-2">Message</h3>
+                    <div class="enquiry-message bg-light rounded-3 p-3">{{ enquiry.message|linebreaksbr }}</div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'panel:enquiry_list' %}" class="btn btn-outline-secondary">Back to list</a>
+                    <a href="mailto:{{ enquiry.email }}?subject=Re%3A%20Your%20enquiry%20to%20{{ SITE_NAME|urlencode }}" class="btn btn-primary">
+                        <i class="bi bi-reply me-1"></i> Reply by email
+                    </a>
+                    <form method="post" action="{% url 'panel:enquiry_delete' enquiry.pk %}" class="d-inline ms-auto"
+                          data-confirm="This enquiry will be permanently removed."
+                          data-confirm-title="Delete this enquiry?"
+                          data-confirm-yes="Yes, delete"
+                          data-confirm-danger="true">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

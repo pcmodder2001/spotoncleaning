@@ -21,7 +21,7 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
         'DJANGO_ALLOWED_HOSTS',
-        'localhost,127.0.0.1,spoton.vehiclecare.online,192.168.0.50,spotonappliancecleaning.co.uk,www.spotonappliancecleaning.co.uk',
+        'localhost,127.0.0.1,spoton.vehiclecare.online,192.168.0.50,spotonappliancecleaning.co.uk,www.spotonappliancecleaning.co.uk,192.168.0.93',
     ).split(',')
     if host.strip()
 ]
@@ -154,6 +154,22 @@ SITE_TAGLINE = 'Appliance shine, Every time.'
 SITE_PHONE = '07123 456789'
 SITE_EMAIL = 'info@spotonappliancecleaning.co.uk'
 SITE_ADDRESS = 'Serving customers across the local area'
+SITE_URL = os.environ.get('SITE_URL', 'https://spotonappliancecleaning.co.uk').rstrip('/')
+SITE_DESCRIPTION = os.environ.get(
+    'SITE_DESCRIPTION',
+    'Professional oven and appliance cleaning across West Yorkshire. Book online for oven, hob '
+    'and extractor cleaning. Eco-friendly products, fully insured, transparent pricing.',
+)
+SITE_KEYWORDS = os.environ.get(
+    'SITE_KEYWORDS',
+    'oven cleaning, appliance cleaning, oven cleaner, hob cleaning, extractor cleaning, '
+    'professional oven cleaning, West Yorkshire, book oven clean online',
+)
+SITE_LOCAL_AREA = os.environ.get('SITE_LOCAL_AREA', 'West Yorkshire')
+SITE_DEFAULT_SEO_TITLE = os.environ.get(
+    'SITE_DEFAULT_SEO_TITLE',
+    'Oven & Appliance Cleaning West Yorkshire | Spot On Appliance Cleaning',
+)
 
 # System administrator accounts — cannot be deleted (comma-separated emails)
 SYSADMIN_EMAILS = [

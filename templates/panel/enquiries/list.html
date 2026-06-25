@@ -20,13 +20,22 @@
             <tbody>
                 {% for enquiry in enquiries %}
                 <tr class="{% if not enquiry.is_read %}table-light fw-semibold{% endif %}">
-                    <td>{{ enquiry.name }}</td>
+                    <td>
+                        <a href="{% url 'panel:enquiry_detail' enquiry.pk %}" class="text-decoration-none text-reset">
+                            {{ enquiry.name }}
+                        </a>
+                    </td>
                     <td>{{ enquiry.email }}</td>
                     <td>{{ enquiry.phone|default:"—" }}</td>
-                    <td>{{ enquiry.message|truncatewords:15 }}</td>
+                    <td>
+                        <a href="{% url 'panel:enquiry_detail' enquiry.pk %}" class="text-decoration-none text-reset">
+                            {{ enquiry.message|truncatewords:15 }}
+                        </a>
+                    </td>
                     <td>{{ enquiry.created_at|date:"d M Y H:i" }}</td>
                     <td>{% if enquiry.is_read %}<span class="badge bg-secondary">Read</span>{% else %}<span class="badge bg-primary">Unread</span>{% endif %}</td>
-                    <td>
+                    <td class="text-nowrap">
+                        <a href="{% url 'panel:enquiry_detail' enquiry.pk %}" class="btn btn-sm btn-outline-secondary">View</a>
                         {% if not enquiry.is_read %}
                         <form method="post" action="{% url 'panel:enquiry_read' enquiry.pk %}" class="d-inline">
                             {% csrf_token %}

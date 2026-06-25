@@ -1,6 +1,36 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}Oven & Appliance Cleaning {{ SITE_LOCAL_AREA }} | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}Book professional oven, hob and extractor cleaning in {{ SITE_LOCAL_AREA }}. {{ SITE_TAGLINE }} Eco-friendly products, online booking, fully insured.{% endblock %}
+{% block meta_keywords %}oven cleaning {{ SITE_LOCAL_AREA|lower }}, appliance cleaning, oven cleaner near me, hob cleaning, book oven clean{% endblock %}
+{% block og_title %}Oven & Appliance Cleaning {{ SITE_LOCAL_AREA }} | {{ SITE_NAME }}{% endblock %}
+{% block og_description %}Book professional oven, hob and extractor cleaning in {{ SITE_LOCAL_AREA }}. {{ SITE_TAGLINE }}{% endblock %}
+{% block twitter_title %}Oven & Appliance Cleaning {{ SITE_LOCAL_AREA }} | {{ SITE_NAME }}{% endblock %}
+{% block twitter_description %}Book professional oven, hob and extractor cleaning in {{ SITE_LOCAL_AREA }}. {{ SITE_TAGLINE }}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "{{ SITE_NAME|escapejs }}",
+  "description": "{{ SITE_DESCRIPTION|escapejs }}",
+  "url": "{{ SITE_URL }}",
+  "email": "{{ SITE_EMAIL }}",
+  "telephone": "{{ SITE_PHONE }}",
+  "image": "{{ SITE_URL }}{% static 'img/logo.png' %}",
+  "priceRange": "££",
+  "areaServed": "{{ SITE_LOCAL_AREA|escapejs }}",
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "GB",
+    "addressRegion": "{{ SITE_LOCAL_AREA|escapejs }}"
+  }
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <section class="hero-section">
     <div class="container">

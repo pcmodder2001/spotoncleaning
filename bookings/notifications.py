@@ -1,5 +1,6 @@
 import logging
 from email.mime.image import MIMEImage
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -103,7 +104,7 @@ def get_booking_email_context(booking):
         token = make_booking_account_token(booking)
         context['account_setup_url'] = (
             f'{settings.SITE_URL.rstrip("/")}'
-            f'{reverse("accounts:complete_account", kwargs={"token": token})}'
+            f'{reverse("accounts:complete_account")}?{urlencode({"token": token})}'
         )
     return context
 

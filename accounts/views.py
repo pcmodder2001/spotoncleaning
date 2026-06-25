@@ -84,7 +84,15 @@ def logout_view(request):
     return redirect('website:home')
 
 
-def complete_account_from_booking_view(request, token):
+def complete_account_from_booking_view(request, token=None):
+    token = (token or request.GET.get('token', '')).strip()
+    if not token:
+        messages.error(
+            request,
+            'This account setup link is invalid or has expired. Please contact us if you need help.',
+        )
+        return redirect('accounts:login')
+
     booking = booking_from_account_token(token)
     if not booking:
         messages.error(

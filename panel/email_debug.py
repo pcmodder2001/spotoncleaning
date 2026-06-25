@@ -275,9 +275,10 @@ def send_test_email(email_type_id):
 
         token = make_booking_account_token(booking) if booking.pk else 'sample-token'
         from django.urls import reverse
+        from urllib.parse import urlencode
         context['account_setup_url'] = (
             f'{settings.SITE_URL.rstrip("/")}'
-            f'{reverse("accounts:complete_account", kwargs={"token": token})}'
+            f'{reverse("accounts:complete_account")}?{urlencode({"token": token})}'
         )
     results = send_test_emails(
         subject_map[email_type_id],

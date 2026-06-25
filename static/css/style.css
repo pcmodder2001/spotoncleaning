@@ -30,6 +30,7 @@
     --shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
     --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.12);
     --nav-height: 64px;
+    --nav-offset: 7.5rem;
     --transition: 0.2s ease;
 }
 
@@ -47,7 +48,7 @@ body {
     font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--text);
     background: var(--surface);
-    padding-top: var(--nav-height);
+    padding-top: 0;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -141,20 +142,143 @@ a {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Navbar                                                                     */
+/* Navbar — floating, blends into page                                        */
 /* -------------------------------------------------------------------------- */
 
 .site-navbar {
-    height: var(--nav-height);
-    background: rgba(255, 255, 255, 0.92) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-    box-shadow: var(--shadow-xs);
+    height: auto;
+    min-height: var(--nav-height);
+    padding: 1rem 0;
+    background: transparent !important;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    pointer-events: none;
+}
+
+.site-navbar .container,
+.site-navbar .navbar-brand,
+.site-navbar .navbar-toggler,
+.site-navbar .navbar-collapse,
+.site-navbar .site-nav-float {
+    pointer-events: auto;
 }
 
 .site-navbar .navbar-brand {
     padding: 0;
+    margin-right: 0.75rem;
+}
+
+.site-nav-float {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 999px;
+    padding: 0.35rem;
+    box-shadow:
+        0 4px 24px rgba(15, 23, 42, 0.07),
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.site-navbar .navbar-nav {
+    gap: 0.15rem;
+}
+
+.site-navbar .nav-link {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-secondary) !important;
+    padding: 0.55rem 0.95rem !important;
+    border-radius: 999px;
+    transition: all var(--transition);
+    white-space: nowrap;
+}
+
+.site-navbar .nav-link:hover,
+.site-navbar .nav-link:focus {
+    color: var(--primary-dark) !important;
+    background: rgba(236, 254, 255, 0.85);
+}
+
+.site-navbar .nav-link-action {
+    font-weight: 700;
+    margin-left: 0.15rem;
+}
+
+.site-navbar .nav-link-action--primary {
+    color: #fff !important;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    box-shadow: 0 4px 14px rgba(14, 116, 144, 0.28);
+}
+
+.site-navbar .nav-link-action--primary:hover,
+.site-navbar .nav-link-action--primary:focus {
+    color: #fff !important;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+    box-shadow: 0 6px 18px rgba(14, 116, 144, 0.34);
+    transform: translateY(-1px);
+}
+
+.site-navbar .nav-link-action--ghost {
+    color: var(--primary) !important;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(14, 116, 144, 0.18);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+.site-navbar .nav-link-action--ghost:hover,
+.site-navbar .nav-link-action--ghost:focus {
+    color: var(--primary-dark) !important;
+    background: var(--primary-light);
+    border-color: rgba(14, 116, 144, 0.28);
+}
+
+.site-navbar-toggler {
+    border: 0;
+    padding: 0.45rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+.site-navbar-toggler:focus {
+    box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.18);
+}
+
+@media (max-width: 991.98px) {
+    .site-navbar {
+        padding: 0.75rem 0;
+    }
+
+    .site-nav-float {
+        width: 100%;
+        margin-top: 0.75rem;
+        border-radius: var(--radius-xl);
+        padding: 0.65rem;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .site-navbar .navbar-nav {
+        gap: 0.25rem;
+        width: 100%;
+    }
+
+    .site-navbar .nav-link {
+        text-align: center;
+        width: 100%;
+    }
+
+    .site-navbar .nav-link-action {
+        margin-left: 0;
+    }
 }
 
 /* Site brand (logo + tagline)                                              */
@@ -181,9 +305,35 @@ a {
     object-fit: contain;
 }
 
-.site-navbar .site-brand-logo {
-    height: 44px;
-    max-width: 160px;
+/* Header logo — larger than footer/panel variants */
+.site-navbar .navbar-brand.site-brand--nav {
+    flex-shrink: 0;
+    margin-right: 1rem;
+}
+
+.site-navbar .site-brand-logo--nav {
+    height: 76px;
+    width: auto;
+    max-width: min(42vw, 220px);
+    min-height: 76px;
+    display: block;
+    object-fit: contain;
+}
+
+@media (min-width: 768px) {
+    .site-navbar .site-brand-logo--nav {
+        height: 88px;
+        max-width: 260px;
+        min-height: 88px;
+    }
+}
+
+@media (min-width: 992px) {
+    .site-navbar .site-brand-logo--nav {
+        height: 100px;
+        max-width: 280px;
+        min-height: 100px;
+    }
 }
 
 .site-brand-footer .site-brand-logo {
@@ -207,20 +357,6 @@ a {
     font-weight: 700;
     font-size: 0.875rem;
     color: rgba(255, 255, 255, 0.9);
-}
-
-.site-navbar .nav-link {
-    font-weight: 500;
-    font-size: 0.9375rem;
-    color: var(--text-secondary) !important;
-    padding: 0.5rem 1rem !important;
-    border-radius: var(--radius-sm);
-    transition: all var(--transition);
-}
-
-.site-navbar .nav-link:hover {
-    color: var(--primary) !important;
-    background: var(--primary-light);
 }
 
 /* SweetAlert2 toast styling */
@@ -402,7 +538,7 @@ a {
 
 .hero-section {
     background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
-    padding: 1.25rem 0 3.5rem;
+    padding: calc(var(--nav-offset) + 0.5rem) 0 3.5rem;
     position: relative;
     overflow: hidden;
 }
@@ -486,17 +622,38 @@ a {
 }
 
 /* Hero comparison slider */
+.hero-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hero-image .hero-comparison {
+    width: 100%;
+    max-width: min(100%, 22rem);
+}
+
+@media (min-width: 992px) {
+    .hero-image {
+        align-items: flex-end;
+    }
+
+    .hero-image .hero-comparison {
+        max-width: 24rem;
+    }
+}
+
 .hero-comparison {
     position: relative;
     width: 100%;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 5 / 4;
     overflow: hidden;
     user-select: none;
     touch-action: none;
     cursor: ew-resize;
     background: var(--navy);
-    border: 3px solid var(--surface);
-    box-shadow: var(--shadow-lg);
+    border: 2px solid var(--surface);
+    box-shadow: var(--shadow);
 }
 
 .hero-comparison-img {
@@ -558,17 +715,17 @@ a {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: #fff;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0;
     color: var(--primary);
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 }
 
 .hero-comparison-badge {
@@ -829,8 +986,8 @@ a {
 /* -------------------------------------------------------------------------- */
 
 .auth-page {
-    padding: 2.5rem 0 4rem;
-    min-height: calc(100vh - var(--nav-height));
+    padding: calc(var(--nav-offset) + 2rem) 0 4rem;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     background: var(--bg);
@@ -1068,7 +1225,7 @@ a {
 
 .dashboard-header {
     background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
-    padding: 2.75rem 0;
+    padding: calc(var(--nav-offset) + 2rem) 0 2.75rem;
     color: #fff;
 }
 
@@ -1692,7 +1849,7 @@ a {
 /* Summary sidebar */
 .booking-summary-card {
     position: sticky;
-    top: calc(var(--nav-height) + 1.5rem);
+    top: calc(var(--nav-offset) + 1.5rem);
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -1764,7 +1921,7 @@ a {
 /* Legacy booking summary (keep for compatibility) */
 .booking-summary {
     position: sticky;
-    top: calc(var(--nav-height) + 1.5rem);
+    top: calc(var(--nav-offset) + 1.5rem);
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-lg) !important;
     overflow: hidden;
@@ -2005,7 +2162,7 @@ body.page-panel .site-footer {
 
 /* Legal pages */
 .legal-page {
-    padding: 3rem 0 5rem;
+    padding: calc(var(--nav-offset) + 3rem) 0 5rem;
     background: var(--bg);
 }
 

@@ -9,14 +9,19 @@ from django.contrib.auth.views import (
     PasswordResetView,
 )
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+import logging
+
 from bookings.models import Booking, BookingStatus
-from bookings.notifications import send_registration_email, get_email_context
+from bookings.notifications import send_branded_email, send_registration_email
 
 from .forms import CustomPasswordChangeForm, LoginForm, ProfileForm, RegistrationForm
+
+logger = logging.getLogger(__name__)
 
 
 def register_view(request):
@@ -134,7 +139,30 @@ class CustomPasswordResetView(PasswordResetView):
     html_email_template_name = 'emails/password_reset.html'
     subject_template_name = 'accounts/password_reset_subject.txt'
     success_url = reverse_lazy('accounts:password_reset_done')
-    extra_email_context = get_email_context()
+
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        subject = render_to_string(subject_template_name, context).strip()
+        plain_body = render_to_string(email_template_name, context)
+        html_template = html_email_template_name or self.html_email_template_name
+        try:
+            send_branded_email(
+                subject=subject,
+                recipient=to_email,
+                html_template=html_template,
+                context=context,
+                plain_message=plain_body,
+            )
+        except Exception:
+            logger.exception('Failed to send password reset email to %s', to_email)
+            raise
 
 
 class CustomPasswordResetDoneView(PasswordResetDoneView):

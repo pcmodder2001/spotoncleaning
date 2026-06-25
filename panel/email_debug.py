@@ -4,13 +4,11 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.html import strip_tags
 
 from bookings.models import Booking, BookingStatus, TimeSlot
-from bookings.notifications import send_test_emails, get_email_context
+from bookings.notifications import send_branded_email, send_test_emails
 from services.models import Service
 
 User = get_user_model()
@@ -199,27 +197,25 @@ def send_test_email(email_type_id):
 
     if email_type_id == 'password_reset':
         user = get_sample_user()
-        context = get_email_context(
-            email=user.email,
-            domain=settings.SITE_URL.replace('https://', '').replace('http://', ''),
-            uid='test',
-            user=user,
-            token='test-token-not-valid',
-            protocol='https' if settings.SITE_URL.startswith('https') else 'http',
-        )
+        context = {
+            'email': user.email,
+            'domain': settings.SITE_URL.replace('https://', '').replace('http://', ''),
+            'uid': 'test',
+            'user': user,
+            'token': 'test-token-not-valid',
+            'protocol': 'https' if settings.SITE_URL.startswith('https') else 'http',
+        }
         subject = render_to_string('accounts/password_reset_subject.txt', context).strip()
-        html_body = render_to_string(email_type['template'], context)
-        plain_body = strip_tags(html_body).strip()
+        plain_body = render_to_string('accounts/password_reset_email.html', context)
         results = []
         for recipient in recipients:
             try:
-                send_mail(
+                send_branded_email(
                     subject=f'[TEST] {subject}',
-                    message=plain_body,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[recipient],
-                    html_message=html_body,
-                    fail_silently=False,
+                    recipient=recipient,
+                    html_template=email_type['template'],
+                    context=context,
+                    plain_message=plain_body,
                 )
                 results.append((recipient, True))
             except Exception:

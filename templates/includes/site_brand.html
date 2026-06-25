@@ -3,8 +3,8 @@
     <img
         src="{% static_v 'img/logo.png' %}"
         alt="{{ SITE_NAME }}"
-        class="site-brand-logo"
-        width="120"
-        height="40"
+        class="site-brand-logo{% if logo_variant == 'nav' %} site-brand-logo--nav{% endif %}"
+        width="{% if logo_variant == 'nav' %}100{% else %}68{% endif %}"
+        height="{% if logo_variant == 'nav' %}100{% else %}68{% endif %}"
     >
 </a>

@@ -1,7 +1,8 @@
 import logging
+from email.mime.image import MIMEImage
 
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
@@ -9,34 +10,74 @@ from config.static_utils import versioned_static_url
 
 logger = logging.getLogger(__name__)
 
+LOGO_CONTENT_ID = 'spoton-logo'
+LOGO_STATIC_PATH = 'img/logo.png'
 
-def get_email_context(**extra):
+
+def get_logo_path():
+    return settings.BASE_DIR / 'static' / LOGO_STATIC_PATH
+
+
+def get_email_context(*, embed_logo=False, **extra):
     site_url = settings.SITE_URL.rstrip('/')
+    logo_url = f'cid:{LOGO_CONTENT_ID}' if embed_logo else versioned_static_url(
+        LOGO_STATIC_PATH,
+        absolute=True,
+    )
     return {
+        **extra,
         'site_name': settings.SITE_NAME,
         'site_tagline': settings.SITE_TAGLINE,
         'site_url': site_url,
         'site_email': settings.SITE_EMAIL,
         'site_phone': settings.SITE_PHONE,
-        'logo_url': versioned_static_url('img/logo.png', absolute=True),
-        **extra,
+        'logo_url': logo_url,
     }
 
 
-def send_notification_email(subject, template_name, context, recipient, *, test=False):
-    context = get_email_context(**context)
-    html_message = render_to_string(template_name, context)
-    plain_message = strip_tags(html_message).strip()
+def attach_inline_logo(email_message):
+    logo_path = get_logo_path()
+    if not logo_path.exists():
+        logger.warning('Logo file missing for email embedding: %s', logo_path)
+        return False
+
+    with logo_path.open('rb') as logo_file:
+        mime_image = MIMEImage(logo_file.read(), _subtype='png')
+    mime_image.add_header('Content-ID', f'<{LOGO_CONTENT_ID}>')
+    mime_image.add_header('Content-Disposition', 'inline', filename='logo.png')
+    email_message.attach(mime_image)
+    return True
+
+
+def send_branded_email(subject, recipient, html_template, context=None, *, plain_message='', test=False):
     if test:
         subject = f'[TEST] {subject}'
+
+    context = get_email_context(embed_logo=True, **(context or {}))
+    html_message = render_to_string(html_template, context)
+    if not plain_message:
+        plain_message = strip_tags(html_message).strip()
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[recipient],
+    )
+    email.attach_alternative(html_message, 'text/html')
+    attach_inline_logo(email)
+    email.send(fail_silently=False)
+    return True
+
+
+def send_notification_email(subject, template_name, context, recipient, *, test=False):
     try:
-        send_mail(
+        send_branded_email(
             subject=subject,
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[recipient],
-            html_message=html_message,
-            fail_silently=False,
+            recipient=recipient,
+            html_template=template_name,
+            context=context,
+            test=test,
         )
         return True
     except Exception:

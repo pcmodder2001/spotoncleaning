@@ -247,7 +247,7 @@
         }
 
         function bindServicePicker() {
-            document.querySelectorAll('.service-pick-oven, .service-pick-exclusive').forEach(function (btn) {
+            document.querySelectorAll('.service-pick-exclusive').forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     const group = btn.dataset.exclusiveGroup;
                     document.querySelectorAll('.service-pick[data-exclusive-group="' + group + '"]').forEach(function (b) {

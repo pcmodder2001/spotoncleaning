@@ -62,12 +62,12 @@
                     <div class="booking-panel active" data-panel="1">
                         <div class="booking-panel-body">
                             <h2 class="booking-panel-title">What would you like cleaned?</h2>
-                            <p class="booking-panel-desc">Choose one oven type, then add any optional extras.</p>
+                            <p class="booking-panel-desc">Select one or more ovens, then add any optional extras.</p>
 
-                            <h3 class="service-group-title">Oven cleaning <span class="text-muted fw-normal">(choose one)</span></h3>
+                            <h3 class="service-group-title">Oven cleaning <span class="text-muted fw-normal">(select all that apply)</span></h3>
                             <div class="service-picker service-picker-oven">
                                 {% for service in oven_services %}
-                                <button type="button" class="service-pick service-pick-oven{% if selected_service and selected_service.pk == service.pk %} selected{% endif %}" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="oven">
+                                <button type="button" class="service-pick service-pick-addon{% if selected_service and selected_service.pk == service.pk %} selected{% endif %}" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="">
                                     <span class="service-pick-icon"><i class="bi bi-fire"></i></span>
                                     <span class="service-pick-info">
                                         <strong>{{ service.name }}</strong>
@@ -313,7 +313,7 @@
         addressLookupEnabled: {{ address_lookup_enabled|yesno:"true,false" }}
     };
 </script>
-<script src="{% static 'js/booking.js' %}?v=6"></script>
+<script src="{% static 'js/booking.js' %}?v=7"></script>
 {% if schedule_debug %}
 <script src="{% static 'js/schedule-debug.js' %}?v=5"></script>
 {% endif %}

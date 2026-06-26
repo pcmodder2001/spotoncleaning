@@ -264,7 +264,7 @@ def service_list_view(request):
         action = request.POST.get('action')
         if action == 'add':
             service_type = request.POST.get('service_type', ServiceType.OVEN)
-            exclusive_group = 'oven' if service_type == ServiceType.OVEN else ''
+            exclusive_group = 'hob' if name.lower().startswith(('4 hob', '5 hob', '6-8 hob', '6–8 hob')) else ''
             Service.objects.create(
                 name=request.POST.get('name'),
                 description=request.POST.get('description'),
@@ -301,7 +301,7 @@ def service_edit_view(request, pk):
         service.active = request.POST.get('is_active') == 'on'
         service_type = request.POST.get('service_type', service.service_type)
         service.service_type = service_type
-        service.exclusive_group = 'oven' if service_type == ServiceType.OVEN else ''
+        service.exclusive_group = 'hob' if service.name.lower().startswith(('4 hob', '5 hob', '6-8 hob', '6–8 hob')) else ''
         try:
             service.price = request.POST.get('price')
             service.duration_minutes = int(request.POST.get('duration_minutes', service.duration_minutes))

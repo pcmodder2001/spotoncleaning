@@ -75,10 +75,6 @@ class BookingForm(forms.ModelForm):
         if not services:
             raise forms.ValidationError('Please select at least one service.')
 
-        oven_services = [s for s in services if s.exclusive_group == 'oven']
-        if len(oven_services) > 1:
-            raise forms.ValidationError('Please select only one oven type.')
-
         hob_services = [s for s in services if s.exclusive_group == 'hob']
         if len(hob_services) > 1:
             raise forms.ValidationError('Please select only one hob size.')
@@ -252,9 +248,6 @@ class AdminBookingForm(forms.ModelForm):
         services = self.cleaned_data.get('services')
         if not services:
             raise forms.ValidationError('Select at least one service.')
-        oven_services = [s for s in services if s.exclusive_group == 'oven']
-        if len(oven_services) > 1:
-            raise forms.ValidationError('Only one oven type allowed per booking.')
         hob_services = [s for s in services if s.exclusive_group == 'hob']
         if len(hob_services) > 1:
             raise forms.ValidationError('Only one hob size allowed per booking.')

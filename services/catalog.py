@@ -12,7 +12,7 @@ SERVICE_CATALOG = [
         'duration_minutes': 60,
         'sort_order': 1,
         'service_type': ServiceType.OVEN,
-        'exclusive_group': 'oven',
+        'exclusive_group': '',
     },
     {
         'name': 'Double Oven',
@@ -21,7 +21,7 @@ SERVICE_CATALOG = [
         'duration_minutes': 75,
         'sort_order': 2,
         'service_type': ServiceType.OVEN,
-        'exclusive_group': 'oven',
+        'exclusive_group': '',
     },
     {
         'name': 'Freestanding Cooker inc Hob',
@@ -30,7 +30,7 @@ SERVICE_CATALOG = [
         'duration_minutes': 90,
         'sort_order': 3,
         'service_type': ServiceType.OVEN,
-        'exclusive_group': 'oven',
+        'exclusive_group': '',
     },
     {
         'name': 'Range Oven inc Hob',
@@ -39,7 +39,7 @@ SERVICE_CATALOG = [
         'duration_minutes': 90,
         'sort_order': 4,
         'service_type': ServiceType.OVEN,
-        'exclusive_group': 'oven',
+        'exclusive_group': '',
     },
     {
         'name': 'AGA 2 Oven',
@@ -48,7 +48,7 @@ SERVICE_CATALOG = [
         'duration_minutes': 90,
         'sort_order': 5,
         'service_type': ServiceType.OVEN,
-        'exclusive_group': 'oven',
+        'exclusive_group': '',
     },
     {
         'name': 'AGA 3 Oven',
@@ -57,7 +57,7 @@ SERVICE_CATALOG = [
         'duration_minutes': 105,
         'sort_order': 6,
         'service_type': ServiceType.OVEN,
-        'exclusive_group': 'oven',
+        'exclusive_group': '',
     },
     {
         'name': 'AGA 4 Oven',
@@ -66,7 +66,7 @@ SERVICE_CATALOG = [
         'duration_minutes': 120,
         'sort_order': 7,
         'service_type': ServiceType.OVEN,
-        'exclusive_group': 'oven',
+        'exclusive_group': '',
     },
     {
         'name': '4 Hob',

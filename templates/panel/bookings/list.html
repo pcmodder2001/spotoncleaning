@@ -1,5 +1,5 @@
 {% extends 'panel/base_panel.html' %}
-{% load static %}
+{% load static static_version %}
 
 {% block panel_title %}Bookings{% endblock %}
 
@@ -104,7 +104,7 @@ window.panelBookingConfig = {
     csrfToken: '{{ csrf_token }}',
 };
 </script>
-<script src="{% static 'js/panel-bookings.js' %}"></script>
+<script src="{% static_v 'js/panel-bookings.js' %}"></script>
 <script>
 {% if can_manage_site %}
 document.getElementById('selectAllBookings')?.addEventListener('change', function () {

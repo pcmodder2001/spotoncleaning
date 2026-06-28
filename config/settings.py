@@ -143,6 +143,12 @@ STATIC_CACHE_VERSIONS = build_static_cache_versions(
     'img/oven-before.jpg',
     'img/oven-after.jpg',
     'css/style.css',
+    'js/main.js',
+    'js/toast.js',
+    'js/booking.js',
+    'js/panel-bookings.js',
+    'js/panel-schedule.js',
+    'js/schedule-debug.js',
 )
 
 MEDIA_URL = 'media/'

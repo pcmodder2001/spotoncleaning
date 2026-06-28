@@ -1,5 +1,5 @@
 {% extends 'panel/base_panel.html' %}
-{% load static %}
+{% load static static_version %}
 
 {% block panel_title %}Schedule{% endblock %}
 
@@ -75,6 +75,6 @@ window.panelBookingConfig = {
     csrfToken: '{{ csrf_token }}',
 };
 </script>
-<script src="{% static 'js/panel-bookings.js' %}"></script>
-<script src="{% static 'js/panel-schedule.js' %}"></script>
+<script src="{% static_v 'js/panel-bookings.js' %}"></script>
+<script src="{% static_v 'js/panel-schedule.js' %}"></script>
 {% endblock %}

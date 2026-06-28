@@ -1,0 +1,103 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Promo codes{% endblock %}
+
+{% block panel_content %}
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="panel-card card border-0">
+            <div class="card-header">Create promo code</div>
+            <div class="card-body">
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add">
+                    <div class="col-12">
+                        <label class="form-label">Code</label>
+                        <input type="text" name="code" class="form-control text-uppercase" placeholder="SUMMER10" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <input type="text" name="description" class="form-control" placeholder="Facebook promo">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Type</label>
+                        <select name="discount_type" class="form-select">
+                            <option value="percent">Percentage off</option>
+                            <option value="fixed">Fixed £ off</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Value</label>
+                        <input type="number" step="0.01" min="0" name="discount_value" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Max uses</label>
+                        <input type="number" min="1" name="max_uses" class="form-control" placeholder="Unlimited">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Min order (£)</label>
+                        <input type="number" step="0.01" min="0" name="min_order_amount" class="form-control" value="0">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Create code</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="panel-card card border-0">
+            <div class="card-header">Active codes</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Discount</th>
+                            <th>Uses</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for promo in promos %}
+                        <tr>
+                            <td>
+                                <strong>{{ promo.code }}</strong>
+                                {% if promo.description %}<br><small class="text-muted">{{ promo.description }}</small>{% endif %}
+                            </td>
+                            <td>
+                                {% if promo.discount_type == 'percent' %}{{ promo.discount_value }}%{% else %}£{{ promo.discount_value }}{% endif %}
+                            </td>
+                            <td>{{ promo.times_used }}{% if promo.max_uses %} / {{ promo.max_uses }}{% endif %}</td>
+                            <td>{% if promo.active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Off</span>{% endif %}</td>
+                            <td class="text-end">
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="promo_id" value="{{ promo.pk }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Toggle</button>
+                                </form>
+                                <form method="post" class="d-inline"
+                                      data-confirm="Delete this promo code?"
+                                      data-confirm-title="Delete code?"
+                                      data-confirm-yes="Delete"
+                                      data-confirm-danger="true">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="promo_id" value="{{ promo.pk }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">No promo codes yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

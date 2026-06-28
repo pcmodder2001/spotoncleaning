@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{ website.name }} — Temporarily unavailable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/sitematrix-offline.css' %}">
+</head>
+<body class="offline-page">
+  <main class="offline-shell">
+    <div class="offline-card">
+      <div class="offline-brand">
+        <img src="{% static 'img/sitematrix-logo.png' %}" alt="SiteMatrix" class="offline-logo" width="56" height="56">
+        <span class="offline-brand-text">SiteMatrix</span>
+      </div>
+
+      <div class="offline-icon" aria-hidden="true">
+        {% if reason == "payment" %}
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+            <line x1="1" y1="10" x2="23" y2="10"></line>
+          </svg>
+        {% elif reason == "cancelled" %}
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        {% else %}
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        {% endif %}
+      </div>
+
+      {% if preview %}
+        <p class="offline-preview-badge">Preview mode</p>
+      {% endif %}
+
+      <p class="offline-eyebrow">{{ headline }}</p>
+      <h1 class="offline-title">{{ website.name }}</h1>
+      <p class="offline-message">{{ message }}</p>
+
+      <div class="offline-actions">
+        {% if owner_action_url %}
+          <a href="{{ owner_action_url }}" class="btn btn-primary">{{ owner_action_label }}</a>
+        {% endif %}
+        <a href="{{ support_url }}" class="btn btn-secondary">Contact support</a>
+      </div>
+
+      <p class="offline-owner-hint">{{ owner_hint }}</p>
+    </div>
+
+    <footer class="offline-footer">
+      <p>Powered by <strong>SiteMatrix</strong></p>
+    </footer>
+  </main>
+</body>
+</html>

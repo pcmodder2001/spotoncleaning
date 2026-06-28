@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import audit_views, booking_api, promo_views, schedule_views, views
 
 app_name = 'panel'
 
@@ -9,10 +9,27 @@ urlpatterns = [
     path('users/', views.user_list_view, name='user_list'),
     path('users/<int:pk>/edit/', views.user_edit_view, name='user_edit'),
     path('users/<int:pk>/delete/', views.user_delete_view, name='user_delete'),
+    path('schedule/', schedule_views.schedule_view, name='schedule'),
+    path('api/schedule/', schedule_views.schedule_api_view, name='schedule_api'),
+    path('api/bookings/catalog/', booking_api.booking_services_catalog_api, name='booking_services_catalog'),
+    path('api/bookings/<int:pk>/', booking_api.booking_detail_api, name='booking_detail_api'),
+    path('api/bookings/<int:pk>/quote/', booking_api.booking_quote_api, name='booking_quote_api'),
+    path('api/bookings/<int:pk>/services/', booking_api.booking_update_services_api, name='booking_update_services_api'),
+    path('api/bookings/<int:pk>/start/', booking_api.booking_start_job_api, name='booking_start_job_api'),
+    path('api/bookings/<int:pk>/complete/', booking_api.booking_complete_job_api, name='booking_complete_job_api'),
     path('bookings/', views.booking_list_view, name='booking_list'),
+    path('bookings/bulk/', schedule_views.booking_bulk_action_view, name='booking_bulk'),
     path('bookings/<int:pk>/edit/', views.booking_edit_view, name='booking_edit'),
     path('bookings/<int:pk>/cancel/', views.booking_cancel_view, name='booking_cancel'),
+    path(
+        'bookings/<int:pk>/photos/<int:photo_pk>/delete/',
+        schedule_views.booking_photo_delete_view,
+        name='booking_photo_delete',
+    ),
     path('availability/', views.availability_view, name='availability'),
+    path('availability/quick/', schedule_views.availability_quick_action_view, name='availability_quick'),
+    path('promos/', promo_views.promo_list_view, name='promo_list'),
+    path('audit/', audit_views.audit_log_view, name='audit_log'),
     path('enquiries/', views.enquiry_list_view, name='enquiry_list'),
     path('enquiries/<int:pk>/', views.enquiry_detail_view, name='enquiry_detail'),
     path('enquiries/<int:pk>/read/', views.enquiry_mark_read_view, name='enquiry_read'),

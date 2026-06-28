@@ -23,6 +23,15 @@ from bookings.guest import attach_guest_bookings_to_user
 from bookings.models import Booking, BookingStatus
 from bookings.notifications import send_branded_email, send_registration_email
 from bookings.tokens import booking_from_account_token
+from audit.actions import (
+    AUTH_ACCOUNT_FROM_BOOKING,
+    AUTH_LOGIN,
+    AUTH_LOGOUT,
+    AUTH_PASSWORD_CHANGE,
+    AUTH_PROFILE_UPDATE,
+    AUTH_REGISTER,
+)
+from audit.services import log_action
 
 from .forms import (
     CompleteAccountFromBookingForm,
@@ -53,6 +62,15 @@ def register_view(request):
             else:
                 messages.success(request, 'Your account has been created successfully. Welcome!')
             login(request, user)
+            log_action(
+                AUTH_REGISTER,
+                f'Registered new account ({user.email}).',
+                request=request,
+                user=user,
+                target_type='user',
+                target_id=user.pk,
+                target_label=user.email,
+            )
             post_next = request.POST.get('next') or next_url
             return redirect(post_next or 'accounts:dashboard')
     else:
@@ -68,6 +86,15 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+            log_action(
+                AUTH_LOGIN,
+                f'Logged in ({user.email}).',
+                request=request,
+                user=user,
+                target_type='user',
+                target_id=user.pk,
+                target_label=user.email,
+            )
             if not form.cleaned_data.get('remember_me'):
                 request.session.set_expiry(0)
             messages.success(request, f'Welcome back, {user.first_name}!')
@@ -79,6 +106,16 @@ def login_view(request):
 
 
 def logout_view(request):
+    if request.user.is_authenticated:
+        log_action(
+            AUTH_LOGOUT,
+            f'Logged out ({request.user.email}).',
+            request=request,
+            user=request.user,
+            target_type='user',
+            target_id=request.user.pk,
+            target_label=request.user.email,
+        )
     logout(request)
     messages.info(request, 'You have been logged out.')
     return redirect('website:home')
@@ -126,6 +163,16 @@ def complete_account_from_booking_view(request, token=None):
                     'You can still use your account.',
                 )
             login(request, user)
+            log_action(
+                AUTH_ACCOUNT_FROM_BOOKING,
+                f'Created account from booking link ({user.email}).',
+                request=request,
+                user=user,
+                target_type='user',
+                target_id=user.pk,
+                target_label=user.email,
+                metadata={'booking_id': booking.pk},
+            )
             messages.success(
                 request,
                 'Your account is ready. You can now view and manage your bookings.',
@@ -179,6 +226,14 @@ def profile_view(request):
             password_form = CustomPasswordChangeForm(request.user)
             if profile_form.is_valid():
                 profile_form.save()
+                log_action(
+                    AUTH_PROFILE_UPDATE,
+                    f'Updated profile ({request.user.email}).',
+                    request=request,
+                    target_type='user',
+                    target_id=request.user.pk,
+                    target_label=request.user.email,
+                )
                 messages.success(request, 'Your profile has been updated.')
                 return redirect('accounts:profile')
         elif action == 'password':
@@ -187,6 +242,15 @@ def profile_view(request):
             if password_form.is_valid():
                 user = password_form.save()
                 update_session_auth_hash(request, user)
+                log_action(
+                    AUTH_PASSWORD_CHANGE,
+                    f'Changed password ({user.email}).',
+                    request=request,
+                    user=user,
+                    target_type='user',
+                    target_id=user.pk,
+                    target_label=user.email,
+                )
                 messages.success(request, 'Your password has been changed.')
                 return redirect('accounts:profile')
         else:

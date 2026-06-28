@@ -309,3 +309,76 @@ def validate_booking_schedule(date, slot_time, service_ids, postcode, city='', e
         'This time is no longer available — there is not enough time to complete your '
         'clean and drive to the next appointment. Please choose another slot.'
     )
+
+
+def get_day_schedule_panel_data(date):
+    """Build day timeline + travel legs for the admin schedule view."""
+    from bookings.routing import osrm_route_geometry
+
+    jobs = get_day_jobs(date)
+    panel_jobs = []
+    legs = []
+
+    for index, job in enumerate(jobs):
+        info = _job_debug_info(job)
+        info.update({
+            'status': job.booking.status,
+            'customer': job.booking.contact_full_name or 'Guest',
+            'phone': job.booking.contact_phone or '',
+            'services': job.booking.service_summary,
+            'city': job.booking.city,
+            'edit_path': f'/panel/bookings/{job.booking.pk}/edit/',
+        })
+        panel_jobs.append(info)
+
+        if index == 0:
+            continue
+
+        prev_job = jobs[index - 1]
+        gap, gap_source = _travel_gap(prev_job.coords, job.coords)
+        geometry = []
+        if prev_job.coords and job.coords:
+            geometry = osrm_route_geometry(prev_job.coords, job.coords)
+
+        legs.append({
+            'from_booking_id': prev_job.booking.pk,
+            'to_booking_id': job.booking.pk,
+            'travel_minutes': gap,
+            'travel_source': gap_source,
+            'geometry': geometry,
+        })
+
+    return {
+        'date': date.isoformat(),
+        'jobs': panel_jobs,
+        'legs': legs,
+        'job_count': len(panel_jobs),
+    }
+
+
+def get_week_schedule_summary(week_start):
+    """Return booking counts per date for a 7-day week starting week_start."""
+    from datetime import timedelta
+
+    from django.db.models import Count
+
+    end = week_start + timedelta(days=6)
+    counts = (
+        Booking.objects.filter(date__gte=week_start, date__lte=end)
+        .exclude(status=BookingStatus.CANCELLED)
+        .values('date')
+        .annotate(count=Count('id'))
+        .order_by('date')
+    )
+    count_map = {row['date']: row['count'] for row in counts}
+    days = []
+    for offset in range(7):
+        day = week_start + timedelta(days=offset)
+        days.append({
+            'date': day.isoformat(),
+            'weekday': day.strftime('%a'),
+            'label': day.strftime('%d %b'),
+            'count': count_map.get(day, 0),
+            'is_today': day == timezone.localdate(),
+        })
+    return days

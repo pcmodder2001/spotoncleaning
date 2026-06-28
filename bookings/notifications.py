@@ -1,5 +1,7 @@
 import logging
+import base64
 from email.mime.image import MIMEImage
+from pathlib import Path
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -8,6 +10,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import strip_tags
 
+from bookings.completion_report import get_completion_report_context
+from bookings.models import BookingStatus
 from config.static_utils import versioned_static_url
 
 logger = logging.getLogger(__name__)
@@ -49,6 +53,37 @@ def attach_inline_logo(email_message):
     mime_image.add_header('Content-Disposition', 'inline', filename='logo.png')
     email_message.attach(mime_image)
     return True
+
+
+def _attach_inline_file(email_message, file_path, content_id, *, filename='image.jpg'):
+    path = Path(file_path)
+    if not path.exists():
+        logger.warning('Missing inline email attachment: %s', file_path)
+        return False
+    subtype = 'jpeg' if path.suffix.lower() in ('.jpg', '.jpeg') else 'png'
+    with path.open('rb') as image_file:
+        mime_image = MIMEImage(image_file.read(), _subtype=subtype)
+    mime_image.add_header('Content-ID', f'<{content_id}>')
+    mime_image.add_header('Content-Disposition', 'inline', filename=filename)
+    email_message.attach(mime_image)
+    return True
+
+
+def _attach_signature_data_url(email_message, data_url, content_id):
+    if not data_url or not data_url.startswith('data:image'):
+        return False
+    try:
+        header, encoded = data_url.split(',', 1)
+        image_data = base64.b64decode(encoded)
+        subtype = 'png' if 'png' in header else 'jpeg'
+        mime_image = MIMEImage(image_data, _subtype=subtype)
+        mime_image.add_header('Content-ID', f'<{content_id}>')
+        mime_image.add_header('Content-Disposition', 'inline', filename='signature.png')
+        email_message.attach(mime_image)
+        return True
+    except Exception:
+        logger.exception('Failed to attach signature to completion report email')
+        return False
 
 
 def send_branded_email(subject, recipient, html_template, context=None, *, plain_message='', test=False):
@@ -142,6 +177,9 @@ def send_booking_created_email(booking):
 
 
 def send_booking_status_email(booking):
+    if booking.status == BookingStatus.COMPLETED and booking.has_complete_job_workflow():
+        return send_booking_completion_report_email(booking)
+
     templates = {
         'confirmed': ('emails/booking_confirmed.html', 'Your booking has been confirmed'),
         'completed': ('emails/booking_completed.html', 'Your booking has been completed'),
@@ -151,3 +189,57 @@ def send_booking_status_email(booking):
         template, subject = templates[booking.status]
         return send_booking_email(booking, template, f'{subject} - {settings.SITE_NAME}')
     return False
+
+
+def send_booking_completion_report_email(booking, *, test=False, recipient=None, context=None):
+    """Email customer a completion report with photos, pricing, and sign-off."""
+    try:
+        report_context = context or get_completion_report_context(booking, for_email=True)
+        subject = f'Your job completion report — {settings.SITE_NAME}'
+        if test:
+            subject = f'[TEST] {subject}'
+
+        email_context = get_email_context(embed_logo=True, **report_context)
+        html_message = render_to_string('emails/booking_completion_report.html', email_context)
+        plain_message = strip_tags(html_message).strip()
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[recipient or booking.contact_email],
+        )
+        email.attach_alternative(html_message, 'text/html')
+        attach_inline_logo(email)
+
+        for row in report_context['service_photos']:
+            if row.get('before_path'):
+                _attach_inline_file(
+                    email,
+                    row['before_path'],
+                    row['before_cid'],
+                    filename=f"before-{row['name']}.jpg",
+                )
+            if row.get('after_path'):
+                _attach_inline_file(
+                    email,
+                    row['after_path'],
+                    row['after_cid'],
+                    filename=f"after-{row['name']}.jpg",
+                )
+
+        if report_context.get('signature_data_url'):
+            _attach_signature_data_url(
+                email,
+                report_context['signature_data_url'],
+                report_context['signature_cid'],
+            )
+
+        email.send(fail_silently=False)
+        return True
+    except Exception:
+        logger.exception(
+            'Failed to send completion report email for booking #%s',
+            getattr(booking, 'pk', '?'),
+        )
+        return False

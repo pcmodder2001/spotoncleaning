@@ -1,0 +1,108 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Audit log{% endblock %}
+
+{% block panel_content %}
+<p class="text-muted mb-4">
+    Every significant action by customers, engineers, and admins is recorded here.
+    Job completions must go through the Start job / Complete job workflow — bulk complete has been removed.
+</p>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-3">
+        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search description, email, target…">
+    </div>
+    <div class="col-md-2">
+        <select name="category" class="form-select">
+            <option value="">All categories</option>
+            {% for value, label in category_choices %}
+            <option value="{{ value }}" {% if category_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="role" class="form-select">
+            <option value="">All roles</option>
+            {% for value, label in role_choices %}
+            <option value="{{ value }}" {% if role_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="action" class="form-select">
+            <option value="">All actions</option>
+            {% for value, label in action_choices %}
+            <option value="{{ value }}" {% if action_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-1">
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-control" title="From date">
+    </div>
+    <div class="col-md-1">
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-control" title="To date">
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'panel:audit_log' %}" class="btn btn-outline-secondary">Clear</a>
+    </div>
+</form>
+
+<div class="panel-card card border-0">
+    <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0 audit-log-table">
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Who</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                    <th>Target</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in page_obj %}
+                <tr>
+                    <td class="text-nowrap">{{ entry.created_at|date:"d M Y H:i:s" }}</td>
+                    <td>
+                        <div>{{ entry.actor_display }}</div>
+                        {% if entry.actor_email %}<small class="text-muted">{{ entry.actor_email }}</small>{% endif %}
+                    </td>
+                    <td><span class="badge role-badge role-{{ entry.actor_role }}">{{ entry.actor_role|title }}</span></td>
+                    <td>{{ entry.action_label }}</td>
+                    <td>{{ entry.description }}</td>
+                    <td>
+                        {% if entry.target_label %}
+                        <span class="text-muted small">{{ entry.target_type }}</span><br>{{ entry.target_label }}
+                        {% elif entry.target_id %}
+                        <span class="text-muted small">{{ entry.target_type }} #{{ entry.target_id }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="text-muted small">{{ entry.ip_address|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No audit entries match your filters.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<nav class="mt-3">
+    <ul class="pagination pagination-sm justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&category={{ category_filter }}&role={{ role_filter }}&action={{ action_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&category={{ category_filter }}&role={{ role_filter }}&action={{ action_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Next</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

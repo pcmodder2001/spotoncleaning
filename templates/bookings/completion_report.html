@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static static_version %}
+
+{% block title %}Job completion report #{{ booking.pk }} | {{ SITE_NAME }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block body_class %}page-completion-report{% endblock %}
+
+{% block content %}
+<div class="completion-report-page">
+    <div class="completion-report-toolbar no-print">
+        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-3 py-3">
+            <a href="{% url 'website:home' %}" class="btn btn-outline-secondary btn-sm">&larr; Back to site</a>
+            <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print / Save as PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="container completion-report-body py-4 py-md-5">
+        <header class="completion-report-header text-center mb-4 mb-md-5">
+            {% include 'includes/site_brand.html' with brand_class='site-brand-report' %}
+            <h1 class="h3 fw-bold mt-3 mb-1">Job completion report</h1>
+            <p class="text-muted mb-0">Booking #{{ booking.pk }} · {{ booking.date|date:"l, d F Y" }}</p>
+            {% if completed_at %}
+            <p class="text-muted small">Completed {{ completed_at|date:"d M Y, H:i" }}</p>
+            {% endif %}
+        </header>
+
+        <section class="completion-report-card panel-card card border-0 mb-4">
+            <div class="card-body p-4">
+                <h2 class="h6 text-uppercase text-muted fw-bold mb-3">Customer</h2>
+                <p class="mb-1 fw-semibold">{{ booking.contact_full_name }}</p>
+                <p class="mb-1 text-muted">{{ booking.contact_email }}{% if booking.contact_phone %} · {{ booking.contact_phone }}{% endif %}</p>
+                <p class="mb-0 text-muted">{{ booking.full_address }}</p>
+            </div>
+        </section>
+
+        <section class="completion-report-card panel-card card border-0 mb-4">
+            <div class="card-body p-4">
+                <h2 class="h6 text-uppercase text-muted fw-bold mb-3">Services completed</h2>
+                <p class="mb-0">{{ booking.service_summary }}</p>
+            </div>
+        </section>
+
+        {% for row in service_photos %}
+        <section class="completion-report-card panel-card card border-0 mb-4">
+            <div class="card-body p-4">
+                <h2 class="h6 fw-bold mb-3">{{ row.name }}</h2>
+                <div class="completion-report-photo-pair">
+                    <figure>
+                        {% if row.before_url %}
+                        <img src="{{ row.before_url }}" alt="Before — {{ row.name }}">
+                        {% endif %}
+                        <figcaption>Before</figcaption>
+                    </figure>
+                    <figure>
+                        {% if row.after_url %}
+                        <img src="{{ row.after_url }}" alt="After — {{ row.name }}">
+                        {% endif %}
+                        <figcaption>After</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+        {% endfor %}
+
+        <section class="completion-report-card panel-card card border-0 mb-4">
+            <div class="card-body p-4">
+                <h2 class="h6 text-uppercase text-muted fw-bold mb-3">Customer sign-off</h2>
+                <p class="mb-3">Signed by: <strong>{{ signed_by_name }}</strong></p>
+                {% if signature_url or signature_data_url %}
+                <div class="completion-report-signature">
+                    <img src="{{ signature_url|default:signature_data_url }}" alt="Customer signature">
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="completion-report-card panel-card card border-0 mb-4">
+            <div class="card-body p-4">
+                <h2 class="h6 text-uppercase text-muted fw-bold mb-3">Payment summary</h2>
+                {% if has_promo %}
+                <div class="d-flex justify-content-between mb-1"><span class="text-muted">Subtotal</span><span>£{{ subtotal }}</span></div>
+                <div class="d-flex justify-content-between mb-2 text-success"><span>Promo {{ promo_code }}</span><span>−£{{ discount_amount }}</span></div>
+                {% endif %}
+                <div class="d-flex justify-content-between fs-5 fw-bold text-primary"><span>Total paid</span><span>£{{ total_paid }}</span></div>
+            </div>
+        </section>
+
+        <footer class="completion-report-footer text-center text-muted small">
+            <p class="mb-0">{{ SITE_NAME }} · Thank you for your business</p>
+        </footer>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static_v 'css/completion-report.css' %}">
+{% endblock %}

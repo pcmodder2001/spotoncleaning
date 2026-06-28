@@ -15,7 +15,7 @@
                 </script>
                 {% endif %}
 
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
 
                     <div class="row g-3">
@@ -102,8 +102,72 @@
                                 {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="col-12">
-                                <label class="form-label" for="{{ form.notes.id_for_label }}">Notes</label>
+                                <label class="form-label" for="{{ form.notes.id_for_label }}">Customer notes</label>
                                 {{ form.notes }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="fw-bold mb-3">Job checklist</h6>
+                        <div class="row g-2">
+                            {% for item in checklist_items %}
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="checklist_{{ item.key }}" id="checklist-{{ item.key }}" {% if item.done %}checked{% endif %}>
+                                    <label class="form-check-label" for="checklist-{{ item.key }}">{{ item.label }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="fw-bold mb-3">Technician notes</h6>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label" for="access_instructions">Access instructions</label>
+                                <textarea name="access_instructions" id="access_instructions" class="form-control" rows="2">{{ booking.access_instructions }}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="staff_notes">Internal staff notes</label>
+                                <textarea name="staff_notes" id="staff_notes" class="form-control" rows="2">{{ booking.staff_notes }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="fw-bold mb-3">Photos</h6>
+                        {% if photos %}
+                        <div class="row g-3 mb-3">
+                            {% for photo in photos %}
+                            <div class="col-md-4">
+                                <div class="booking-photo-card">
+                                    <img src="{{ photo.image.url }}" alt="{{ photo.get_photo_type_display }} photo" class="img-fluid rounded">
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <span class="badge bg-secondary">{{ photo.get_photo_type_display }}</span>
+                                        <form method="post" action="{% url 'panel:booking_photo_delete' booking.pk photo.pk %}"
+                                              data-confirm="Remove this photo?"
+                                              data-confirm-title="Delete photo?"
+                                              data-confirm-yes="Delete"
+                                              data-confirm-danger="true">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="photo_before">Upload before photo</label>
+                                <input type="file" name="photo_before" id="photo_before" class="form-control" accept="image/*">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="photo_after">Upload after photo</label>
+                                <input type="file" name="photo_after" id="photo_after" class="form-control" accept="image/*">
                             </div>
                         </div>
                     </div>

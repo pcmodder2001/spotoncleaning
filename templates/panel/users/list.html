@@ -20,6 +20,7 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
+                    <th>Role</th>
                     <th>Registered</th>
                     <th>Last Login</th>
                     <th>Status</th>
@@ -32,6 +33,17 @@
                     <td>{{ u.full_name }}</td>
                     <td>{{ u.email }}</td>
                     <td>{{ u.phone_number|default:"—" }}</td>
+                    <td>
+                        {% if u.is_sysadmin %}
+                        <span class="badge role-badge role-sysadmin">System admin</span>
+                        {% elif u.role == 'admin' %}
+                        <span class="badge role-badge role-admin">Admin</span>
+                        {% elif u.role == 'engineer' %}
+                        <span class="badge role-badge role-engineer">Engineer</span>
+                        {% else %}
+                        <span class="badge role-badge role-standard">Standard</span>
+                        {% endif %}
+                    </td>
                     <td>{{ u.date_joined|date:"d M Y" }}</td>
                     <td>{{ u.last_login|date:"d M Y H:i"|default:"Never" }}</td>
                     <td>
@@ -42,7 +54,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center text-muted py-4">No users found</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-4">No users found</td></tr>
                 {% endfor %}
             </tbody>
         </table>

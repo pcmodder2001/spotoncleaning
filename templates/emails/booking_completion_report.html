@@ -1,0 +1,67 @@
+{% extends 'emails/base_email.html' %}
+
+{% block email_title %}Job Completion Report — {{ site_name }}{% endblock %}
+{% block accent_color %}#059669{% endblock %}
+
+{% block email_heading %}
+<h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">Job completion report</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #64748b;">
+    Booking #{{ booking.pk }} · {{ booking.date|date:"l, d F Y" }}
+</p>
+{% endblock %}
+
+{% block email_content %}
+<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.contact_first_name }},</p>
+<p style="margin: 0 0 24px; font-size: 15px; color: #334155;">
+    Thank you for choosing {{ site_name }}. Below is your completion report with before/after photos
+    and sign-off for <strong>{{ booking.service_summary }}</strong>.
+</p>
+
+{% for row in service_photos %}
+<div style="margin: 0 0 28px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+    <p style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #0f172a;">{{ row.name }}</p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td width="48%" valign="top" style="padding-right: 8px;">
+                <p style="margin: 0 0 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Before</p>
+                {% if row.before_url %}
+                <img src="{{ row.before_url }}" alt="Before — {{ row.name }}" width="260" style="display: block; width: 100%; max-width: 260px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0;">
+                {% endif %}
+            </td>
+            <td width="48%" valign="top" style="padding-left: 8px;">
+                <p style="margin: 0 0 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">After</p>
+                {% if row.after_url %}
+                <img src="{{ row.after_url }}" alt="After — {{ row.name }}" width="260" style="display: block; width: 100%; max-width: 260px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0;">
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
+{% endfor %}
+
+<div style="margin: 0 0 24px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+    <p style="margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #0f172a;">Customer sign-off</p>
+    <p style="margin: 0 0 12px; font-size: 14px; color: #334155;">Signed by: <strong>{{ signed_by_name }}</strong></p>
+    {% if signature_url %}
+    <img src="{{ signature_url }}" alt="Customer signature" width="220" style="display: block; max-width: 220px; height: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px;">
+    {% endif %}
+</div>
+
+<div style="margin: 0 0 24px; padding: 16px; background: #f0fdfa; border-radius: 8px; border: 1px solid #99f6e4;">
+    <p style="margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #0f172a;">Amount</p>
+    {% if has_promo %}
+    <p style="margin: 0 0 4px; font-size: 14px; color: #64748b;">Subtotal: £{{ subtotal }}</p>
+    <p style="margin: 0 0 4px; font-size: 14px; color: #059669;">Promo {{ promo_code }}: −£{{ discount_amount }}</p>
+    {% endif %}
+    <p style="margin: 0; font-size: 18px; font-weight: 800; color: #0e7490;">Total: £{{ total_paid }}</p>
+</div>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 0 8px;">
+    <tr>
+        <td style="border-radius: 8px; background-color: #0e7490;">
+            <a href="{{ report_url }}" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">View full report online</a>
+        </td>
+    </tr>
+</table>
+<p style="margin: 0; font-size: 13px; color: #64748b;">You can print or save the online report as a PDF from your browser.</p>
+{% endblock %}

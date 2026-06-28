@@ -14,6 +14,15 @@ User = get_user_model()
 
 
 class BookingForm(forms.ModelForm):
+    promo_code = forms.CharField(
+        required=False,
+        max_length=40,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Promo code (optional)',
+            'autocomplete': 'off',
+        }),
+    )
     services = forms.ModelMultipleChoiceField(
         queryset=Service.objects.filter(active=True),
         widget=forms.MultipleHiddenInput(),
@@ -102,6 +111,7 @@ class BookingForm(forms.ModelForm):
         postcode = cleaned_data.get('postcode')
         city = cleaned_data.get('city', '')
         services = cleaned_data.get('services')
+        promo_code = cleaned_data.get('promo_code', '')
         if date and time_slot and postcode and services:
             service_ids = [s.pk for s in services]
             ok, message = validate_booking_schedule(
@@ -113,15 +123,38 @@ class BookingForm(forms.ModelForm):
             )
             if not ok:
                 raise forms.ValidationError(message)
+
+        if promo_code and services:
+            from bookings.promo import PromoError, get_valid_promo
+            try:
+                promo = get_valid_promo(promo_code)
+                subtotal = sum(s.price for s in services)
+                discount = promo.calculate_discount(subtotal)
+                if discount <= 0:
+                    raise PromoError(
+                        f'This code requires a minimum order of £{promo.min_order_amount:.2f}.'
+                    )
+                cleaned_data['_promo'] = promo
+                cleaned_data['_discount'] = discount
+            except PromoError as exc:
+                raise forms.ValidationError(str(exc)) from exc
         return cleaned_data
 
     def save(self, commit=True):
         booking = super().save(commit=False)
+        promo = self.cleaned_data.get('_promo')
+        discount = self.cleaned_data.get('_discount')
+        if promo:
+            booking.promo_code = promo
+            booking.discount_amount = discount
         if commit:
             booking.save()
             service_ids = [s.pk for s in self.cleaned_data['services']]
             booking.services.set(self.cleaned_data['services'])
             booking.geocode_and_set_duration(service_ids)
+            if promo:
+                from bookings.promo import record_promo_use
+                record_promo_use(promo)
         return booking
 
 
@@ -275,6 +308,19 @@ class AdminBookingForm(forms.ModelForm):
             if not ok:
                 raise forms.ValidationError(message)
 
+        if (
+            status == BookingStatus.COMPLETED
+            and self.instance.pk
+            and self.instance.status != BookingStatus.COMPLETED
+        ):
+            workflow_errors = self.instance.job_workflow_errors(services=services)
+            if workflow_errors:
+                raise forms.ValidationError(
+                    'This booking cannot be marked completed until the full job workflow is done: '
+                    + '; '.join(workflow_errors)
+                    + ' Use Start job and Complete job in the booking view.'
+                )
+
         return cleaned_data
 
     def save(self, commit=True):
@@ -284,6 +330,7 @@ class AdminBookingForm(forms.ModelForm):
             service_ids = [s.pk for s in self.cleaned_data['services']]
             booking.services.set(self.cleaned_data['services'])
             booking.geocode_and_set_duration(service_ids)
+            booking.recalculate_pricing(save=True)
         return booking
 
 

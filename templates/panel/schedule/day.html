@@ -1,0 +1,80 @@
+{% extends 'panel/base_panel.html' %}
+{% load static %}
+
+{% block panel_title %}Schedule{% endblock %}
+
+{% block panel_content %}
+<div class="schedule-toolbar mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'panel:schedule' %}?date={{ prev_day|date:'Y-m-d' }}&week={{ week_start|date:'Y-m-d' }}" class="btn btn-outline-secondary btn-sm">&larr; Prev day</a>
+            <h2 class="h5 mb-0">{{ selected_date|date:"l, j F Y" }}</h2>
+            <a href="{% url 'panel:schedule' %}?date={{ next_day|date:'Y-m-d' }}&week={{ week_start|date:'Y-m-d' }}" class="btn btn-outline-secondary btn-sm">Next day &rarr;</a>
+            {% if selected_date != today %}
+            <a href="{% url 'panel:schedule' %}?date={{ today|date:'Y-m-d' }}" class="btn btn-primary btn-sm">Today</a>
+            {% endif %}
+        </div>
+        <a href="{% url 'panel:booking_list' %}?date={{ selected_date|date:'Y-m-d' }}" class="btn btn-outline-primary btn-sm">List view</a>
+    </div>
+
+    <div class="schedule-week-strip mt-3">
+        <a href="{% url 'panel:schedule' %}?week={{ prev_week|date:'Y-m-d' }}&date={{ selected_date|date:'Y-m-d' }}" class="week-nav">&lsaquo;</a>
+        {% for day in week_days %}
+        <a href="{% url 'panel:schedule' %}?date={{ day.date }}&week={{ week_start|date:'Y-m-d' }}"
+           class="week-day {% if day.date == selected_date|date:'Y-m-d' %}active{% endif %} {% if day.is_today %}today{% endif %}">
+            <span class="week-day-name">{{ day.weekday }}</span>
+            <span class="week-day-date">{{ day.label }}</span>
+            {% if day.count %}<span class="week-day-count">{{ day.count }}</span>{% endif %}
+        </a>
+        {% endfor %}
+        <a href="{% url 'panel:schedule' %}?week={{ next_week|date:'Y-m-d' }}&date={{ selected_date|date:'Y-m-d' }}" class="week-nav">&rsaquo;</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="panel-card card border-0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Day timeline</span>
+                <span class="text-muted small" id="scheduleJobCount">Loading…</span>
+            </div>
+            <div class="card-body" id="scheduleTimeline">
+                <p class="text-muted mb-0">Loading schedule…</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="panel-card card border-0 mb-4">
+            <div class="card-header">Route map</div>
+            <div class="card-body p-0">
+                <div id="scheduleMap" class="schedule-map"></div>
+            </div>
+        </div>
+        <div class="panel-card card border-0">
+            <div class="card-header">Travel legs</div>
+            <div class="card-body" id="scheduleLegs">
+                <p class="text-muted small mb-0">Drive times appear between jobs.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+window.panelScheduleConfig = {
+    apiUrl: "{% url 'panel:schedule_api' %}",
+    selectedDate: "{{ selected_date|date:'Y-m-d' }}",
+};
+</script>
+<script>
+window.panelBookingConfig = {
+    apiBase: '/panel/api/bookings',
+    csrfToken: '{{ csrf_token }}',
+};
+</script>
+<script src="{% static 'js/panel-bookings.js' %}"></script>
+<script src="{% static 'js/panel-schedule.js' %}"></script>
+{% endblock %}

@@ -8,7 +8,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 from bookings.models import Booking, BookingStatus, TimeSlot
-from bookings.notifications import send_branded_email, send_test_emails
+from bookings.notifications import send_booking_completion_report_email, send_branded_email, send_test_emails
+from bookings.completion_report import get_sample_completion_report_context
 from services.models import Service
 
 User = get_user_model()
@@ -177,8 +178,14 @@ EMAIL_TEST_TYPES = [
     {
         'id': 'booking_completed',
         'name': 'Booking completed',
-        'description': 'Sent when staff mark a job as completed.',
+        'description': 'Simple notice when a job is marked completed (legacy — without full workflow).',
         'template': 'emails/booking_completed.html',
+    },
+    {
+        'id': 'completion_report',
+        'name': 'Job completion report',
+        'description': 'Sent after a job is completed with before/after photos, sign-off, and pricing.',
+        'template': 'emails/booking_completion_report.html',
     },
     {
         'id': 'booking_cancelled',
@@ -225,6 +232,20 @@ def send_test_email(email_type_id):
             {'user': get_sample_user()},
             recipients,
         )
+        return email_type, results
+
+    if email_type_id == 'completion_report':
+        sample_context = get_sample_completion_report_context()
+        booking = sample_context['booking']
+        results = []
+        for recipient in recipients:
+            ok = send_booking_completion_report_email(
+                booking,
+                test=True,
+                recipient=recipient,
+                context=sample_context,
+            )
+            results.append((recipient, ok))
         return email_type, results
 
     if email_type_id == 'password_reset':

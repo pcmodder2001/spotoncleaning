@@ -1,0 +1,172 @@
+/* SiteMatrix offline page — standalone styles for client sites */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.offline-page {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -20%, rgba(37, 99, 235, 0.18), transparent),
+    linear-gradient(180deg, #0f172a 0%, #1e293b 45%, #0f172a 100%);
+  color: #f8fafc;
+}
+
+.offline-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+}
+
+.offline-card {
+  width: min(520px, 100%);
+  padding: 2.5rem 2rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  text-align: center;
+}
+
+.offline-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.75rem;
+}
+
+.offline-logo {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.offline-brand-text {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #e2e8f0;
+}
+
+.offline-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 5rem;
+  margin-bottom: 1.25rem;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.15);
+  color: #60a5fa;
+}
+
+.offline-preview-badge {
+  display: inline-block;
+  margin: 0 0 1rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(217, 119, 6, 0.2);
+  color: #fcd34d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.offline-eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.offline-title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: #fff;
+}
+
+.offline-message {
+  margin: 0 auto 1.75rem;
+  max-width: 38ch;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: #cbd5e1;
+}
+
+.offline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.offline-page .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.offline-page .btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.offline-page .btn-primary:hover {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.offline-page .btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.offline-page .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.offline-owner-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.offline-footer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.offline-footer p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.offline-footer strong {
+  color: #94a3b8;
+  font-weight: 600;
+}

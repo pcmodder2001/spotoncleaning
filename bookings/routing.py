@@ -131,6 +131,42 @@ def travel_minutes(origin, destination):
     return estimate_travel_minutes(origin, destination)
 
 
+def osrm_route_geometry(origin, destination):
+    """Return GeoJSON-style [lon, lat] coordinates for map display."""
+    if not origin or not destination:
+        return []
+
+    lat1, lon1 = origin
+    lat2, lon2 = destination
+    if lat1 == lat2 and lon1 == lon2:
+        return [[lon1, lat1]]
+
+    cache_key = f'routegeom:{lat1:.4f},{lon1:.4f}:{lat2:.4f},{lon2:.4f}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    base_url = getattr(
+        settings,
+        'OSRM_BASE_URL',
+        'https://router.project-osrm.org/route/v1/driving',
+    )
+    url = f'{base_url}/{lon1},{lat1};{lon2},{lat2}?overview=full&geometries=geojson'
+    try:
+        with urlopen(url, timeout=8) as response:
+            data = json.loads(response.read().decode())
+        if data.get('code') == 'Ok' and data.get('routes'):
+            geometry = data['routes'][0]['geometry']['coordinates']
+            cache.set(cache_key, geometry, 60 * 60 * 24 * 7)
+            return geometry
+    except (URLError, TimeoutError, KeyError, ValueError, json.JSONDecodeError, OSError) as exc:
+        logger.warning('OSRM geometry failed: %s', exc)
+
+    geometry = [[lon1, lat1], [lon2, lat2]]
+    cache.set(cache_key, geometry, 60 * 60 * 24)
+    return geometry
+
+
 def coords_for_address(postcode, city='', address_line_1=''):
     coords = geocode_postcode(postcode)
     if coords:

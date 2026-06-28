@@ -1,15 +1,18 @@
 {% extends 'panel/base_panel.html' %}
+{% load static %}
 
 {% block panel_title %}Dashboard{% endblock %}
 
 {% block panel_content %}
 <div class="row g-4 mb-4">
+    {% if user.can_manage_site %}
     <div class="col-md-4 col-lg-2">
         <div class="panel-stat">
             <h3>{{ stats.total_users }}</h3>
             <p>Total Users</p>
         </div>
     </div>
+    {% endif %}
     <div class="col-md-4 col-lg-2">
         <div class="panel-stat">
             <h3>{{ stats.total_bookings }}</h3>
@@ -43,7 +46,7 @@
 </div>
 
 <div class="row g-4">
-    <div class="col-lg-7">
+    <div class="col-lg-{% if user.can_manage_site %}7{% else %}12{% endif %}">
         <div class="panel-card card border-0">
             <div class="card-header">Recent Bookings</div>
             <div class="table-responsive">
@@ -52,7 +55,7 @@
                     <tbody>
                         {% for booking in recent_bookings %}
                         <tr>
-                            <td><a href="{% url 'panel:booking_edit' booking.pk %}">#{{ booking.pk }}</a></td>
+                            <td><button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-booking-view="{{ booking.pk }}">#{{ booking.pk }}</button></td>
                             <td>{{ booking.contact_full_name }}</td>
                             <td>{{ booking.service_summary }}</td>
                             <td>{{ booking.date|date:"d M Y" }}</td>
@@ -66,6 +69,7 @@
             </div>
         </div>
     </div>
+    {% if user.can_manage_site %}
     <div class="col-lg-5">
         <div class="panel-card card border-0">
             <div class="card-header">Recent Registrations</div>
@@ -93,5 +97,16 @@
         </div>
         {% endif %}
     </div>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.panelBookingConfig = {
+    apiBase: '/panel/api/bookings',
+    csrfToken: '{{ csrf_token }}',
+};
+</script>
+<script src="{% static 'js/panel-bookings.js' %}"></script>
 {% endblock %}

@@ -25,6 +25,19 @@
         <div class="panel-card card border-0">
             <div class="card-header">Block Dates</div>
             <div class="card-body">
+                <form method="post" action="{% url 'panel:availability_quick' %}" class="row g-2 mb-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="block_day_full">
+                    <div class="col-md-5">
+                        <input type="date" name="date" class="form-control" required>
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" name="reason" class="form-control" value="Fully booked" placeholder="Reason">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-warning w-100">Mark full</button>
+                    </div>
+                </form>
                 <form method="post" class="row g-2 mb-3">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="block_date">
@@ -53,6 +66,24 @@
                     <li class="list-group-item text-muted px-0">No blocked dates</li>
                     {% endfor %}
                 </ul>
+            </div>
+        </div>
+
+        <div class="panel-card card border-0 mt-4">
+            <div class="card-header">Copy availability</div>
+            <div class="card-body">
+                <p class="text-muted small">Copy blocked dates and per-slot overrides from one week to the next.</p>
+                <form method="post" action="{% url 'panel:availability_quick' %}" class="row g-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="duplicate_week">
+                    <div class="col-md-8">
+                        <label class="form-label">Source week (any date in that week)</label>
+                        <input type="date" name="source_week_start" class="form-control" required>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-primary w-100">Copy to next week</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
@@ -97,6 +98,34 @@ class Booking(models.Model):
     city = models.CharField(max_length=100)
     postcode = models.CharField(max_length=20)
     notes = models.TextField(blank=True)
+    access_instructions = models.TextField(
+        blank=True,
+        help_text='Gate codes, parking, key location — for the technician.',
+    )
+    staff_notes = models.TextField(
+        blank=True,
+        help_text='Internal notes — not shown to the customer.',
+    )
+    checklist = models.JSONField(default=dict, blank=True)
+    promo_code = models.ForeignKey(
+        'bookings.PromoCode',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bookings',
+    )
+    discount_amount = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal('0.00'),
+    )
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    signed_by_name = models.CharField(max_length=200, blank=True)
+    completion_signature = models.TextField(
+        blank=True,
+        help_text='Base64 PNG data URL captured on job completion.',
+    )
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     estimated_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
@@ -178,6 +207,23 @@ class Booking(models.Model):
         return sum(s.price for s in self.get_services())
 
     @property
+    def discounted_total(self):
+        return max(Decimal('0.00'), self.total_price - (self.discount_amount or Decimal('0.00')))
+
+    @property
+    def has_promo(self):
+        return bool(self.promo_code_id and self.discount_amount)
+
+    def recalculate_pricing(self, *, save=True):
+        """Recompute discount from current services and attached promo code."""
+        if self.promo_code_id:
+            self.discount_amount = self.promo_code.calculate_discount(self.total_price)
+        else:
+            self.discount_amount = Decimal('0.00')
+        if save and self.pk:
+            self.save(update_fields=['discount_amount', 'updated_at'])
+
+    @property
     def is_cancellable(self):
         if self.status in (
             BookingStatus.CANCELLED,
@@ -207,3 +253,127 @@ class Booking(models.Model):
         self.save(update_fields=[
             'latitude', 'longitude', 'estimated_duration_minutes', 'updated_at',
         ])
+
+    def has_complete_job_workflow(self):
+        services = list(self.get_services())
+        if not services:
+            return False
+        if not self.signed_by_name or not self.completion_signature:
+            return False
+        for service in services:
+            if not self.photos.filter(
+                service=service,
+                photo_type=BookingPhoto.PhotoType.BEFORE,
+            ).exists():
+                return False
+            if not self.photos.filter(
+                service=service,
+                photo_type=BookingPhoto.PhotoType.AFTER,
+            ).exists():
+                return False
+        return True
+
+    def job_workflow_errors(self, services=None):
+        """Human-readable list of missing items for job completion."""
+        if services is None:
+            services = list(self.get_services())
+        errors = []
+        if not services:
+            errors.append('At least one service must be booked.')
+        if not self.signed_by_name:
+            errors.append('Customer name for sign-off is required.')
+        if not self.completion_signature:
+            errors.append('Customer signature is required.')
+        for service in services:
+            if not self.photos.filter(
+                service=service,
+                photo_type=BookingPhoto.PhotoType.BEFORE,
+            ).exists():
+                errors.append(f'Before photo required for {service.name}.')
+            if not self.photos.filter(
+                service=service,
+                photo_type=BookingPhoto.PhotoType.AFTER,
+            ).exists():
+                errors.append(f'After photo required for {service.name}.')
+        return errors
+
+
+class PromoCode(models.Model):
+    class DiscountType(models.TextChoices):
+        PERCENT = 'percent', 'Percentage off'
+        FIXED = 'fixed', 'Fixed amount off'
+
+    code = models.CharField(max_length=40, unique=True)
+    description = models.CharField(max_length=200, blank=True)
+    discount_type = models.CharField(
+        max_length=10,
+        choices=DiscountType.choices,
+        default=DiscountType.PERCENT,
+    )
+    discount_value = models.DecimalField(max_digits=8, decimal_places=2)
+    active = models.BooleanField(default=True)
+    valid_from = models.DateField(null=True, blank=True)
+    valid_until = models.DateField(null=True, blank=True)
+    max_uses = models.PositiveIntegerField(null=True, blank=True)
+    times_used = models.PositiveIntegerField(default=0)
+    min_order_amount = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal('0.00'),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.code.upper()
+
+    def save(self, *args, **kwargs):
+        self.code = self.code.upper().strip()
+        super().save(*args, **kwargs)
+
+    def is_valid_today(self):
+        if not self.active:
+            return False
+        today = timezone.localdate()
+        if self.valid_from and today < self.valid_from:
+            return False
+        if self.valid_until and today > self.valid_until:
+            return False
+        if self.max_uses is not None and self.times_used >= self.max_uses:
+            return False
+        return True
+
+    def calculate_discount(self, subtotal):
+        subtotal = Decimal(subtotal)
+        if subtotal < self.min_order_amount:
+            return Decimal('0.00')
+        if self.discount_type == self.DiscountType.PERCENT:
+            return min(subtotal, (subtotal * self.discount_value / Decimal('100')).quantize(Decimal('0.01')))
+        return min(subtotal, self.discount_value)
+
+
+class BookingPhoto(models.Model):
+    class PhotoType(models.TextChoices):
+        BEFORE = 'before', 'Before'
+        AFTER = 'after', 'After'
+
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='photos')
+    service = models.ForeignKey(
+        'services.Service',
+        on_delete=models.CASCADE,
+        related_name='job_photos',
+        null=True,
+        blank=True,
+    )
+    image = models.ImageField(upload_to='booking-photos/%Y/%m/')
+    photo_type = models.CharField(max_length=10, choices=PhotoType.choices)
+    caption = models.CharField(max_length=200, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['uploaded_at']
+
+    def __str__(self):
+        return f'{self.get_photo_type_display()} photo for booking #{self.booking_id}'

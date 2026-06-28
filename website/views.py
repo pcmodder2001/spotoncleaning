@@ -9,6 +9,8 @@ from services.catalog import split_addon_services
 from services.models import Service, ServiceType
 from website.forms import ContactForm
 from website.models import Testimonial
+from audit.actions import ENQUIRY_CREATED
+from audit.services import log_action
 
 
 def home_view(request):
@@ -31,7 +33,18 @@ def contact_submit_view(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)
         if form.is_valid():
-            form.save()
+            enquiry = form.save()
+            log_action(
+                ENQUIRY_CREATED,
+                f'Contact enquiry submitted by {enquiry.name}.',
+                request=request,
+                user=request.user if request.user.is_authenticated else None,
+                actor_email=enquiry.email,
+                actor_name=enquiry.name,
+                target_type='enquiry',
+                target_id=enquiry.pk,
+                target_label=enquiry.email,
+            )
             messages.success(request, 'Thank you for your message. We will get back to you soon!')
         else:
             messages.error(request, 'Please correct the errors in the contact form.')

@@ -11,13 +11,29 @@ from bookings.forms import AdminBookingForm, BookingForm
 from bookings.models import (
     BlockedDate,
     Booking,
+    BookingPhoto,
     BookingStatus,
     TimeSlot,
     WeeklySchedule,
 )
+from bookings.checklist import checklist_from_post, merge_checklist
 from bookings.utils import cancel_booking
 from bookings.notifications import send_booking_status_email
-from panel.decorators import staff_required, sysadmin_required
+from accounts.roles import UserRole
+from audit.actions import (
+    AVAILABILITY_UPDATED,
+    BOOKING_CANCELLED,
+    BOOKING_UPDATED,
+    ENQUIRY_DELETED,
+    ENQUIRY_READ,
+    SERVICE_CREATED,
+    SERVICE_DELETED,
+    SERVICE_UPDATED,
+    USER_DELETED,
+    USER_UPDATED,
+)
+from audit.services import log_action
+from panel.decorators import admin_required, panel_required, sysadmin_required
 from panel.email_debug import (
     EMAIL_TEST_TYPES,
     get_email_config_summary,
@@ -30,7 +46,7 @@ from website.models import ContactMessage
 User = get_user_model()
 
 
-@staff_required
+@panel_required
 def dashboard_view(request):
     today = timezone.localdate()
     stats = {
@@ -52,7 +68,7 @@ def dashboard_view(request):
     })
 
 
-@staff_required
+@admin_required
 def user_list_view(request):
     query = request.GET.get('q', '')
     users = User.objects.all()
@@ -66,27 +82,40 @@ def user_list_view(request):
     return render(request, 'panel/users/list.html', {'users': users, 'query': query})
 
 
-@staff_required
+@admin_required
 def user_edit_view(request, pk):
     user = get_object_or_404(User, pk=pk)
     if request.method == 'POST':
         user.first_name = request.POST.get('first_name', user.first_name)
         user.last_name = request.POST.get('last_name', user.last_name)
+        user.phone_number = request.POST.get('phone_number', user.phone_number)
         if not user.is_sysadmin:
             user.email = request.POST.get('email', user.email)
             user.is_active = request.POST.get('is_active') == 'on'
-            user.is_staff = request.POST.get('is_staff') == 'on'
+            role = request.POST.get('role', user.role)
+            if role in UserRole.values:
+                user.role = role
         else:
             user.is_active = True
-            user.is_staff = True
-        user.phone_number = request.POST.get('phone_number', user.phone_number)
         user.save()
+        log_action(
+            USER_UPDATED,
+            f'Updated user {user.email} (role: {user.get_role_display()}).',
+            request=request,
+            target_type='user',
+            target_id=user.pk,
+            target_label=user.email,
+            metadata={'role': user.role, 'is_active': user.is_active},
+        )
         messages.success(request, f'User {user.email} updated successfully.')
         return redirect('panel:user_list')
-    return render(request, 'panel/users/edit.html', {'edit_user': user})
+    return render(request, 'panel/users/edit.html', {
+        'edit_user': user,
+        'role_choices': UserRole.choices,
+    })
 
 
-@staff_required
+@admin_required
 @require_POST
 def user_delete_view(request, pk):
     user = get_object_or_404(User, pk=pk)
@@ -97,16 +126,25 @@ def user_delete_view(request, pk):
         messages.error(request, 'The system administrator account cannot be deleted.')
         return redirect('panel:user_list')
     email = user.email
+    user_id = user.pk
     try:
         user.delete()
     except PermissionDenied:
         messages.error(request, 'The system administrator account cannot be deleted.')
         return redirect('panel:user_list')
+    log_action(
+        USER_DELETED,
+        f'Deleted user {email}.',
+        request=request,
+        target_type='user',
+        target_id=user_id,
+        target_label=email,
+    )
     messages.success(request, f'User {email} deleted.')
     return redirect('panel:user_list')
 
 
-@staff_required
+@panel_required
 def booking_list_view(request):
     query = request.GET.get('q', '')
     status = request.GET.get('status', '')
@@ -130,10 +168,11 @@ def booking_list_view(request):
         'status_filter': status,
         'date_filter': date_filter,
         'status_choices': BookingStatus.choices,
+        'can_manage_site': request.user.can_manage_site,
     })
 
 
-@staff_required
+@admin_required
 def booking_edit_view(request, pk):
     booking = get_object_or_404(Booking, pk=pk)
     old_status = booking.status
@@ -141,8 +180,33 @@ def booking_edit_view(request, pk):
         form = AdminBookingForm(request.POST, instance=booking)
         if form.is_valid():
             booking = form.save()
+            booking.access_instructions = request.POST.get('access_instructions', '')
+            booking.staff_notes = request.POST.get('staff_notes', '')
+            booking.checklist = checklist_from_post(request.POST)
+            booking.save(update_fields=[
+                'access_instructions', 'staff_notes', 'checklist', 'updated_at',
+            ])
+            for photo_type, field_name in (
+                (BookingPhoto.PhotoType.BEFORE, 'photo_before'),
+                (BookingPhoto.PhotoType.AFTER, 'photo_after'),
+            ):
+                if field_name in request.FILES:
+                    BookingPhoto.objects.create(
+                        booking=booking,
+                        image=request.FILES[field_name],
+                        photo_type=photo_type,
+                    )
             if booking.status != old_status:
                 send_booking_status_email(booking)
+            log_action(
+                BOOKING_UPDATED,
+                f'Updated booking #{booking.pk} (status: {booking.get_status_display()}).',
+                request=request,
+                target_type='booking',
+                target_id=booking.pk,
+                target_label=f'Booking #{booking.pk} — {booking.contact_full_name}',
+                metadata={'old_status': old_status, 'new_status': booking.status},
+            )
             messages.success(request, 'Booking updated successfully.')
             return redirect('panel:booking_list')
     else:
@@ -161,21 +225,31 @@ def booking_edit_view(request, pk):
         'oven_services': services.filter(service_type=ServiceType.OVEN),
         'addon_services': services.filter(service_type=ServiceType.ADDON),
         'selected_service_ids': selected_service_ids,
+        'checklist_items': merge_checklist(booking.checklist),
+        'photos': booking.photos.all(),
     })
 
 
-@staff_required
+@admin_required
 @require_POST
 def booking_cancel_view(request, pk):
     booking = get_object_or_404(Booking, pk=pk)
     if cancel_booking(booking):
+        log_action(
+            BOOKING_CANCELLED,
+            f'Admin cancelled booking #{booking.pk} ({booking.contact_full_name}).',
+            request=request,
+            target_type='booking',
+            target_id=booking.pk,
+            target_label=f'Booking #{booking.pk}',
+        )
         messages.success(request, f'Booking #{booking.pk} cancelled.')
     else:
         messages.info(request, f'Booking #{booking.pk} is already cancelled.')
     return redirect('panel:booking_list')
 
 
-@staff_required
+@admin_required
 def availability_view(request):
     weekly_schedule = WeeklySchedule.objects.all()
     time_slots = TimeSlot.objects.all()
@@ -186,6 +260,7 @@ def availability_view(request):
             for schedule in weekly_schedule:
                 schedule.is_available = request.POST.get(f'day_{schedule.day_of_week}') == 'on'
                 schedule.save()
+            log_action(AVAILABILITY_UPDATED, 'Updated weekly schedule.', request=request, target_type='availability')
             messages.success(request, 'Weekly schedule updated.')
         elif action == 'add_slot':
             time_str = request.POST.get('time')
@@ -193,15 +268,18 @@ def availability_view(request):
                 from datetime import datetime
                 time_obj = datetime.strptime(time_str, '%H:%M').time()
                 TimeSlot.objects.get_or_create(time=time_obj)
+                log_action(AVAILABILITY_UPDATED, f'Added time slot {time_str}.', request=request, target_type='availability')
                 messages.success(request, f'Time slot {time_str} added.')
         elif action == 'toggle_slot':
             slot = get_object_or_404(TimeSlot, pk=request.POST.get('slot_id'))
             slot.active = not slot.active
             slot.save()
+            log_action(AVAILABILITY_UPDATED, f'Toggled time slot {slot}.', request=request, target_type='availability')
             messages.success(request, f'Time slot {slot} updated.')
         elif action == 'delete_slot':
             slot = get_object_or_404(TimeSlot, pk=request.POST.get('slot_id'))
             slot.delete()
+            log_action(AVAILABILITY_UPDATED, 'Deleted a time slot.', request=request, target_type='availability')
             messages.success(request, 'Time slot deleted.')
         elif action == 'block_date':
             date_str = request.POST.get('date')
@@ -210,10 +288,12 @@ def availability_view(request):
                 from datetime import datetime
                 date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
                 BlockedDate.objects.get_or_create(date=date_obj, defaults={'reason': reason})
+                log_action(AVAILABILITY_UPDATED, f'Blocked date {date_str}.', request=request, target_type='availability')
                 messages.success(request, f'Date {date_str} blocked.')
         elif action == 'unblock_date':
             blocked = get_object_or_404(BlockedDate, pk=request.POST.get('blocked_id'))
             blocked.delete()
+            log_action(AVAILABILITY_UPDATED, 'Unblocked a date.', request=request, target_type='availability')
             messages.success(request, 'Date unblocked.')
         return redirect('panel:availability')
     return render(request, 'panel/availability.html', {
@@ -223,67 +303,111 @@ def availability_view(request):
     })
 
 
-@staff_required
+@admin_required
 def enquiry_list_view(request):
     messages_qs = ContactMessage.objects.all()
     return render(request, 'panel/enquiries/list.html', {'enquiries': messages_qs})
 
 
-@staff_required
+@admin_required
 def enquiry_detail_view(request, pk):
     enquiry = get_object_or_404(ContactMessage, pk=pk)
     if not enquiry.is_read:
         enquiry.is_read = True
         enquiry.save(update_fields=['is_read'])
+        log_action(
+            ENQUIRY_READ,
+            f'Opened enquiry from {enquiry.name}.',
+            request=request,
+            target_type='enquiry',
+            target_id=enquiry.pk,
+            target_label=enquiry.email,
+        )
     return render(request, 'panel/enquiries/detail.html', {'enquiry': enquiry})
 
 
-@staff_required
+@admin_required
 @require_POST
 def enquiry_mark_read_view(request, pk):
     enquiry = get_object_or_404(ContactMessage, pk=pk)
     enquiry.is_read = True
     enquiry.save()
+    log_action(ENQUIRY_READ, f'Marked enquiry #{enquiry.pk} as read.', request=request, target_type='enquiry', target_id=enquiry.pk)
     messages.success(request, 'Enquiry marked as read.')
     return redirect('panel:enquiry_detail', pk=pk)
 
 
-@staff_required
+@admin_required
 @require_POST
 def enquiry_delete_view(request, pk):
     enquiry = get_object_or_404(ContactMessage, pk=pk)
+    enquiry_id = enquiry.pk
+    enquiry_email = enquiry.email
     enquiry.delete()
+    log_action(
+        ENQUIRY_DELETED,
+        f'Deleted enquiry from {enquiry_email}.',
+        request=request,
+        target_type='enquiry',
+        target_id=enquiry_id,
+        target_label=enquiry_email,
+    )
     messages.success(request, 'Enquiry deleted.')
     return redirect('panel:enquiry_list')
 
 
-@staff_required
+@admin_required
 def service_list_view(request):
     services = Service.objects.all()
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'add':
+            name = request.POST.get('name', '')
             service_type = request.POST.get('service_type', ServiceType.OVEN)
             exclusive_group = 'hob' if name.lower().startswith(('4 hob', '5 hob', '6-8 hob', '6–8 hob')) else ''
-            Service.objects.create(
-                name=request.POST.get('name'),
+            service = Service.objects.create(
+                name=name,
                 description=request.POST.get('description'),
                 price=request.POST.get('price'),
                 sort_order=request.POST.get('sort_order', 0),
                 service_type=service_type,
                 exclusive_group=exclusive_group,
             )
+            log_action(
+                SERVICE_CREATED,
+                f'Created service {service.name}.',
+                request=request,
+                target_type='service',
+                target_id=service.pk,
+                target_label=service.name,
+            )
             messages.success(request, 'Service added.')
         elif action == 'toggle':
             service = get_object_or_404(Service, pk=request.POST.get('service_id'))
             service.active = not service.active
             service.save()
+            log_action(
+                SERVICE_UPDATED,
+                f'{"Activated" if service.active else "Deactivated"} service {service.name}.',
+                request=request,
+                target_type='service',
+                target_id=service.pk,
+                target_label=service.name,
+            )
             messages.success(request, f'Service {service.name} updated.')
         elif action == 'update_price':
             service = get_object_or_404(Service, pk=request.POST.get('service_id'))
             try:
                 service.price = request.POST.get('price')
                 service.save()
+                log_action(
+                    SERVICE_UPDATED,
+                    f'Updated price for {service.name} to £{service.price}.',
+                    request=request,
+                    target_type='service',
+                    target_id=service.pk,
+                    target_label=service.name,
+                )
                 messages.success(request, f'Price updated for {service.name}.')
             except (ValueError, TypeError):
                 messages.error(request, 'Please enter a valid price.')
@@ -291,7 +415,7 @@ def service_list_view(request):
     return render(request, 'panel/services/list.html', {'services': services})
 
 
-@staff_required
+@admin_required
 def service_edit_view(request, pk):
     service = get_object_or_404(Service, pk=pk)
     if request.method == 'POST':
@@ -306,6 +430,14 @@ def service_edit_view(request, pk):
             service.price = request.POST.get('price')
             service.duration_minutes = int(request.POST.get('duration_minutes', service.duration_minutes))
             service.save()
+            log_action(
+                SERVICE_UPDATED,
+                f'Updated service {service.name}.',
+                request=request,
+                target_type='service',
+                target_id=service.pk,
+                target_label=service.name,
+            )
             messages.success(request, f'Service {service.name} updated.')
             return redirect('panel:service_list')
         except (ValueError, TypeError):
@@ -313,7 +445,7 @@ def service_edit_view(request, pk):
     return render(request, 'panel/services/edit.html', {'edit_service': service})
 
 
-@staff_required
+@admin_required
 @require_POST
 def service_delete_view(request, pk):
     service = get_object_or_404(Service, pk=pk)
@@ -329,6 +461,13 @@ def service_delete_view(request, pk):
         return redirect('panel:service_list')
     name = service.name
     service.delete()
+    log_action(
+        SERVICE_DELETED,
+        f'Deleted service {name}.',
+        request=request,
+        target_type='service',
+        target_label=name,
+    )
     messages.success(request, f'Service {name} deleted.')
     return redirect('panel:service_list')
 

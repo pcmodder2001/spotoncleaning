@@ -11,7 +11,7 @@ _env_file = BASE_DIR / '.env'
 if _env_file.exists():
     from dotenv import load_dotenv
 
-    load_dotenv(_env_file)
+    load_dotenv(_env_file, override=True)
 
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
@@ -53,10 +53,12 @@ INSTALLED_APPS = [
     'bookings',
     'website',
     'panel',
+    'audit',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'config.middleware.SiteMatrixStatusMiddleware',
     'config.middleware.CanonicalHostMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -176,6 +178,25 @@ SITE_URL = os.environ.get('SITE_URL', 'https://www.spotonappliancecleaning.co.uk
 # Bare domain (spotonappliancecleaning.co.uk) may not reach the app via Cloudflare — use www in SITE_URL.
 CANONICAL_HOST = os.environ.get('CANONICAL_HOST', 'www.spotonappliancecleaning.co.uk').strip()
 
+# SiteMatrix — remote site on/off + subscription status (fail open if unreachable)
+SITEMATRIX_API_KEY = os.environ.get('SITEMATRIX_API_KEY', '')
+SITEMATRIX_STATUS_URL = os.environ.get('SITEMATRIX_STATUS_URL', '').strip()
+if SITEMATRIX_STATUS_URL and not SITEMATRIX_STATUS_URL.endswith('/'):
+    SITEMATRIX_STATUS_URL = f'{SITEMATRIX_STATUS_URL}/'
+SITEMATRIX_CACHE_SECONDS = int(os.environ.get('SITEMATRIX_CACHE_SECONDS', '300'))
+SITEMATRIX_TIMEOUT_SECONDS = int(os.environ.get('SITEMATRIX_TIMEOUT_SECONDS', '3'))
+_sitematrix_enabled = os.environ.get(
+    'SITEMATRIX_ENABLED',
+    'true' if SITEMATRIX_API_KEY and SITEMATRIX_STATUS_URL else 'false',
+).lower() in ('true', '1', 'yes')
+SITEMATRIX_ENABLED = _sitematrix_enabled and bool(SITEMATRIX_API_KEY and SITEMATRIX_STATUS_URL)
+SITEMATRIX_DEBUG = os.environ.get(
+    'SITEMATRIX_DEBUG',
+    'true' if DEBUG else 'false',
+).lower() in ('true', '1', 'yes')
+SITEMATRIX_PORTAL_URL = os.environ.get('SITEMATRIX_PORTAL_URL', '').strip()
+SITEMATRIX_SUPPORT_URL = os.environ.get('SITEMATRIX_SUPPORT_URL', '').strip()
+
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     USE_X_FORWARDED_HOST = True
@@ -241,6 +262,11 @@ LOGGING = {
         'django.security.DisallowedHost': {
             'handlers': ['console'],
             'level': 'ERROR',
+            'propagate': False,
+        },
+        'config.sitematrix': {
+            'handlers': ['console'],
+            'level': 'INFO' if SITEMATRIX_DEBUG else 'WARNING',
             'propagate': False,
         },
     },

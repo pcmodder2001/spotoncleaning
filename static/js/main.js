@@ -2,7 +2,32 @@ document.addEventListener('DOMContentLoaded', function () {
     initTestimonialSlider();
     initSmoothScroll();
     initHeroComparison();
+    initNavbarScroll();
 });
+
+function initNavbarScroll() {
+    const navbar = document.querySelector('.site-navbar--centered');
+    if (!navbar) return;
+
+    const scrollThreshold = 48;
+    let ticking = false;
+
+    function updateNavbar() {
+        const scrolled = window.scrollY > scrollThreshold;
+        navbar.classList.toggle('site-navbar--scrolled', scrolled);
+        document.body.classList.toggle('site-navbar-scrolled', scrolled);
+        ticking = false;
+    }
+
+    window.addEventListener('scroll', function () {
+        if (!ticking) {
+            window.requestAnimationFrame(updateNavbar);
+            ticking = true;
+        }
+    }, { passive: true });
+
+    updateNavbar();
+}
 
 function initSmoothScroll() {
     document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {

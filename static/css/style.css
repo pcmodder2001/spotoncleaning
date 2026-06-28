@@ -31,7 +31,8 @@
     --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.12);
     --nav-height: 64px;
     --topbar-height: 40px;
-    --nav-offset: 7.5rem;
+    --nav-offset: 8.5rem;
+    --nav-offset-lg: 13.5rem;
     --nav-offset-home: calc(var(--nav-offset) + var(--topbar-height));
     --transition: 0.2s ease;
 }
@@ -150,13 +151,109 @@ a {
 .site-navbar {
     height: auto;
     min-height: var(--nav-height);
-    padding: 1rem 0;
+    padding: 0.75rem 0 1rem;
     background: transparent !important;
     border: none;
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     pointer-events: none;
+}
+
+.site-navbar-shell {
+    width: 100%;
+    pointer-events: auto;
+}
+
+.site-navbar-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    min-height: 4.5rem;
+    transition:
+        min-height 0.3s ease,
+        margin 0.3s ease,
+        opacity 0.25s ease;
+}
+
+.site-navbar-brand-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    transition:
+        opacity 0.25s ease,
+        max-height 0.35s ease,
+        transform 0.3s ease;
+    max-height: 160px;
+    overflow: hidden;
+}
+
+.site-navbar-brand-center .navbar-brand {
+    margin: 0;
+    padding: 0;
+}
+
+.site-navbar-toggler-spacer {
+    width: 2.75rem;
+    flex-shrink: 0;
+}
+
+.site-navbar--centered .site-navbar-toggler {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+
+/* Compact header after scroll — logo hidden, solid bar for nav links */
+.site-navbar--centered.site-navbar--scrolled {
+    padding: 0.45rem 0 0.65rem;
+    background: rgba(255, 255, 255, 0.94) !important;
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.site-navbar--centered.site-navbar--scrolled .site-navbar-brand-center {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-12px);
+    pointer-events: none;
+    flex: 0;
+}
+
+.site-navbar--centered.site-navbar--scrolled .site-navbar-brand-row {
+    min-height: 0;
+    margin: 0;
+}
+
+@media (min-width: 992px) {
+    .site-navbar--centered.site-navbar--scrolled .site-navbar-brand-row {
+        display: none;
+    }
+
+    .site-navbar--centered.site-navbar--scrolled {
+        padding: 0.55rem 0 0.75rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .site-navbar--centered.site-navbar--scrolled .site-navbar-brand-row {
+        min-height: 2.5rem;
+    }
+
+    .site-navbar--centered.site-navbar--scrolled .site-navbar-toggler-spacer {
+        display: none;
+    }
+
+    .site-navbar--centered.site-navbar--scrolled .site-nav-float {
+        margin-top: 0.35rem;
+    }
 }
 
 .site-navbar .container,
@@ -169,12 +266,13 @@ a {
 
 .site-navbar .navbar-brand {
     padding: 0;
-    margin-right: 0.75rem;
+    margin-right: 0;
 }
 
 .site-nav-float {
     display: flex;
     align-items: center;
+    justify-content: center;
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -182,12 +280,13 @@ a {
     border-radius: 0;
     padding: 0;
     box-shadow: none;
+    width: 100%;
 }
 
 .site-navbar .navbar-nav {
     gap: 0.5rem;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: center;
 }
 
 .site-navbar .nav-link {
@@ -282,7 +381,11 @@ a {
 
 @media (max-width: 991.98px) {
     .site-navbar {
-        padding: 0.75rem 0;
+        padding: 0.65rem 0 0.75rem;
+    }
+
+    .site-navbar-brand-row {
+        min-height: 4rem;
     }
 
     .site-nav-float {
@@ -298,6 +401,23 @@ a {
     .site-navbar .nav-link {
         text-align: center;
         width: 100%;
+    }
+}
+
+@media (min-width: 992px) {
+    .site-navbar--centered {
+        padding-bottom: 1.15rem;
+    }
+
+    .site-navbar--centered .site-navbar-brand-row {
+        min-height: 5.5rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .site-navbar--centered .navbar-collapse {
+        display: block !important;
+        height: auto !important;
+        visibility: visible !important;
     }
 }
 
@@ -325,34 +445,40 @@ a {
     object-fit: contain;
 }
 
-/* Header logo — larger than footer/panel variants */
+/* Header logo — centered, prominent */
 .site-navbar .navbar-brand.site-brand--nav {
     flex-shrink: 0;
-    margin-right: 1rem;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+}
+
+.site-navbar .site-brand--nav {
+    justify-content: center;
 }
 
 .site-navbar .site-brand-logo--nav {
-    height: 76px;
+    height: 88px;
     width: auto;
-    max-width: min(42vw, 220px);
-    min-height: 76px;
+    max-width: min(72vw, 280px);
+    min-height: 88px;
     display: block;
     object-fit: contain;
 }
 
 @media (min-width: 768px) {
     .site-navbar .site-brand-logo--nav {
-        height: 88px;
-        max-width: 260px;
-        min-height: 88px;
+        height: 112px;
+        max-width: 320px;
+        min-height: 112px;
     }
 }
 
 @media (min-width: 992px) {
     .site-navbar .site-brand-logo--nav {
-        height: 100px;
-        max-width: 280px;
-        min-height: 100px;
+        height: 132px;
+        max-width: 380px;
+        min-height: 132px;
     }
 }
 
@@ -2276,6 +2402,17 @@ body:not(.site-home) .site-navbar {
 
     body.site-home .hero-section {
         padding-top: calc(var(--nav-offset-home) + 0.5rem);
+    }
+}
+
+@media (min-width: 992px) {
+    :root {
+        --nav-offset: var(--nav-offset-lg);
+        --nav-offset-home: calc(var(--nav-offset-lg) + var(--topbar-height));
+    }
+
+    body.site-home .hero-section {
+        padding-top: calc(var(--nav-offset-home) + 0.75rem);
     }
 }
 

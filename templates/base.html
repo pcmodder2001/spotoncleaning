@@ -20,15 +20,21 @@
 <body class="{% block body_class %}{% endblock %}">
     {% block site_topbar %}{% endblock %}
 
-    <nav class="navbar navbar-expand-lg fixed-top site-navbar site-navbar--blend">
+    <nav class="navbar navbar-expand-lg fixed-top site-navbar site-navbar--blend site-navbar--centered">
         <div class="container">
-            {% include 'includes/site_brand.html' with brand_class='navbar-brand site-brand--nav' logo_variant='nav' %}
-            <button class="navbar-toggler site-navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="site-nav-float ms-lg-auto">
-                    <ul class="navbar-nav align-items-lg-center">
+            <div class="site-navbar-shell">
+                <div class="site-navbar-brand-row">
+                    <button class="navbar-toggler site-navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="site-navbar-brand-center">
+                        {% include 'includes/site_brand.html' with brand_class='navbar-brand site-brand--nav' logo_variant='nav' %}
+                    </div>
+                    <div class="site-navbar-toggler-spacer d-lg-none" aria-hidden="true"></div>
+                </div>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <div class="site-nav-float">
+                        <ul class="navbar-nav align-items-lg-center">
                         <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#about">About</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#services">Prices</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#services">Services</a></li>
@@ -54,7 +60,8 @@
                                 <a class="nav-link nav-link-action nav-link-action--primary" href="{% url 'bookings:create' %}">Book now</a>
                             </li>
                         {% endif %}
-                    </ul>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>

@@ -7,6 +7,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from bookings.models import Booking, BookingPhoto, BookingStatus
 from bookings.notifications import send_booking_status_email
+from bookings.photo_access import booking_photo_url
 from audit.actions import (
     BOOKING_JOB_COMPLETED,
     BOOKING_JOB_STARTED,
@@ -20,7 +21,7 @@ from services.models import Service, ServiceType
 def _photo_url(request, photo):
     if not photo:
         return None
-    return request.build_absolute_uri(photo.image.url)
+    return booking_photo_url(request, photo.booking, photo)
 
 
 def _booking_pricing(booking):

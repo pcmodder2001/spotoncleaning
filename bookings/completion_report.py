@@ -11,6 +11,7 @@ from django.urls import reverse
 from urllib.parse import urlencode
 
 from bookings.models import Booking, BookingPhoto, BookingStatus
+from bookings.photo_access import booking_photo_url
 
 completion_report_signer = TimestampSigner(salt='spoton-completion-report')
 COMPLETION_REPORT_MAX_AGE = 60 * 60 * 24 * 365  # 1 year
@@ -61,7 +62,7 @@ def _media_absolute_url(request, file_field):
     return f'{site_url}/{media_url}{file_field.name}'
 
 
-def _photo_row(booking, service, *, request=None, for_email=False):
+def _photo_row(booking, service, *, request=None, for_email=False, access_token=''):
     before = booking.photos.filter(
         service=service,
         photo_type=BookingPhoto.PhotoType.BEFORE,
@@ -74,19 +75,25 @@ def _photo_row(booking, service, *, request=None, for_email=False):
     before_cid = f'job-before-{booking.pk}-{service.pk}'
     after_cid = f'job-after-{booking.pk}-{service.pk}'
 
-    row = {
+    if for_email:
+        before_url = f'cid:{before_cid}' if before and before.image else ''
+        after_url = f'cid:{after_cid}' if after and after.image else ''
+    elif request:
+        before_url = booking_photo_url(request, booking, before, access_token=access_token)
+        after_url = booking_photo_url(request, booking, after, access_token=access_token)
+    else:
+        before_url = _media_absolute_url(request, before.image if before else None)
+        after_url = _media_absolute_url(request, after.image if after else None)
+
+    return {
         'name': service.name,
-        'before_url': _media_absolute_url(request, before.image if before else None),
-        'after_url': _media_absolute_url(request, after.image if after else None),
+        'before_url': before_url,
+        'after_url': after_url,
         'before_cid': before_cid,
         'after_cid': after_cid,
         'before_path': before.image.path if before and before.image else None,
         'after_path': after.image.path if after and after.image else None,
     }
-    if for_email:
-        row['before_url'] = f'cid:{before_cid}' if row['before_path'] else ''
-        row['after_url'] = f'cid:{after_cid}' if row['after_path'] else ''
-    return row
 
 
 def get_completion_report_url(booking, *, request=None) -> str:
@@ -98,9 +105,15 @@ def get_completion_report_url(booking, *, request=None) -> str:
     return f'{settings.SITE_URL.rstrip("/")}{path}?{query}'
 
 
-def get_completion_report_context(booking, *, request=None, for_email=False):
+def get_completion_report_context(booking, *, request=None, for_email=False, access_token=''):
     service_photos = [
-        _photo_row(booking, service, request=request, for_email=for_email)
+        _photo_row(
+            booking,
+            service,
+            request=request,
+            for_email=for_email,
+            access_token=access_token,
+        )
         for service in booking.get_services()
     ]
     signature_url = ''

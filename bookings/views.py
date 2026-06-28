@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
+import mimetypes
 
 from bookings.address_lookup import get_address_lookup_api_key
 from bookings.completion_report import (
@@ -11,7 +12,8 @@ from bookings.completion_report import (
     get_completion_report_context,
 )
 from bookings.forms import BookingForm, GuestBookingForm
-from bookings.models import Booking, BookingStatus
+from bookings.models import Booking, BookingPhoto, BookingStatus
+from bookings.photo_access import can_view_booking_photo
 from bookings.notifications import send_booking_created_email
 from bookings.utils import cancel_booking, get_available_dates_in_month, get_available_slots_for_date
 from audit.actions import BOOKING_CANCELLED, BOOKING_CREATED
@@ -122,8 +124,28 @@ def completion_report_view(request, pk):
     if not authorized:
         raise Http404('Completion report not found.')
 
-    context = get_completion_report_context(booking, request=request)
+    context = get_completion_report_context(booking, request=request, access_token=token)
     return render(request, 'bookings/completion_report.html', context)
+
+
+@require_GET
+def booking_photo_view(request, pk, photo_pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    photo = get_object_or_404(BookingPhoto, pk=photo_pk, booking=booking)
+    token = request.GET.get('token', '').strip()
+
+    if not can_view_booking_photo(request, booking, access_token=token):
+        raise Http404('Photo not found.')
+    if not photo.image:
+        raise Http404('Photo not found.')
+
+    content_type, _ = mimetypes.guess_type(photo.image.name)
+    response = FileResponse(
+        photo.image.open('rb'),
+        content_type=content_type or 'image/jpeg',
+    )
+    response['Cache-Control'] = 'private, max-age=3600'
+    return response
 
 
 @login_required

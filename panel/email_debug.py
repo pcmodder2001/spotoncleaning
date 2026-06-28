@@ -50,7 +50,8 @@ class SampleBooking:
         self.address_line_2 = ''
         self.city = 'Wakefield'
         self.postcode = 'WF1 1AA'
-        self.notes = 'Sample booking used for email testing.'
+        self.notes = 'Gate code 1234 — park on the drive please.'
+        self.estimated_duration_minutes = 90
         self.status = status
         self._services = _SampleServices(services)
         self.service = services[0] if services else None
@@ -102,6 +103,27 @@ class SampleBooking:
     @property
     def full_address(self):
         return f'{self.address_line_1}, {self.city}, {self.postcode}'
+
+    @property
+    def customer_access_notes(self):
+        return self.notes
+
+    def appointment_time_window(self):
+        from datetime import datetime, timedelta
+
+        duration = self.estimated_duration_minutes or 60
+        start_dt = datetime.combine(self.date, self.time_slot.time)
+        end_dt = start_dt + timedelta(minutes=duration)
+        return {
+            'start': self.time_slot.time,
+            'end': end_dt.time(),
+            'duration_minutes': duration,
+        }
+
+    @property
+    def appointment_time_window_display(self):
+        window = self.appointment_time_window()
+        return f"{window['start'].strftime('%H:%M')} – {window['end'].strftime('%H:%M')}"
 
     def get_status_display(self):
         return dict(BookingStatus.choices).get(self.status, self.status)
@@ -176,6 +198,12 @@ EMAIL_TEST_TYPES = [
         'template': 'emails/booking_confirmed.html',
     },
     {
+        'id': 'booking_reminder',
+        'name': 'Day-before reminder',
+        'description': 'Sent the day before an appointment (date, time window, address, services, access notes).',
+        'template': 'emails/booking_reminder.html',
+    },
+    {
         'id': 'booking_completed',
         'name': 'Booking completed',
         'description': 'Simple notice when a job is marked completed (legacy — without full workflow).',
@@ -248,6 +276,19 @@ def send_test_email(email_type_id):
             results.append((recipient, ok))
         return email_type, results
 
+    if email_type_id == 'booking_reminder':
+        from bookings.reminders import get_booking_reminder_context
+
+        booking = get_sample_booking(status=BookingStatus.CONFIRMED)
+        context = get_booking_reminder_context(booking)
+        results = send_test_emails(
+            f'Reminder: your appointment is tomorrow — {settings.SITE_NAME}',
+            email_type['template'],
+            context,
+            recipients,
+        )
+        return email_type, results
+
     if email_type_id == 'password_reset':
         user = get_sample_user()
         context = {
@@ -282,6 +323,9 @@ def send_test_email(email_type_id):
         'booking_completed': BookingStatus.COMPLETED,
         'booking_cancelled': BookingStatus.CANCELLED,
     }
+    if email_type_id not in status_map:
+        return email_type, []
+
     subject_map = {
         'booking_created': f'Booking Confirmation - {settings.SITE_NAME}',
         'booking_confirmed': f'Your booking has been confirmed - {settings.SITE_NAME}',

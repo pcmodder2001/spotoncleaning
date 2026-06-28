@@ -241,6 +241,15 @@ BUSINESS_BASE_POSTCODE = os.environ.get('BUSINESS_BASE_POSTCODE', '')
 IDEAL_POSTCODES_API_KEY = os.environ.get('IDEAL_POSTCODES_API_KEY', '')
 ADDRESS_LOOKUP_ENABLED = os.environ.get('ADDRESS_LOOKUP_ENABLED', 'True').lower() in ('true', '1', 'yes')
 
+# Day-before booking reminders (run via send_booking_reminders management command)
+BOOKING_REMINDERS_ENABLED = os.environ.get('BOOKING_REMINDERS_ENABLED', 'True').lower() in ('true', '1', 'yes')
+
+# SMS via Twilio (optional — reminders still send email if SMS is not configured)
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '').strip()
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '').strip()
+TWILIO_FROM_NUMBER = os.environ.get('TWILIO_FROM_NUMBER', '').strip()
+SMS_ENABLED = bool(TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_FROM_NUMBER)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

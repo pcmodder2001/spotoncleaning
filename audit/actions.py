@@ -16,6 +16,7 @@ BOOKING_UPDATED = 'booking.updated'
 BOOKING_SERVICES_UPDATED = 'booking.services_updated'
 BOOKING_JOB_STARTED = 'booking.job_started'
 BOOKING_JOB_COMPLETED = 'booking.job_completed'
+BOOKING_REMINDER_SENT = 'booking.reminder_sent'
 BOOKING_BULK_CONFIRM = 'booking.bulk_confirm'
 BOOKING_BULK_CANCEL = 'booking.bulk_cancel'
 BOOKING_BULK_EXPORT = 'booking.bulk_export'
@@ -51,6 +52,7 @@ ACTION_LABELS = {
     BOOKING_SERVICES_UPDATED: 'Updated booking services',
     BOOKING_JOB_STARTED: 'Started job',
     BOOKING_JOB_COMPLETED: 'Completed job',
+    BOOKING_REMINDER_SENT: 'Sent booking reminder',
     BOOKING_BULK_CONFIRM: 'Bulk confirmed bookings',
     BOOKING_BULK_CANCEL: 'Bulk cancelled bookings',
     BOOKING_BULK_EXPORT: 'Exported bookings',
@@ -90,6 +92,7 @@ ACTION_CATEGORIES = {
     BOOKING_SERVICES_UPDATED: 'booking',
     BOOKING_JOB_STARTED: 'booking',
     BOOKING_JOB_COMPLETED: 'booking',
+    BOOKING_REMINDER_SENT: 'booking',
     BOOKING_BULK_CONFIRM: 'booking',
     BOOKING_BULK_CANCEL: 'booking',
     BOOKING_BULK_EXPORT: 'booking',

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -129,6 +129,11 @@ class Booking(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     estimated_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
+    reminder_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the day-before reminder email/SMS was sent.',
+    )
     status = models.CharField(
         max_length=20,
         choices=BookingStatus.choices,
@@ -187,6 +192,31 @@ class Booking(models.Model):
             parts.append(self.address_line_2)
         parts.extend([self.city, self.postcode])
         return ', '.join(parts)
+
+    def appointment_time_window(self):
+        """Start time, estimated end time, and on-site duration in minutes."""
+        from bookings.scheduling import get_booking_duration_minutes
+
+        duration = get_booking_duration_minutes(self)
+        start_dt = datetime.combine(self.date, self.time_slot.time)
+        end_dt = start_dt + timedelta(minutes=duration)
+        return {
+            'start': self.time_slot.time,
+            'end': end_dt.time(),
+            'duration_minutes': duration,
+        }
+
+    @property
+    def appointment_time_window_display(self):
+        window = self.appointment_time_window()
+        start = window['start'].strftime('%H:%M')
+        end = window['end'].strftime('%H:%M')
+        return f'{start} – {end}'
+
+    @property
+    def customer_access_notes(self):
+        """Notes the customer should see before the visit."""
+        return (self.notes or '').strip()
 
     def get_services(self):
         selected = self.services.all()

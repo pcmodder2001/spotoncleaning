@@ -18,6 +18,8 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
+    {% block site_topbar %}{% endblock %}
+
     <nav class="navbar navbar-expand-lg fixed-top site-navbar site-navbar--blend">
         <div class="container">
             {% include 'includes/site_brand.html' with brand_class='navbar-brand site-brand--nav' logo_variant='nav' %}
@@ -27,10 +29,14 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="site-nav-float ms-lg-auto">
                     <ul class="navbar-nav align-items-lg-center">
-                        <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#services">Services</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#about">About</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#services">Prices</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#services">Services</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#reviews">Reviews</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#contact">Contact</a></li>
+                        <li class="nav-item d-md-none">
+                            <a class="nav-link" href="tel:{{ SITE_PHONE }}"><i class="bi bi-telephone me-1"></i>{{ SITE_PHONE }}</a>
+                        </li>
                         {% if user.is_authenticated %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
                             {% if user.can_access_panel %}
@@ -42,7 +48,10 @@
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>
                             <li class="nav-item">
-                                <a class="nav-link nav-link-action nav-link-action--primary" href="{% url 'bookings:create' %}">Book Now</a>
+                                <a class="nav-link nav-link-action nav-link-action--quote" href="{% url 'website:home' %}#contact">Get a quote</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-action nav-link-action--primary" href="{% url 'bookings:create' %}">Book now</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -71,22 +80,36 @@
                 <div class="col-lg-4">
                     {% include 'includes/site_brand.html' with brand_class='site-brand-footer' %}
                     <p class="footer-tagline mb-3">{{ SITE_TAGLINE }}</p>
-                    <p>{{ SITE_ADDRESS }}</p>
-                    <p class="mb-1"><i class="bi bi-telephone me-2"></i><a href="tel:{{ SITE_PHONE }}" class="text-decoration-none">{{ SITE_PHONE }}</a></p>
-                    <p class="mb-0"><i class="bi bi-envelope me-2"></i><a href="mailto:{{ SITE_EMAIL }}" class="text-decoration-none">{{ SITE_EMAIL }}</a></p>
+                    <p class="footer-desc">Professional oven and appliance cleaning across {{ SITE_LOCAL_AREA }}. Book online or request a quote today.</p>
                 </div>
-                <div class="col-6 col-lg-4">
-                    <h6>Quick Links</h6>
+                <div class="col-6 col-lg-2">
+                    <h6>Main menu</h6>
                     <ul class="list-unstyled footer-links">
-                        <li><a href="{% url 'website:home' %}#services" class="text-decoration-none">Our Services</a></li>
-                        <li><a href="{% url 'bookings:create' %}" class="text-decoration-none">Book Online</a></li>
-                        <li><a href="{% url 'website:privacy' %}" class="text-decoration-none">Privacy Policy</a></li>
-                        <li><a href="{% url 'website:terms' %}" class="text-decoration-none">Terms &amp; Conditions</a></li>
+                        <li><a href="{% url 'website:home' %}" class="text-decoration-none">Home</a></li>
+                        <li><a href="{% url 'website:home' %}#about" class="text-decoration-none">About us</a></li>
+                        <li><a href="{% url 'website:home' %}#services" class="text-decoration-none">Prices</a></li>
+                        <li><a href="{% url 'website:home' %}#reviews" class="text-decoration-none">Reviews</a></li>
+                        <li><a href="{% url 'website:home' %}#contact" class="text-decoration-none">Contact</a></li>
                     </ul>
                 </div>
-                <div class="col-6 col-lg-4">
-                    <h6>Follow Us</h6>
-                    <div class="d-flex gap-2">
+                <div class="col-6 col-lg-3">
+                    <h6>Our services</h6>
+                    <ul class="list-unstyled footer-links">
+                        <li><a href="{% url 'website:home' %}#services" class="text-decoration-none">Oven cleaning</a></li>
+                        <li><a href="{% url 'bookings:create' %}" class="text-decoration-none">Book online</a></li>
+                        <li><a href="{% url 'website:home' %}#how-we-clean" class="text-decoration-none">How we clean</a></li>
+                        <li><a href="{% url 'website:privacy' %}" class="text-decoration-none">Privacy policy</a></li>
+                        <li><a href="{% url 'website:terms' %}" class="text-decoration-none">Terms &amp; conditions</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3">
+                    <h6>Contact {{ SITE_NAME }}</h6>
+                    <ul class="list-unstyled footer-contact">
+                        <li><a href="tel:{{ SITE_PHONE }}" class="text-decoration-none"><i class="bi bi-telephone me-2"></i>{{ SITE_PHONE }}</a></li>
+                        <li><a href="mailto:{{ SITE_EMAIL }}" class="text-decoration-none"><i class="bi bi-envelope me-2"></i>{{ SITE_EMAIL }}</a></li>
+                        <li><i class="bi bi-geo-alt me-2"></i>{{ SITE_ADDRESS }}</li>
+                    </ul>
+                    <div class="d-flex gap-2 mt-3">
                         <a href="#" class="social-link" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
                         <a href="#" class="social-link" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
                         <a href="#" class="social-link" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>

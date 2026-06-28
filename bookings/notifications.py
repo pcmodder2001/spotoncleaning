@@ -176,6 +176,17 @@ def send_booking_created_email(booking):
     )
 
 
+def send_booking_reminder_email(booking):
+    from bookings.reminders import get_booking_reminder_context
+
+    return send_notification_email(
+        subject=f'Reminder: your appointment is tomorrow — {settings.SITE_NAME}',
+        template_name='emails/booking_reminder.html',
+        context=get_booking_reminder_context(booking),
+        recipient=booking.contact_email,
+    )
+
+
 def send_booking_status_email(booking):
     if booking.status == BookingStatus.COMPLETED and booking.has_complete_job_workflow():
         return send_booking_completion_report_email(booking)

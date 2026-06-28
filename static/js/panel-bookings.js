@@ -129,9 +129,9 @@
 
         <div class="booking-view-section">
           <h6>Customer</h6>
-          <p class="mb-1"><strong>${escapeHtml(data.customer.name)}</strong></p>
-          <p class="mb-1"><a href="mailto:${escapeHtml(data.customer.email)}">${escapeHtml(data.customer.email)}</a></p>
-          ${data.customer.phone ? `<p class="mb-0"><a href="tel:${escapeHtml(data.customer.phone)}">${escapeHtml(data.customer.phone)}</a></p>` : ''}
+          <p class="mb-2"><strong>${escapeHtml(data.customer.name)}</strong></p>
+          <p class="mb-2 text-muted small">${escapeHtml(data.customer.email)}</p>
+          ${customerContactHtml(data)}
         </div>
 
         <div class="booking-view-section">
@@ -155,10 +155,10 @@
         ${signOffHtml(data)}
 
         <div class="booking-view-actions">
-          ${data.can_start ? `<button type="button" class="btn btn-primary" id="bookingStartBtn">Start job</button>` : ''}
-          ${data.can_complete ? `<button type="button" class="btn btn-success" id="bookingCompleteBtn">Complete job</button>` : ''}
-          ${data.can_manage_services ? `<button type="button" class="btn btn-outline-secondary" id="bookingManageServicesBtn">Update services</button>` : ''}
-          ${data.can_admin_edit ? `<a href="${escapeHtml(data.edit_url)}" class="btn btn-link btn-sm">Full admin edit</a>` : ''}
+          ${data.can_start ? `<button type="button" class="btn btn-primary booking-action-btn" id="bookingStartBtn"><i class="bi bi-play-fill me-2"></i>Start job</button>` : ''}
+          ${data.can_complete ? `<button type="button" class="btn btn-success booking-action-btn" id="bookingCompleteBtn"><i class="bi bi-check-circle me-2"></i>Complete job</button>` : ''}
+          ${data.can_manage_services ? `<button type="button" class="btn btn-outline-secondary booking-action-btn" id="bookingManageServicesBtn"><i class="bi bi-pencil-square me-2"></i>Update services</button>` : ''}
+          ${data.can_admin_edit ? `<a href="${escapeHtml(data.edit_url)}" class="btn btn-link btn-sm w-100">Full admin edit</a>` : ''}
         </div>
       </div>`;
   }
@@ -172,31 +172,98 @@
     });
   }
 
+  function swalMobileClasses(extra) {
+    return Object.assign({
+      popup: 'panel-booking-popup',
+      htmlContainer: 'panel-booking-html',
+    }, extra || {});
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia('(max-width: 767px)').matches;
+  }
+
   function photoFieldsHtml(services, prefix, labelPrefix) {
     return services.map(function (service) {
       return `
-        <div class="booking-photo-field">
-          <label class="form-label">${labelPrefix} — ${escapeHtml(service.name)}</label>
-          <input type="file" class="form-control" accept="image/*" capture="environment"
+        <label class="booking-photo-upload">
+          <span class="booking-photo-upload-label">${labelPrefix} — ${escapeHtml(service.name)}</span>
+          <span class="booking-photo-upload-btn">
+            <i class="bi bi-camera-fill" aria-hidden="true"></i>
+            <span>Take or choose photo</span>
+          </span>
+          <span class="booking-photo-filename text-muted small">No photo selected</span>
+          <input type="file" class="booking-photo-input" accept="image/*" capture="environment"
                  name="${prefix}_${service.id}" required>
-        </div>`;
+        </label>`;
     }).join('');
   }
 
-  function initSignaturePad(canvas) {
+  function wirePhotoUploadPreviews(root) {
+    root.querySelectorAll('.booking-photo-upload').forEach(function (label) {
+      const input = label.querySelector('.booking-photo-input');
+      const filenameEl = label.querySelector('.booking-photo-filename');
+      if (!input || !filenameEl) return;
+      input.addEventListener('change', function () {
+        if (input.files && input.files.length) {
+          filenameEl.textContent = input.files[0].name;
+          label.classList.add('has-photo');
+        } else {
+          filenameEl.textContent = 'No photo selected';
+          label.classList.remove('has-photo');
+        }
+      });
+    });
+  }
+
+  function setupCanvasSize(canvas, cssWidth, cssHeight) {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(cssWidth * dpr);
+    canvas.height = Math.floor(cssHeight * dpr);
+    canvas.style.width = cssWidth + 'px';
+    canvas.style.height = cssHeight + 'px';
     const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
     ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    return ctx;
+  }
+
+  function loadSignatureOntoCanvas(canvas, dataUrl, logicalWidth, logicalHeight) {
+    if (!dataUrl) return Promise.resolve();
+    return new Promise(function (resolve) {
+      const img = new Image();
+      img.onload = function () {
+        const ctx = canvas.getContext('2d');
+        const w = logicalWidth || canvas.getBoundingClientRect().width;
+        const h = logicalHeight || canvas.getBoundingClientRect().height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve();
+      };
+      img.onerror = resolve;
+      img.src = dataUrl;
+    });
+  }
+
+  function initSignaturePad(canvas, cssWidth, cssHeight) {
+    const width = cssWidth || canvas.clientWidth || 480;
+    const height = cssHeight || canvas.clientHeight || 160;
+    const ctx = setupCanvasSize(canvas, width, height);
     let drawing = false;
     let hasStroke = false;
 
     function point(event) {
       const rect = canvas.getBoundingClientRect();
       const source = event.touches ? event.touches[0] : event;
+      const scaleX = width / rect.width;
+      const scaleY = height / rect.height;
       return {
-        x: source.clientX - rect.left,
-        y: source.clientY - rect.top,
+        x: (source.clientX - rect.left) * scaleX,
+        y: (source.clientY - rect.top) * scaleY,
       };
     }
 
@@ -231,27 +298,127 @@
 
     return {
       isEmpty: function () { return !hasStroke; },
+      markSigned: function () { hasStroke = true; },
       clear: function () {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, width, height);
         hasStroke = false;
       },
       toDataURL: function () { return canvas.toDataURL('image/png'); },
     };
   }
 
+  function updateSignaturePreview(previewImg, dataUrl) {
+    if (!previewImg) return;
+    if (!dataUrl) {
+      previewImg.hidden = true;
+      previewImg.removeAttribute('src');
+      return;
+    }
+    previewImg.src = dataUrl;
+    previewImg.hidden = false;
+  }
+
+  function showInlineSignaturePad(popupRoot, existingSignature, onDone) {
+    if (!popupRoot) return;
+
+    popupRoot.querySelectorAll('.signature-pad-overlay').forEach(function (el) {
+      el.remove();
+    });
+
+    const overlay = document.createElement('div');
+    overlay.className = 'signature-pad-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-label', 'Customer signature');
+    overlay.innerHTML = `
+      <div class="signature-pad-overlay-panel">
+        <h3 class="signature-pad-overlay-title">Customer signature</h3>
+        <p class="text-muted small mb-2">Ask the customer to sign in the box below.</p>
+        <div class="signature-pad-stage">
+          <canvas class="signature-canvas signature-canvas-lg signature-canvas-inline" aria-label="Signature pad"></canvas>
+        </div>
+        <p class="signature-pad-error text-danger small mt-2 mb-0" hidden></p>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-2 signature-clear-inline-btn">Clear signature</button>
+        <div class="signature-pad-overlay-actions">
+          <button type="button" class="btn btn-outline-secondary signature-cancel-inline-btn">Cancel</button>
+          <button type="button" class="btn btn-success signature-save-inline-btn">Save signature</button>
+        </div>
+      </div>`;
+    popupRoot.appendChild(overlay);
+
+    const canvas = overlay.querySelector('.signature-canvas-inline');
+    const stage = canvas.parentElement;
+    const stageWidth = stage.clientWidth || Math.max(popupRoot.clientWidth - 48, 280);
+    const cssHeight = isMobileViewport() ? Math.min(window.innerHeight * 0.4, 280) : 220;
+    const pad = initSignaturePad(canvas, stageWidth, cssHeight);
+    const errorEl = overlay.querySelector('.signature-pad-error');
+
+    function showError(message) {
+      if (!errorEl) return;
+      errorEl.textContent = message;
+      errorEl.hidden = !message;
+    }
+
+    if (existingSignature) {
+      loadSignatureOntoCanvas(canvas, existingSignature, stageWidth, cssHeight).then(function () {
+        pad.markSigned();
+      });
+    }
+
+    overlay.querySelector('.signature-clear-inline-btn').addEventListener('click', function () {
+      pad.clear();
+      showError('');
+    });
+
+    overlay.querySelector('.signature-cancel-inline-btn').addEventListener('click', function () {
+      overlay.remove();
+    });
+
+    overlay.querySelector('.signature-save-inline-btn').addEventListener('click', function () {
+      if (pad.isEmpty()) {
+        showError('Please capture the customer signature.');
+        return;
+      }
+      if (typeof onDone === 'function') {
+        onDone(pad.toDataURL());
+      }
+      overlay.remove();
+    });
+  }
+
+  function customerContactHtml(data) {
+    return `
+      <div class="booking-contact-actions">
+        ${data.customer.phone ? `
+          <a href="tel:${escapeHtml(data.customer.phone)}" class="btn btn-outline-primary booking-action-btn">
+            <i class="bi bi-telephone me-2"></i>Call ${escapeHtml(data.customer.phone)}
+          </a>` : ''}
+        <a href="mailto:${escapeHtml(data.customer.email)}" class="btn btn-outline-secondary booking-action-btn">
+          <i class="bi bi-envelope me-2"></i>Email customer
+        </a>
+        <a href="https://maps.google.com/?q=${encodeURIComponent(data.address.full)}" target="_blank" rel="noopener"
+           class="btn btn-outline-secondary booking-action-btn">
+          <i class="bi bi-geo-alt me-2"></i>Open in Maps
+        </a>
+      </div>`;
+  }
+
   function openStartJobModal(booking) {
     Swal.fire({
       title: 'Start job',
       html: `
-        <p class="text-muted small">Take a <strong>before</strong> photo of each item booked.</p>
-        <form id="bookingStartForm" class="text-start">
+        <p class="booking-modal-intro">Take a <strong>before</strong> photo of each item booked.</p>
+        <form id="bookingStartForm" class="text-start booking-job-form">
           ${photoFieldsHtml(booking.services, 'before', 'Before photo')}
         </form>`,
-      width: 560,
+      width: isMobileViewport() ? '100%' : 560,
       showCancelButton: true,
       confirmButtonText: 'Start job',
       confirmButtonColor: '#0e7490',
       focusConfirm: false,
+      customClass: swalMobileClasses(),
+      didOpen: function () {
+        wirePhotoUploadPreviews(document.getElementById('bookingStartForm'));
+      },
       preConfirm: function () {
         const form = document.getElementById('bookingStartForm');
         const formData = new FormData();
@@ -287,52 +454,81 @@
   }
 
   function openCompleteJobModal(booking) {
+    let signatureDataUrl = '';
+
     Swal.fire({
       title: 'Complete job',
       html: `
-        <p class="text-muted small">Add <strong>after</strong> photos and customer sign-off.</p>
-        <form id="bookingCompleteForm" class="text-start">
+        <p class="booking-modal-intro">Add <strong>after</strong> photos and customer sign-off.</p>
+        <form id="bookingCompleteForm" class="text-start booking-job-form">
           ${photoFieldsHtml(booking.services, 'after', 'After photo')}
           <div class="mt-3">
             <label class="form-label" for="signedByName">Customer name</label>
-            <input type="text" class="form-control" id="signedByName" name="signed_by_name"
-                   value="${escapeHtml(booking.customer.name)}" required>
+            <input type="text" class="form-control form-control-lg" id="signedByName" name="signed_by_name"
+                   value="${escapeHtml(booking.customer.name)}" required autocomplete="name">
           </div>
           <div class="mt-3">
             <label class="form-label">Customer signature</label>
-            <canvas id="signatureCanvas" class="signature-canvas" width="480" height="160"></canvas>
-            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="clearSignatureBtn">Clear signature</button>
+            <button type="button" class="signature-pad-trigger" id="openSignaturePadBtn">
+              <span class="signature-pad-trigger-placeholder" id="signaturePlaceholder">
+                <i class="bi bi-pen"></i>
+                Tap to sign — opens larger signature box
+              </span>
+              <img id="signaturePreviewImg" class="signature-preview-img" alt="Signature preview" hidden>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="clearSignaturePreviewBtn" hidden>Clear signature</button>
           </div>
         </form>`,
-      width: 560,
+      width: isMobileViewport() ? '100%' : 560,
       showCancelButton: true,
       confirmButtonText: 'Complete job',
       confirmButtonColor: '#059669',
       focusConfirm: false,
+      customClass: swalMobileClasses(),
       didOpen: function () {
-        const canvas = document.getElementById('signatureCanvas');
-        const pad = initSignaturePad(canvas);
-        canvas._signaturePad = pad;
-        document.getElementById('clearSignatureBtn').addEventListener('click', function () {
-          pad.clear();
+        wirePhotoUploadPreviews(document.getElementById('bookingCompleteForm'));
+
+        const openBtn = document.getElementById('openSignaturePadBtn');
+        const clearBtn = document.getElementById('clearSignaturePreviewBtn');
+        const placeholder = document.getElementById('signaturePlaceholder');
+        const previewImg = document.getElementById('signaturePreviewImg');
+
+        function refreshSignatureUi() {
+          const hasSig = Boolean(signatureDataUrl);
+          openBtn.classList.toggle('has-signature', hasSig);
+          placeholder.hidden = hasSig;
+          clearBtn.hidden = !hasSig;
+          updateSignaturePreview(previewImg, hasSig ? signatureDataUrl : '');
+        }
+
+        openBtn.addEventListener('click', function () {
+          showInlineSignaturePad(Swal.getPopup(), signatureDataUrl, function (dataUrl) {
+            signatureDataUrl = dataUrl;
+            refreshSignatureUi();
+          });
         });
+
+        clearBtn.addEventListener('click', function () {
+          signatureDataUrl = '';
+          refreshSignatureUi();
+        });
+
+        refreshSignatureUi();
       },
       preConfirm: function () {
         const form = document.getElementById('bookingCompleteForm');
-        const canvas = document.getElementById('signatureCanvas');
-        const pad = canvas._signaturePad;
         const signedByName = form.querySelector('#signedByName').value.trim();
         if (!signedByName) {
           Swal.showValidationMessage('Customer name is required.');
           return false;
         }
-        if (!pad || pad.isEmpty()) {
+        if (!signatureDataUrl) {
           Swal.showValidationMessage('Please capture the customer signature.');
           return false;
         }
         const formData = new FormData();
         formData.append('signed_by_name', signedByName);
-        formData.append('signature', pad.toDataURL());
+        formData.append('signature', signatureDataUrl);
         let missing = false;
         booking.services.forEach(function (service) {
           const input = form.querySelector(`[name="after_${service.id}"]`);
@@ -420,15 +616,15 @@
                 </div>
               </div>
             </div>`,
-          width: 620,
+          width: isMobileViewport() ? '100%' : 620,
           showCancelButton: true,
           confirmButtonText: 'Save services',
           confirmButtonColor: '#0e7490',
           focusConfirm: false,
-          customClass: {
-            popup: 'panel-service-popup',
+          customClass: swalMobileClasses({
+            popup: 'panel-booking-popup panel-service-popup',
             htmlContainer: 'panel-service-html',
-          },
+          }),
           didOpen: function () {
             function preview() {
               const picks = Array.from(document.querySelectorAll('.panel-service-pick.selected')).map(function (btn) {
@@ -523,10 +719,11 @@
       .then(function (data) {
         Swal.fire({
           html: buildViewHtml(data),
-          width: 640,
+          title: 'Booking #' + data.id,
+          width: isMobileViewport() ? '100%' : 640,
           showConfirmButton: false,
           showCloseButton: true,
-          customClass: { popup: 'booking-view-popup' },
+          customClass: swalMobileClasses({ popup: 'panel-booking-popup booking-view-popup' }),
           didOpen: function () {
             wireViewActions(data);
           },

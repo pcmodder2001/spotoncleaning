@@ -2556,6 +2556,294 @@ body.page-panel .site-footer {
     margin: 0 auto;
 }
 
+/* Panel booking modals — mobile-friendly */
+.panel-booking-popup {
+    max-width: 640px;
+}
+
+.panel-booking-popup .swal2-html-container {
+    max-height: min(70vh, 640px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    text-align: left;
+}
+
+.panel-booking-popup .swal2-actions {
+    width: 100%;
+    margin-top: 0;
+    padding: 0.75rem 1rem 1rem;
+    gap: 0.5rem;
+}
+
+.panel-booking-popup .swal2-actions .swal2-styled {
+    flex: 1;
+    min-height: 48px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.booking-modal-intro {
+    margin: 0 0 1rem;
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+}
+
+.booking-job-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.booking-contact-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.booking-action-btn {
+    width: 100%;
+    min-height: 48px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.booking-photo-upload {
+    display: block;
+    padding: 1rem;
+    border: 2px dashed var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface-muted, #f8fafc);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.booking-photo-upload:active,
+.booking-photo-upload.has-photo {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.booking-photo-upload-label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    margin-bottom: 0.5rem;
+}
+
+.booking-photo-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+.booking-photo-upload-btn .bi {
+    font-size: 1.125rem;
+}
+
+.booking-photo-filename {
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.booking-photo-upload {
+    position: relative;
+}
+
+.booking-photo-upload .booking-photo-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.signature-pad-trigger {
+    display: block;
+    width: 100%;
+    min-height: 120px;
+    padding: 0.75rem;
+    border: 2px dashed var(--border);
+    border-radius: 0.75rem;
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.signature-pad-trigger:hover,
+.signature-pad-trigger:focus {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.signature-pad-trigger.has-signature {
+    border-style: solid;
+    min-height: auto;
+}
+
+.signature-pad-trigger-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 100px;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.signature-pad-trigger-placeholder .bi {
+    font-size: 1.75rem;
+    color: var(--primary);
+}
+
+.signature-preview-img {
+    display: block;
+    width: 100%;
+    max-height: 100px;
+    object-fit: contain;
+    margin: 0 auto;
+}
+
+.panel-booking-popup {
+    position: relative;
+    overflow: hidden;
+}
+
+.signature-pad-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.25rem 1.25rem;
+    border-radius: inherit;
+}
+
+.signature-pad-overlay-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.signature-pad-overlay-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+}
+
+.signature-pad-overlay-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 1rem;
+}
+
+.signature-pad-overlay-actions .btn {
+    flex: 1;
+    min-height: 48px;
+    font-weight: 600;
+}
+
+.signature-pad-stage {
+    width: 100%;
+}
+
+.signature-canvas-lg {
+    width: 100% !important;
+    min-height: 200px;
+    border: 2px solid var(--border);
+    border-radius: 0.75rem;
+    background: #fff;
+    touch-action: none;
+}
+
+@media (max-width: 767px) {
+    .panel-booking-popup {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        border-radius: 1rem 1rem 0 0 !important;
+        align-self: flex-end;
+    }
+
+    .swal2-container:has(.panel-booking-popup) {
+        padding: 0 !important;
+        align-items: flex-end;
+    }
+
+    .panel-booking-popup .swal2-html-container {
+        max-height: calc(100vh - 180px);
+        padding: 0 1rem;
+    }
+
+    .panel-booking-popup .swal2-title {
+        font-size: 1.125rem;
+        padding: 1rem 1rem 0.25rem;
+    }
+
+    .panel-booking-popup .swal2-actions {
+        flex-direction: column-reverse;
+        padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .panel-booking-popup .swal2-actions .swal2-styled {
+        width: 100%;
+    }
+
+    .booking-view-modal {
+        padding: 0 0.25rem;
+    }
+
+    .booking-view-actions {
+        flex-direction: column;
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        padding-bottom: 0.5rem;
+        z-index: 1;
+    }
+
+    .signature-pad-popup {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
+    .swal2-container:has(.signature-pad-popup) {
+        padding: 0 !important;
+    }
+
+    .signature-pad-popup .swal2-html-container {
+        max-height: none;
+        flex: 1;
+    }
+
+    .signature-canvas-lg {
+        min-height: min(50vh, 360px);
+    }
+
+    .panel-service-popup.panel-booking-popup {
+        width: 100% !important;
+        max-width: none !important;
+    }
+}
+
 @media (max-width: 480px) {
     .booking-photo-pair {
         grid-template-columns: 1fr;

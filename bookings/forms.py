@@ -99,9 +99,14 @@ class BookingForm(forms.ModelForm):
     def clean_postcode(self):
         postcode = self.cleaned_data['postcode']
         from bookings.routing import is_valid_uk_postcode, normalize_postcode
+        from bookings.service_area import postcode_service_area_error
+
         normalized = normalize_postcode(postcode)
         if not is_valid_uk_postcode(normalized):
             raise forms.ValidationError('Please enter a valid UK postcode.')
+        area_error = postcode_service_area_error(normalized)
+        if area_error:
+            raise forms.ValidationError(area_error)
         return normalized
 
     def clean(self):
@@ -285,6 +290,19 @@ class AdminBookingForm(forms.ModelForm):
         if len(hob_services) > 1:
             raise forms.ValidationError('Only one hob size allowed per booking.')
         return services
+
+    def clean_postcode(self):
+        postcode = self.cleaned_data.get('postcode', '')
+        from bookings.routing import is_valid_uk_postcode, normalize_postcode
+        from bookings.service_area import postcode_service_area_error
+
+        normalized = normalize_postcode(postcode)
+        if not is_valid_uk_postcode(normalized):
+            raise forms.ValidationError('Please enter a valid UK postcode.')
+        area_error = postcode_service_area_error(normalized)
+        if area_error:
+            raise forms.ValidationError(area_error)
+        return normalized
 
     def clean(self):
         cleaned_data = super().clean()

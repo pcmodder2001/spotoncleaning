@@ -31,13 +31,21 @@ def is_valid_uk_postcode(postcode):
 
 def geocode_postcode(postcode):
     """Return (lat, lng) for a UK postcode via postcodes.io."""
+    info = fetch_postcode_info(postcode)
+    if info and info.get('latitude') is not None and info.get('longitude') is not None:
+        return (float(info['latitude']), float(info['longitude']))
+    return None
+
+
+def fetch_postcode_info(postcode):
+    """Return postcode metadata from postcodes.io (cached)."""
     normalized = normalize_postcode(postcode)
     if not normalized:
         return None
 
-    cache_key = f'geocode:{normalized.replace(" ", "")}'
+    cache_key = f'postcode-info:{normalized.replace(" ", "")}'
     cached = cache.get(cache_key)
-    if cached:
+    if cached is not None:
         return cached
 
     url = f'https://api.postcodes.io/postcodes/{quote(normalized.replace(" ", ""))}'
@@ -45,13 +53,21 @@ def geocode_postcode(postcode):
         with urlopen(url, timeout=5) as response:
             data = json.loads(response.read().decode())
         if data.get('status') != 200:
+            cache.set(cache_key, {}, 60 * 60)
             return None
         result = data['result']
-        coords = (float(result['latitude']), float(result['longitude']))
-        cache.set(cache_key, coords, 60 * 60 * 24 * 30)
-        return coords
+        info = {
+            'postcode': normalized,
+            'latitude': result.get('latitude'),
+            'longitude': result.get('longitude'),
+            'admin_district': result.get('admin_district'),
+            'admin_county': result.get('admin_county'),
+            'region': result.get('region'),
+        }
+        cache.set(cache_key, info, 60 * 60 * 24 * 30)
+        return info
     except (URLError, TimeoutError, KeyError, ValueError, json.JSONDecodeError) as exc:
-        logger.warning('Geocoding failed for %s: %s', normalized, exc)
+        logger.warning('Postcode lookup failed for %s: %s', normalized, exc)
         return None
 
 

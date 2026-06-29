@@ -121,14 +121,15 @@
                     <div class="booking-panel" data-panel="2">
                         <div class="booking-panel-body">
                             <h2 class="booking-panel-title">When works for you?</h2>
-                            <p class="booking-panel-desc">Enter your postcode first so we can calculate travel time between jobs and show accurate availability.</p>
+                            <p class="booking-panel-desc">Enter your {{ SITE_LOCAL_AREA }} postcode so we can calculate travel time between jobs and show accurate availability.</p>
 
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <label class="form-label" for="id_postcode">Postcode</label>
                                     {{ form.postcode }}
                                     {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
-                                    <div class="form-text">We use this to work out driving time from other appointments that day.</div>
+                                    <div id="postcodeAreaError" class="alert alert-warning py-2 px-3 small mt-2 mb-0" role="alert" hidden></div>
+                                    <div class="form-text">We currently cover {{ SITE_LOCAL_AREA }} only (e.g. LS, WF, HD, HX, BD postcodes).</div>
                                 </div>
                             </div>
 
@@ -278,7 +279,7 @@
                     </div>
                 </div>
                 <div class="summary-footer">
-                    <small class="text-muted"><i class="bi bi-shield-check me-1"></i> Fully insured service</small>
+                    <small class="text-muted"><i class="bi bi-shield-check me-1"></i> Fully insured &amp; DBS checked</small>
                 </div>
             </div>
 

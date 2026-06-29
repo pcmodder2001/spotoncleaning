@@ -12,6 +12,7 @@
         const dateInput = document.getElementById('id_date');
         const timeInput = document.getElementById('id_time_slot');
         const postcodeInput = document.getElementById('id_postcode');
+        const postcodeAreaError = document.getElementById('postcodeAreaError');
         const cityInput = document.getElementById('id_city');
         const postcodeDisplay = document.getElementById('postcodeDisplay');
         const calendarSection = document.getElementById('calendarSection');
@@ -106,16 +107,54 @@
             postcodeInput.addEventListener('blur', onPostcodeChanged);
         }
 
+        function clearPostcodeAreaError() {
+            if (!postcodeAreaError) return;
+            postcodeAreaError.hidden = true;
+            postcodeAreaError.textContent = '';
+        }
+
+        function showPostcodeAreaError(message) {
+            if (postcodeAreaError) {
+                postcodeAreaError.textContent = message;
+                postcodeAreaError.hidden = false;
+            }
+            calendarSection.hidden = true;
+            timeSlotsSection.hidden = true;
+        }
+
+        async function validatePostcodeServiceArea(postcode) {
+            const params = new URLSearchParams({ postcode: postcode });
+            params.set('year', String(new Date().getFullYear()));
+            params.set('month', String(new Date().getMonth() + 1));
+            try {
+                const res = await fetch(cfg.datesUrl + '?' + params.toString());
+                const data = await res.json().catch(function () { return {}; });
+                if (res.status === 400 && data.error === 'outside_service_area') {
+                    showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
+                    return false;
+                }
+                clearPostcodeAreaError();
+                return true;
+            } catch (err) {
+                clearPostcodeAreaError();
+                return true;
+            }
+        }
+
         async function onPostcodeChanged() {
             syncPostcodeDisplay();
             resetAddressLookup();
             const postcode = getPostcode();
             if (postcode.length < 5) {
+                clearPostcodeAreaError();
                 calendarSection.hidden = true;
                 timeSlotsSection.hidden = true;
                 if (showScheduleDebug) showDebugWaiting('Enter a valid UK postcode (e.g. WF6 1TN) to begin.');
                 return;
             }
+            const inArea = await validatePostcodeServiceArea(postcode);
+            if (!inArea) return;
+
             calendarSection.hidden = false;
             selectedDate = '';
             selectedTime = '';
@@ -187,8 +226,15 @@
             try {
                 const params = new URLSearchParams({ postcode: postcode });
                 const res = await fetch(cfg.addressesUrl + '?' + params.toString());
+                const data = await res.json().catch(function () { return {}; });
+                if (res.status === 400 && data.error === 'outside_service_area') {
+                    showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
+                    addressLookupSelect.innerHTML = '<option value="">Outside service area</option>';
+                    addressLookupSelect.disabled = true;
+                    if (addressLookupStatus) addressLookupStatus.textContent = '';
+                    return;
+                }
                 if (!res.ok) throw new Error('Server returned ' + res.status);
-                const data = await res.json();
 
                 loadedAddresses = data.addresses || [];
                 addressLookupLoadedFor = postcode;
@@ -386,7 +432,11 @@
             params.set('year', year);
             params.set('month', month + 1);
             const res = await fetch(cfg.datesUrl + '?' + params.toString());
-            const data = await res.json();
+            const data = await res.json().catch(function () { return {}; });
+            if (res.status === 400 && data.error === 'outside_service_area') {
+                showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
+                return new Set();
+            }
             return new Set(data.available || []);
         }
 
@@ -469,10 +519,15 @@
                 params.set('date', iso);
                 if (showScheduleDebug) params.set('debug', '1');
                 const res = await fetch(cfg.slotsUrl + '?' + params.toString());
+                const data = await res.json().catch(function () { return {}; });
+                if (res.status === 400 && data.error === 'outside_service_area') {
+                    showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
+                    timeSlotsGrid.innerHTML = '';
+                    return;
+                }
                 if (!res.ok) {
                     throw new Error('Server returned ' + res.status);
                 }
-                const data = await res.json();
 
                 if (showScheduleDebug && data.debug) {
                     renderScheduleDebug(data.debug, selectedTime);

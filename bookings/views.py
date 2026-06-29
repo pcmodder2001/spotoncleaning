@@ -15,6 +15,7 @@ from bookings.forms import BookingForm, GuestBookingForm
 from bookings.models import Booking, BookingPhoto, BookingStatus
 from bookings.photo_access import can_view_booking_photo
 from bookings.notifications import send_booking_created_email
+from bookings.service_area import is_postcode_in_service_area, service_area_error_message
 from bookings.utils import cancel_booking, get_available_dates_in_month, get_available_slots_for_date
 from audit.actions import BOOKING_CANCELLED, BOOKING_CREATED
 from audit.services import log_action
@@ -174,6 +175,16 @@ def _parse_service_ids(request):
     return [int(pk) for pk in ids if str(pk).strip().isdigit()]
 
 
+def _service_area_api_error(postcode):
+    allowed, message = is_postcode_in_service_area(postcode)
+    if allowed:
+        return None
+    return JsonResponse({
+        'error': 'outside_service_area',
+        'message': message or service_area_error_message(),
+    }, status=400)
+
+
 @require_GET
 def address_lookup_api(request):
     from bookings.address_lookup import lookup_addresses
@@ -184,6 +195,9 @@ def address_lookup_api(request):
     postcode = request.GET.get('postcode', '').strip()
     if not postcode:
         return JsonResponse({'addresses': [], 'error': 'postcode_required'})
+    area_error = _service_area_api_error(postcode)
+    if area_error:
+        return area_error
     return JsonResponse(lookup_addresses(postcode))
 
 
@@ -200,6 +214,10 @@ def available_dates_api(request):
     service_ids = _parse_service_ids(request)
     postcode = request.GET.get('postcode', '').strip()
     city = request.GET.get('city', '').strip()
+    if postcode:
+        area_error = _service_area_api_error(postcode)
+        if area_error:
+            return area_error
     available = get_available_dates_in_month(
         year, month,
         service_ids=service_ids or None,
@@ -226,6 +244,10 @@ def available_slots_api(request):
 
     if not postcode:
         return JsonResponse({'slots': [], 'error': 'postcode_required'})
+
+    area_error = _service_area_api_error(postcode)
+    if area_error:
+        return area_error
 
     duration = None
     if service_ids:

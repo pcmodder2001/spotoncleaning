@@ -217,6 +217,10 @@ SITE_KEYWORDS = os.environ.get(
     'professional oven cleaning, West Yorkshire, book oven clean online',
 )
 SITE_LOCAL_AREA = os.environ.get('SITE_LOCAL_AREA', 'West Yorkshire')
+SERVICE_AREA_NAME = os.environ.get('SERVICE_AREA_NAME', SITE_LOCAL_AREA)
+SERVICE_AREA_ENFORCED = os.environ.get('SERVICE_AREA_ENFORCED', 'True').lower() in (
+    'true', '1', 'yes',
+)
 SITE_DEFAULT_SEO_TITLE = os.environ.get(
     'SITE_DEFAULT_SEO_TITLE',
     'Oven & Appliance Cleaning West Yorkshire | Spot On Appliance Cleaning',

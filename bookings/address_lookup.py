@@ -44,6 +44,17 @@ def lookup_addresses(postcode):
     if not is_valid_uk_postcode(normalized):
         return {'addresses': [], 'error': 'invalid_postcode', 'postcode': normalized}
 
+    from bookings.service_area import is_postcode_in_service_area
+
+    allowed, area_message = is_postcode_in_service_area(normalized)
+    if not allowed:
+        return {
+            'addresses': [],
+            'error': 'outside_service_area',
+            'message': area_message,
+            'postcode': normalized,
+        }
+
     api_key = get_address_lookup_api_key()
     if not api_key:
         return {

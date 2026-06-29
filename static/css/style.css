@@ -2459,6 +2459,17 @@ body:not(.site-home) .site-navbar {
     flex-shrink: 0;
 }
 
+.why-spot-intro p {
+    font-size: 1.0625rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.why-spot-intro p:last-child {
+    margin-bottom: 0;
+}
+
 .why-spot-checklist {
     list-style: none;
     padding: 0;

@@ -1,10 +1,20 @@
 import hashlib
+from pathlib import Path
 
 from django.conf import settings
 
 
+def static_file_path(relative_path: str) -> Path:
+    """Path to the static asset that is actually served (collected copy in production)."""
+    rel = relative_path.lstrip('/')
+    collected = Path(settings.STATIC_ROOT) / rel
+    if collected.exists():
+        return collected
+    return Path(settings.BASE_DIR) / 'static' / rel
+
+
 def static_cache_version(relative_path: str) -> str:
-    path = settings.BASE_DIR / 'static' / relative_path
+    path = static_file_path(relative_path)
     if not path.exists():
         return '0'
     return hashlib.md5(path.read_bytes()).hexdigest()[:10]

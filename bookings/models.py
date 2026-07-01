@@ -328,6 +328,65 @@ class Booking(models.Model):
         return errors
 
 
+class CoverageArea(models.Model):
+    """Town or region where online bookings are accepted."""
+
+    slug = models.SlugField(max_length=40, unique=True)
+    name = models.CharField(max_length=100)
+    region_group = models.CharField(
+        max_length=50,
+        default='West Yorkshire',
+        help_text='Group shown on the admin map (e.g. West Yorkshire, York).',
+    )
+    admin_districts = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='postcodes.io admin_district names when no postcode list is set.',
+    )
+    postcode_districts = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Outward codes covered, e.g. HG1, WF8.',
+    )
+    postcode_area = models.CharField(
+        max_length=4,
+        blank=True,
+        default='',
+        help_text='Two-letter postcode area fallback, e.g. LS, WF.',
+    )
+    enabled = models.BooleanField(default=True)
+    map_color = models.CharField(max_length=7, default='#0e7490')
+    center_lat = models.DecimalField(max_digits=9, decimal_places=6)
+    center_lng = models.DecimalField(max_digits=9, decimal_places=6)
+    map_radius_km = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        default=Decimal('5.0'),
+        help_text='Circle radius on the admin map.',
+    )
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'name']
+
+    def __str__(self):
+        status = 'on' if self.enabled else 'off'
+        return f'{self.name} ({status})'
+
+    @property
+    def postcode_label(self):
+        if self.postcode_districts:
+            districts = self.postcode_districts
+            if len(districts) <= 4:
+                return ', '.join(districts)
+            return f'{districts[0]}-{districts[-1]} ({len(districts)} districts)'
+        if self.postcode_area:
+            return f'{self.postcode_area} postcodes'
+        if self.admin_districts:
+            return self.admin_districts[0]
+        return 'Custom area'
+
+
 class PromoCode(models.Model):
     class DiscountType(models.TextChoices):
         PERCENT = 'percent', 'Percentage off'

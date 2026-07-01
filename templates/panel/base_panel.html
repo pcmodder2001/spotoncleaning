@@ -30,6 +30,9 @@
             <a href="{% url 'panel:availability' %}" class="{% if request.resolver_match.url_name == 'availability' %}active{% endif %}">
                 <i class="bi bi-clock me-2"></i>Availability
             </a>
+            <a href="{% url 'panel:coverage_map' %}" class="{% if 'coverage' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-map me-2"></i>Coverage map
+            </a>
             <a href="{% url 'panel:service_list' %}" class="{% if 'service' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-tools me-2"></i>Services
             </a>

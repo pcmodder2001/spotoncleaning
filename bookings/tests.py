@@ -2,7 +2,8 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
-from bookings.service_area import is_postcode_in_service_area, outward_code
+from bookings.models import CoverageArea
+from bookings.service_area import invalidate_coverage_cache, is_postcode_in_service_area, outward_code
 
 
 @override_settings(SERVICE_AREA_ENFORCED=True, SERVICE_AREA_NAME='West Yorkshire')
@@ -30,6 +31,28 @@ class ServiceAreaTests(TestCase):
     @patch('bookings.service_area.fetch_postcode_info', return_value=None)
     def test_wakefield_fallback_without_api(self, _mock_fetch):
         allowed, _ = is_postcode_in_service_area('WF1 1AA')
+        self.assertTrue(allowed)
+
+    @patch('bookings.service_area.fetch_postcode_info')
+    def test_disabled_area_rejected(self, mock_fetch):
+        mock_fetch.return_value = {'admin_district': 'Leeds'}
+        CoverageArea.objects.filter(slug='leeds').update(enabled=False)
+        invalidate_coverage_cache()
+        allowed, _ = is_postcode_in_service_area('LS1 1AA')
+        self.assertFalse(allowed)
+
+    @patch('bookings.service_area.fetch_postcode_info')
+    def test_york_disabled_by_default(self, mock_fetch):
+        mock_fetch.return_value = {'admin_district': 'York'}
+        allowed, _ = is_postcode_in_service_area('YO1 7HH')
+        self.assertFalse(allowed)
+
+    @patch('bookings.service_area.fetch_postcode_info')
+    def test_york_enabled_when_toggled(self, mock_fetch):
+        mock_fetch.return_value = {'admin_district': 'York'}
+        CoverageArea.objects.filter(slug='york').update(enabled=True)
+        invalidate_coverage_cache()
+        allowed, _ = is_postcode_in_service_area('YO1 7HH')
         self.assertTrue(allowed)
 
     def test_outward_code_normalizes(self):

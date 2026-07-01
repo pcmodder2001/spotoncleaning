@@ -5,7 +5,7 @@ import math
 import re
 from urllib.error import URLError
 from urllib.parse import quote
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 import json
 
 from django.conf import settings
@@ -68,6 +68,44 @@ def fetch_postcode_info(postcode):
         return info
     except (URLError, TimeoutError, KeyError, ValueError, json.JSONDecodeError) as exc:
         logger.warning('Postcode lookup failed for %s: %s', normalized, exc)
+        return None
+
+
+def geocode_place_name(place_name, *, country='gb'):
+    """Return lat/lng and label for a place name via OpenStreetMap Nominatim."""
+    cleaned = (place_name or '').strip()
+    if not cleaned:
+        return None
+
+    cache_key = f'place-geocode:{cleaned.lower()}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached or None
+
+    query = quote(f'{cleaned}, United Kingdom')
+    url = (
+        'https://nominatim.openstreetmap.org/search'
+        f'?q={query}&format=json&limit=1&countrycodes={country}'
+    )
+    user_agent = getattr(settings, 'NOMINATIM_USER_AGENT', 'SpotOnCleaning/1.0')
+    try:
+        request = Request(url, headers={'User-Agent': user_agent})
+        with urlopen(request, timeout=5) as response:
+            data = json.loads(response.read().decode())
+        if not data:
+            cache.set(cache_key, {}, 60 * 60)
+            return None
+        hit = data[0]
+        info = {
+            'name': hit.get('display_name', cleaned),
+            'lat': float(hit['lat']),
+            'lng': float(hit['lon']),
+        }
+        cache.set(cache_key, info, 60 * 60 * 24 * 7)
+        return info
+    except (URLError, TimeoutError, KeyError, ValueError, json.JSONDecodeError, TypeError) as exc:
+        logger.warning('Place geocode failed for %s: %s', cleaned, exc)
+        cache.set(cache_key, {}, 60 * 10)
         return None
 
 

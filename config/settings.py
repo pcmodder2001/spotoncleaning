@@ -140,6 +140,8 @@ from config.static_utils import build_static_cache_versions  # noqa: E402
 STATIC_CACHE_VERSIONS = build_static_cache_versions(
     'img/logo.png',
     'img/logo-alt.png',
+    'img/favicon.png',
+    'img/apple-touch-icon.png',
     'img/oven-before.jpg',
     'img/oven-after.jpg',
     'css/style.css',
@@ -148,6 +150,7 @@ STATIC_CACHE_VERSIONS = build_static_cache_versions(
     'js/booking.js',
     'js/panel-bookings.js',
     'js/panel-schedule.js',
+    'js/panel-coverage.js',
     'js/schedule-debug.js',
 )
 

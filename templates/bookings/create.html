@@ -24,7 +24,7 @@ fbq('track', 'ViewContent', {
 <div class="dashboard-header">
     <div class="container">
         <h1 class="fw-bold">Book an Appointment</h1>
-        <p class="text-muted mb-0">Check your area, choose your service, pick a date, and confirm</p>
+        <p class="text-muted mb-0">Enter your location, choose your services, pick a date and time, then confirm</p>
         {% if is_guest_booking %}
         <p class="mb-0 mt-2 small">
             Already have an account?
@@ -46,17 +46,22 @@ fbq('track', 'ViewContent', {
                 <div class="booking-steps" id="bookingSteps">
                     <button type="button" class="booking-step active" data-step="1" aria-current="step">
                         <span class="step-num">1</span>
-                        <span class="step-label">Service</span>
+                        <span class="step-label">Location</span>
                     </button>
                     <div class="booking-step-line"></div>
                     <button type="button" class="booking-step" data-step="2">
                         <span class="step-num">2</span>
-                        <span class="step-label">Date &amp; Time</span>
+                        <span class="step-label">Services</span>
                     </button>
                     <div class="booking-step-line"></div>
                     <button type="button" class="booking-step" data-step="3">
                         <span class="step-num">3</span>
-                        <span class="step-label">Details</span>
+                        <span class="step-label">Date &amp; Time</span>
+                    </button>
+                    <div class="booking-step-line"></div>
+                    <button type="button" class="booking-step" data-step="4">
+                        <span class="step-num">4</span>
+                        <span class="step-label">Confirm</span>
                     </button>
                 </div>
 
@@ -74,60 +79,124 @@ fbq('track', 'ViewContent', {
                     </script>
                     {% endif %}
 
-                    <!-- Step 1: Postcode & Services -->
+                    <!-- Step 1: Postcode & Address -->
                     <div class="booking-panel active" data-panel="1">
                         <div class="booking-panel-body">
-                            <div class="booking-postcode-gate mb-4">
-                                <h2 class="booking-panel-title">Where are you based?</h2>
-                                <p class="booking-panel-desc mb-3">Enter your postcode first so we can confirm we cover your area and show accurate availability.</p>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label" for="id_postcode">Postcode</label>
-                                        {{ form.postcode }}
-                                        {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
-                                        <div id="postcodeAreaError" class="alert alert-warning py-2 px-3 small mt-2 mb-0" role="alert" hidden></div>
-                                        <div class="form-text">We cover {{ SITE_LOCAL_AREA }} (e.g. LS, WF, HD, HX, BD postcodes).</div>
-                                    </div>
+                            <h2 class="booking-panel-title">Where should we visit?</h2>
+                            <p class="booking-panel-desc">Enter your postcode and address so we can confirm we cover your area and calculate travel time.</p>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="id_postcode">Postcode</label>
+                                    {{ form.postcode }}
+                                    {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
+                                    <div id="postcodeAreaError" class="alert alert-warning py-2 px-3 small mt-2 mb-0" role="alert" hidden></div>
+                                    <div class="form-text">We cover {{ SITE_LOCAL_AREA }} (e.g. LS, WF, HD, HX, BD postcodes).</div>
                                 </div>
                             </div>
 
-                            <h2 class="booking-panel-title">What would you like cleaned?</h2>
-                            <p class="booking-panel-desc">Select one or more ovens, then add any optional extras.</p>
-
-                            <h3 class="service-group-title">Oven cleaning <span class="text-muted fw-normal">(select all that apply)</span></h3>
-                            <div class="service-picker service-picker-oven">
-                                {% for service in oven_services %}
-                                {% include 'bookings/includes/service_pick.html' with icon='bi-fire' extra_class='service-pick-oven' %}
-                                {% endfor %}
-                            </div>
-
-                            <h3 class="service-group-title mt-4">Add-ons <span class="text-muted fw-normal">(optional)</span></h3>
-                            <div class="service-picker service-picker-addon">
-                                {% for service in standard_addon_services %}
-                                {% include 'bookings/includes/service_pick.html' %}
-                                {% endfor %}
-                            </div>
-
-                            {% if additional_addon_services %}
-                            <h3 class="service-group-title mt-4">Additional add-ons <span class="text-muted fw-normal">(optional)</span></h3>
-                            <div class="service-picker service-picker-addon">
-                                {% for service in additional_addon_services %}
-                                {% include 'bookings/includes/service_pick.html' %}
-                                {% endfor %}
+                            {% if not is_guest_booking %}
+                            <div class="mb-4" id="savedAddressSection">
+                                <label class="form-label" for="savedAddressSelect">Saved address</label>
+                                <select id="savedAddressSelect" class="form-select">
+                                    <option value="">Enter address manually</option>
+                                </select>
+                                <div class="form-text">
+                                    <a href="{% url 'accounts:addresses' %}">Manage saved addresses</a>
+                                </div>
                             </div>
                             {% endif %}
 
-                            {% if form.services.errors %}
-                            <div class="text-danger small mt-2">{{ form.services.errors.0 }}</div>
-                            {% endif %}
+                            <div id="addressManualFields">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Address Line 1</label>
+                                    {{ form.address_line_1 }}
+                                    {% if form.address_line_1.errors %}<div class="text-danger small">{{ form.address_line_1.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Address Line 2 <span class="text-muted fw-normal">(optional)</span></label>
+                                    {{ form.address_line_2 }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">City</label>
+                                    {{ form.city }}
+                                    {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                                </div>
+                                {% if not is_guest_booking %}
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="save_address" id="id_save_address" value="1">
+                                        <label class="form-check-label" for="id_save_address">Save this address for future bookings</label>
+                                    </div>
+                                    <div class="form-check ms-4">
+                                        <input type="checkbox" class="form-check-input" name="save_address_default" id="id_save_address_default" value="1">
+                                        <label class="form-check-label" for="id_save_address_default">Set as my default address</label>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            </div>
                         </div>
                         <div class="booking-panel-footer">
                             <button type="button" class="btn btn-primary btn-next" id="btnStep1Next" data-next="2" disabled>Continue</button>
                         </div>
                     </div>
 
-                    <!-- Step 2: Calendar & Time -->
+                    <!-- Step 2: Services -->
                     <div class="booking-panel" data-panel="2">
+                        <div class="booking-panel-body">
+                            <h2 class="booking-panel-title">What would you like cleaned?</h2>
+
+                            <div id="serviceMainSection">
+                                <p class="booking-panel-desc" id="serviceMainDesc">Choose your oven cleaning service to get started.</p>
+                                <div class="service-picker service-picker-oven">
+                                    {% for service in oven_services %}
+                                    {% include 'bookings/includes/service_pick.html' with icon='bi-fire' extra_class='service-pick-oven' %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="service-main-summary" id="serviceMainSummary" hidden>
+                                <div class="service-main-summary-text">
+                                    <span class="service-main-summary-label">Selected</span>
+                                    <span id="serviceMainSummaryText">—</span>
+                                </div>
+                                <button type="button" class="btn btn-link btn-sm p-0" id="btnChangeMainServices">Change</button>
+                            </div>
+
+                            <div id="serviceAddonsSection" hidden>
+                                <h3 class="service-group-title mt-4">Add-ons <span class="text-muted fw-normal">(optional)</span></h3>
+                                <p class="booking-panel-desc mb-3">Enhance your clean with any extras below — skip if you don't need them.</p>
+                                <div class="service-picker service-picker-addon">
+                                    {% for service in standard_addon_services %}
+                                    {% include 'bookings/includes/service_pick.html' %}
+                                    {% endfor %}
+                                </div>
+
+                                {% if additional_addon_services %}
+                                <h3 class="service-group-title mt-4">Additional add-ons <span class="text-muted fw-normal">(optional)</span></h3>
+                                <div class="service-picker service-picker-addon">
+                                    {% for service in additional_addon_services %}
+                                    {% include 'bookings/includes/service_pick.html' %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if form.services.errors %}
+                            <div class="text-danger small mt-2">{{ form.services.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="booking-panel-footer">
+                            <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="1">Back</button>
+                            <button type="button" class="btn btn-primary" id="btnConfirmMainServices" disabled>Continue</button>
+                            <button type="button" class="btn btn-primary btn-next" id="btnStep2Next" data-next="3" hidden>Continue</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Calendar & Time -->
+                    <div class="booking-panel" data-panel="3">
                         <div class="booking-panel-body">
                             <h2 class="booking-panel-title">When works for you?</h2>
                             <p class="booking-panel-desc">Pick a date and time — travel between jobs is calculated automatically for your area.</p>
@@ -146,7 +215,7 @@ fbq('track', 'ViewContent', {
                             <div id="calendarSection" class="booking-calendar-wrap is-placeholder">
                                 <div class="calendar-placeholder" id="calendarPlaceholder">
                                     <i class="bi bi-calendar3"></i>
-                                    <p>Enter your postcode on step 1 to see available dates.</p>
+                                    <p>Choose your services on step 2 to see available dates.</p>
                                 </div>
                                 <div id="calendarActive" hidden>
                                     <div class="booking-calendar-header">
@@ -179,13 +248,13 @@ fbq('track', 'ViewContent', {
                             {% if form.time_slot.errors %}<div class="text-danger small">{{ form.time_slot.errors.0 }}</div>{% endif %}
                         </div>
                         <div class="booking-panel-footer">
-                            <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="1">Back</button>
-                            <button type="button" class="btn btn-primary btn-next" id="btnStep2Next" data-next="3" disabled>Continue</button>
+                            <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="2">Back</button>
+                            <button type="button" class="btn btn-primary btn-next" id="btnStep3Next" data-next="4" disabled>Continue</button>
                         </div>
                     </div>
 
-                    <!-- Step 3: Contact, Address & Confirm -->
-                    <div class="booking-panel" data-panel="3">
+                    <!-- Step 4: Review & Confirm -->
+                    <div class="booking-panel" data-panel="4">
                         <div class="booking-panel-body">
                             <div class="booking-review-card" id="bookingReview">
                                 <div class="booking-review-header">
@@ -193,18 +262,19 @@ fbq('track', 'ViewContent', {
                                 </div>
                                 <div class="booking-review-body">
                                     <div class="booking-review-row">
+                                        <span class="booking-review-label">Address</span>
+                                        <span class="booking-review-value" id="reviewAddress">—</span>
+                                        <button type="button" class="btn btn-link btn-sm booking-review-edit" data-go-step="1">Edit</button>
+                                    </div>
+                                    <div class="booking-review-row">
                                         <span class="booking-review-label">Services</span>
                                         <span class="booking-review-value" id="reviewServices">—</span>
-                                        <button type="button" class="btn btn-link btn-sm booking-review-edit" data-go-step="1">Edit</button>
+                                        <button type="button" class="btn btn-link btn-sm booking-review-edit" data-go-step="2">Edit</button>
                                     </div>
                                     <div class="booking-review-row">
                                         <span class="booking-review-label">Date &amp; time</span>
                                         <span class="booking-review-value" id="reviewDateTime">—</span>
-                                        <button type="button" class="btn btn-link btn-sm booking-review-edit" data-go-step="2">Edit</button>
-                                    </div>
-                                    <div class="booking-review-row">
-                                        <span class="booking-review-label">Address</span>
-                                        <span class="booking-review-value" id="reviewAddress">—</span>
+                                        <button type="button" class="btn btn-link btn-sm booking-review-edit" data-go-step="3">Edit</button>
                                     </div>
                                     <div class="booking-review-row booking-review-total">
                                         <span class="booking-review-label">Total</span>
@@ -243,55 +313,7 @@ fbq('track', 'ViewContent', {
                             </div>
                             {% endif %}
 
-                            <h2 class="booking-panel-title">Where should we visit?</h2>
-                            <p class="booking-panel-desc">Pick a saved address or enter your details below.</p>
-
-                            {% if not is_guest_booking %}
-                            <div class="mb-4" id="savedAddressSection">
-                                <label class="form-label" for="savedAddressSelect">Saved address</label>
-                                <select id="savedAddressSelect" class="form-select">
-                                    <option value="">Enter address manually</option>
-                                </select>
-                                <div class="form-text">
-                                    <a href="{% url 'accounts:addresses' %}">Manage saved addresses</a>
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            {% if address_lookup_enabled %}
-                            <div class="mb-4" id="addressLookupSection">
-                                <label class="form-label" for="addressLookupSelect">Select your address</label>
-                                <select id="addressLookupSelect" class="form-select" disabled>
-                                    <option value="">Enter your postcode on step 1 first…</option>
-                                </select>
-                                <div class="form-text" id="addressLookupStatus"></div>
-                                <button type="button" class="btn btn-link btn-sm px-0 mt-1" id="addressManualToggle" hidden>
-                                    My address isn't listed — enter manually
-                                </button>
-                            </div>
-                            {% endif %}
-
-                            <div id="addressManualFields">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Address Line 1</label>
-                                    {{ form.address_line_1 }}
-                                    {% if form.address_line_1.errors %}<div class="text-danger small">{{ form.address_line_1.errors.0 }}</div>{% endif %}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Address Line 2 <span class="text-muted fw-normal">(optional)</span></label>
-                                    {{ form.address_line_2 }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">City</label>
-                                    {{ form.city }}
-                                    {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Postcode</label>
-                                    <input type="text" class="form-control" id="postcodeDisplay" readonly>
-                                    <div class="form-text">Set on step 1</div>
-                                </div>
+                            <div class="row g-3 mt-2">
                                 <div class="col-12">
                                     <label class="form-label" for="id_promo_code">Promo code <span class="text-muted fw-normal">(optional)</span></label>
                                     {{ form.promo_code }}
@@ -301,23 +323,10 @@ fbq('track', 'ViewContent', {
                                     <label class="form-label">Additional Notes <span class="text-muted fw-normal">(optional)</span></label>
                                     {{ form.notes }}
                                 </div>
-                                {% if not is_guest_booking %}
-                                <div class="col-12">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" name="save_address" id="id_save_address" value="1">
-                                        <label class="form-check-label" for="id_save_address">Save this address for future bookings</label>
-                                    </div>
-                                    <div class="form-check ms-4">
-                                        <input type="checkbox" class="form-check-input" name="save_address_default" id="id_save_address_default" value="1">
-                                        <label class="form-check-label" for="id_save_address_default">Set as my default address</label>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
                             </div>
                         </div>
                         <div class="booking-panel-footer">
-                            <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="2">Back</button>
+                            <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="3">Back</button>
                             <button type="submit" class="btn btn-primary btn-lg">Confirm Booking</button>
                         </div>
                     </div>
@@ -383,7 +392,7 @@ fbq('track', 'ViewContent', {
 
 <div class="booking-mobile-bar d-lg-none" id="bookingMobileBar">
     <button type="button" class="booking-mobile-bar-main" id="mobileBarToggle" aria-expanded="false">
-        <span class="booking-mobile-bar-text" id="mobileBarSummary">Select services to begin</span>
+        <span class="booking-mobile-bar-text" id="mobileBarSummary">Enter your postcode to begin</span>
         <span class="booking-mobile-bar-price" id="mobileBarPrice">—</span>
         <i class="bi bi-chevron-up booking-mobile-bar-chevron" aria-hidden="true"></i>
     </button>
@@ -409,10 +418,8 @@ fbq('track', 'ViewContent', {
         initialTimeSlot: "{{ form.time_slot.value|default:'' }}",
         initialPostcode: "{{ form.postcode.value|default:'' }}",
         hasErrors: {{ form.errors|yesno:"true,false" }},
-        errorStep: {% if form.date.errors or form.time_slot.errors %}2{% elif form.postcode.errors or form.services.errors %}1{% elif form.address_line_1.errors or form.city.errors or form.guest_email.errors or form.guest_first_name.errors or form.guest_last_name.errors %}3{% else %}1{% endif %},
+        errorStep: {% if form.date.errors or form.time_slot.errors %}3{% elif form.services.errors %}2{% elif form.postcode.errors or form.address_line_1.errors or form.city.errors %}1{% elif form.guest_email.errors or form.guest_first_name.errors or form.guest_last_name.errors %}4{% else %}1{% endif %},
         showScheduleDebug: {{ schedule_debug|yesno:"true,false" }},
-        addressesUrl: "{% url 'bookings:address_lookup' %}",
-        addressLookupEnabled: {{ address_lookup_enabled|yesno:"true,false" }},
         prefillAddress: {{ prefill_address_json|safe }},
         savedAddresses: {{ saved_addresses_json|safe }}
     };

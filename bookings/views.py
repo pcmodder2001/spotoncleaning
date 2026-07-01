@@ -8,7 +8,6 @@ from django.views.decorators.http import require_GET, require_POST
 import json
 import mimetypes
 
-from bookings.address_lookup import get_address_lookup_api_key
 from bookings.completion_report import (
     booking_from_completion_report_token,
     get_completion_report_context,
@@ -101,9 +100,6 @@ def _booking_create_context(request, form):
         'prefill_address': prefill_address,
         'prefill_address_json': json.dumps(prefill_address) if prefill_address else 'null',
         'saved_addresses_json': _saved_addresses_json(request.user),
-        'address_lookup_enabled': (
-            settings.ADDRESS_LOOKUP_ENABLED and bool(get_address_lookup_api_key())
-        ),
     }
 
 
@@ -324,22 +320,6 @@ def _service_area_api_error(postcode):
         'error': 'outside_service_area',
         'message': message or service_area_error_message(),
     }, status=400)
-
-
-@require_GET
-def address_lookup_api(request):
-    from bookings.address_lookup import lookup_addresses
-
-    if not settings.ADDRESS_LOOKUP_ENABLED:
-        return JsonResponse({'addresses': [], 'error': 'disabled', 'manual_entry': True})
-
-    postcode = request.GET.get('postcode', '').strip()
-    if not postcode:
-        return JsonResponse({'addresses': [], 'error': 'postcode_required'})
-    area_error = _service_area_api_error(postcode)
-    if area_error:
-        return area_error
-    return JsonResponse(lookup_addresses(postcode))
 
 
 @require_GET

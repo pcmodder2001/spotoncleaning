@@ -14,7 +14,7 @@
         const postcodeInput = document.getElementById('id_postcode');
         const postcodeAreaError = document.getElementById('postcodeAreaError');
         const cityInput = document.getElementById('id_city');
-        const postcodeDisplay = document.getElementById('postcodeDisplay');
+        const addressLine1Input = document.getElementById('id_address_line_1');
         const calendarSection = document.getElementById('calendarSection');
         const calendarPlaceholder = document.getElementById('calendarPlaceholder');
         const calendarActive = document.getElementById('calendarActive');
@@ -24,7 +24,14 @@
         const nextAvailableLabel = document.getElementById('nextAvailableLabel');
         const nextAvailableJump = document.getElementById('nextAvailableJump');
         const btnStep1Next = document.getElementById('btnStep1Next');
+        const btnConfirmMainServices = document.getElementById('btnConfirmMainServices');
         const btnStep2Next = document.getElementById('btnStep2Next');
+        const btnStep3Next = document.getElementById('btnStep3Next');
+        const btnChangeMainServices = document.getElementById('btnChangeMainServices');
+        const serviceMainSection = document.getElementById('serviceMainSection');
+        const serviceMainSummary = document.getElementById('serviceMainSummary');
+        const serviceMainSummaryText = document.getElementById('serviceMainSummaryText');
+        const serviceAddonsSection = document.getElementById('serviceAddonsSection');
         const promoInput = document.getElementById('id_promo_code');
         const promoFeedback = document.getElementById('promoFeedback');
         const panels = document.querySelectorAll('.booking-panel');
@@ -41,9 +48,6 @@
         const scheduleDebugPanel = document.getElementById('scheduleDebugPanel');
         const scheduleDebugContent = document.getElementById('scheduleDebugContent');
         const showScheduleDebug = cfg.showScheduleDebug === true;
-        const addressLookupSelect = document.getElementById('addressLookupSelect');
-        const addressLookupStatus = document.getElementById('addressLookupStatus');
-        const addressManualToggle = document.getElementById('addressManualToggle');
         const mobileBarToggle = document.getElementById('mobileBarToggle');
         const mobileBarDetails = document.getElementById('mobileBarDetails');
         const savedAddressSelect = document.getElementById('savedAddressSelect');
@@ -59,12 +63,11 @@
         let selectedTimeLabel = '';
         let selectedServices = {};
         let postcodeDebounce = null;
-        let loadedAddresses = [];
-        let addressLookupLoadedFor = '';
         let postcodeValid = false;
         let nextAvailableDate = null;
         let promoState = { valid: false, discount: 0, code: '', total: 0 };
         let savedAddresses = Array.isArray(cfg.savedAddresses) ? cfg.savedAddresses : [];
+        let servicesPhase = 'main';
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -72,16 +75,17 @@
         initViewMonth();
         bindServicePicker();
         bindServiceExpand();
+        bindServiceStep();
         bindNavigation();
         bindStepIndicators();
         bindGoStepLinks();
         bindCalendarNav();
         bindPostcodeInput();
-        bindAddressLookup();
         bindPromoField();
         bindMobileBar();
         bindAddressReviewFields();
         bindSavedAddresses();
+        bindFormSubmit();
         applyPrefillAddress();
         initFromConfig();
 
@@ -94,8 +98,13 @@
                 if (el) applyServiceSelection(el, false);
             });
             syncServiceInputs();
-            syncPostcodeDisplay();
             updatePostcodeChip();
+            if (hasMainServiceSelected()) {
+                if (hasAddonServices()) {
+                    servicesPhase = 'addons';
+                }
+                updateServiceStepUI();
+            }
             if (cfg.hasErrors) {
                 goToStep(parseInt(cfg.errorStep, 10) || 1);
             }
@@ -110,6 +119,7 @@
                 setCalendarMode(false);
             }
             updateSummary();
+            updateServiceStepUI();
             updateContinueButtons();
         }
 
@@ -166,9 +176,10 @@
             const previousPostcode = getPostcode();
             if (postcodeInput && addr.postcode) {
                 postcodeInput.value = addr.postcode;
-                syncPostcodeDisplay();
+                updatePostcodeChip();
             }
             updateReviewBlock();
+            updateContinueButtons();
             if (refreshSchedule && addr.postcode && addr.postcode !== previousPostcode) {
                 await onPostcodeChanged();
             }
@@ -178,13 +189,16 @@
             return (postcodeInput && postcodeInput.value || '').trim();
         }
 
-        function getCity() {
-            return (cityInput && cityInput.value || '').trim();
+        function getAddressLine1() {
+            return (addressLine1Input && addressLine1Input.value || '').trim();
         }
 
-        function syncPostcodeDisplay() {
-            if (postcodeDisplay) postcodeDisplay.value = getPostcode();
-            updatePostcodeChip();
+        function isAddressComplete() {
+            return !!getAddressLine1() && !!getCity();
+        }
+
+        function getCity() {
+            return (cityInput && cityInput.value || '').trim();
         }
 
         function updatePostcodeChip() {
@@ -209,7 +223,7 @@
         function bindPostcodeInput() {
             if (!postcodeInput) return;
             postcodeInput.addEventListener('input', function () {
-                syncPostcodeDisplay();
+                updatePostcodeChip();
                 postcodeValid = false;
                 updateContinueButtons();
                 clearTimeout(postcodeDebounce);
@@ -256,8 +270,7 @@
         }
 
         async function onPostcodeChanged() {
-            syncPostcodeDisplay();
-            resetAddressLookup();
+            updatePostcodeChip();
             const postcode = getPostcode();
             if (postcode.length < 5) {
                 clearPostcodeAreaError();
@@ -284,7 +297,6 @@
                 showDebugWaiting('Postcode <strong>' + escapeHtml(postcode) + '</strong> set. Now <strong>click a date</strong> on the calendar.');
             }
             await renderCalendar();
-            loadAddressLookup();
             updateContinueButtons();
             updatePostcodeChip();
         }
@@ -311,112 +323,16 @@
             }
         }
 
-        function resetAddressLookup() {
-            loadedAddresses = [];
-            addressLookupLoadedFor = '';
-            if (!addressLookupSelect) return;
-            addressLookupSelect.innerHTML = '<option value="">Enter your postcode on step 1 first…</option>';
-            addressLookupSelect.disabled = true;
-            addressLookupSelect.value = '';
-            if (addressLookupStatus) addressLookupStatus.textContent = '';
-            if (addressManualToggle) addressManualToggle.hidden = true;
-        }
-
-        function bindAddressLookup() {
-            if (!cfg.addressLookupEnabled || !addressLookupSelect) return;
-            addressLookupSelect.addEventListener('change', function () {
-                if (!this.value) return;
-                applySelectedAddress(this.value);
-            });
-            if (addressManualToggle) {
-                addressManualToggle.addEventListener('click', function () {
-                    addressLookupSelect.value = '';
-                    const line1 = document.getElementById('id_address_line_1');
-                    if (line1) line1.focus();
-                });
-            }
-        }
-
         function bindAddressReviewFields() {
             ['id_address_line_1', 'id_address_line_2', 'id_city'].forEach(function (id) {
                 const el = document.getElementById(id);
-                if (el) el.addEventListener('input', updateReviewBlock);
+                if (el) {
+                    el.addEventListener('input', function () {
+                        updateReviewBlock();
+                        updateContinueButtons();
+                    });
+                }
             });
-        }
-
-        function applySelectedAddress(index) {
-            const addr = loadedAddresses[parseInt(index, 10)];
-            if (!addr) return;
-            const line1 = document.getElementById('id_address_line_1');
-            const line2 = document.getElementById('id_address_line_2');
-            if (line1) line1.value = addr.line_1 || '';
-            if (line2) line2.value = addr.line_2 || '';
-            if (cityInput) cityInput.value = addr.city || '';
-            if (postcodeInput && addr.postcode) {
-                postcodeInput.value = addr.postcode;
-                syncPostcodeDisplay();
-            }
-            updateReviewBlock();
-        }
-
-        async function loadAddressLookup() {
-            if (!cfg.addressLookupEnabled || !cfg.addressesUrl || !addressLookupSelect) return;
-
-            const postcode = getPostcode();
-            if (!postcode || postcode.length < 5 || !postcodeValid) {
-                resetAddressLookup();
-                return;
-            }
-            if (addressLookupLoadedFor === postcode) return;
-
-            addressLookupSelect.disabled = true;
-            addressLookupSelect.innerHTML = '<option value="">Loading addresses…</option>';
-            if (addressLookupStatus) addressLookupStatus.textContent = 'Looking up addresses for ' + postcode + '…';
-            if (addressManualToggle) addressManualToggle.hidden = true;
-
-            try {
-                const params = new URLSearchParams({ postcode: postcode });
-                const res = await fetch(cfg.addressesUrl + '?' + params.toString());
-                const data = await res.json().catch(function () { return {}; });
-                if (res.status === 400 && data.error === 'outside_service_area') {
-                    showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
-                    addressLookupSelect.innerHTML = '<option value="">Outside service area</option>';
-                    addressLookupSelect.disabled = true;
-                    if (addressLookupStatus) addressLookupStatus.textContent = '';
-                    return;
-                }
-                if (!res.ok) throw new Error('Server returned ' + res.status);
-
-                loadedAddresses = data.addresses || [];
-                addressLookupLoadedFor = postcode;
-                addressLookupSelect.innerHTML = '<option value="">— Select your address —</option>';
-                loadedAddresses.forEach(function (addr, index) {
-                    const option = document.createElement('option');
-                    option.value = String(index);
-                    option.textContent = addr.label;
-                    addressLookupSelect.appendChild(option);
-                });
-                addressLookupSelect.disabled = false;
-
-                if (addressLookupStatus) {
-                    if (data.error === 'postcode_not_found') {
-                        addressLookupStatus.textContent = 'No addresses found. Enter your address manually below.';
-                    } else if (loadedAddresses.length) {
-                        addressLookupStatus.textContent = loadedAddresses.length + ' address(es) found — select yours from the list.';
-                    } else {
-                        addressLookupStatus.textContent = 'Enter your address manually below.';
-                    }
-                }
-                if (addressManualToggle) {
-                    addressManualToggle.hidden = loadedAddresses.length === 0;
-                }
-            } catch (err) {
-                addressLookupSelect.innerHTML = '<option value="">Could not load addresses</option>';
-                addressLookupSelect.disabled = true;
-                if (addressLookupStatus) {
-                    addressLookupStatus.textContent = 'Address lookup unavailable — enter your details manually below.';
-                }
-            }
         }
 
         function showDebugWaiting(message) {
@@ -489,14 +405,92 @@
 
         async function onServicesChanged() {
             if (promoInput && promoInput.value.trim()) validatePromoField();
-            if (postcodeValid) {
-                if (currentStep === 2 && selectedDate) {
+            updateMainServiceSummary();
+            if (postcodeValid && Object.keys(selectedServices).length) {
+                if (currentStep === 3 && selectedDate) {
                     await loadTimeSlots(selectedDate);
-                } else if (postcodeValid) {
+                } else {
                     await renderCalendar();
                 }
             }
             updateContinueButtons();
+        }
+
+        function hasMainServiceSelected() {
+            return document.querySelectorAll('.service-picker-oven .service-pick.selected').length > 0;
+        }
+
+        function hasAddonServices() {
+            return serviceAddonsSection && serviceAddonsSection.querySelectorAll('.service-pick').length > 0;
+        }
+
+        function getMainServiceNames() {
+            const names = [];
+            document.querySelectorAll('.service-picker-oven .service-pick.selected').forEach(function (el) {
+                names.push(el.dataset.serviceName);
+            });
+            return names;
+        }
+
+        function updateMainServiceSummary() {
+            if (!serviceMainSummaryText) return;
+            const names = getMainServiceNames();
+            serviceMainSummaryText.textContent = names.length ? names.join(', ') : '—';
+        }
+
+        function bindServiceStep() {
+            if (btnConfirmMainServices) {
+                btnConfirmMainServices.addEventListener('click', function () {
+                    if (!hasMainServiceSelected()) {
+                        showToast('Please select at least one service.');
+                        return;
+                    }
+                    confirmMainServices();
+                });
+            }
+            if (btnChangeMainServices) {
+                btnChangeMainServices.addEventListener('click', showMainServicesPhase);
+            }
+        }
+
+        function confirmMainServices() {
+            if (!hasMainServiceSelected()) return;
+            updateMainServiceSummary();
+            if (!hasAddonServices()) {
+                goToStep(3);
+                return;
+            }
+            servicesPhase = 'addons';
+            updateServiceStepUI();
+            scrollToElement(serviceAddonsSection);
+        }
+
+        function showMainServicesPhase() {
+            servicesPhase = 'main';
+            updateServiceStepUI();
+            scrollToElement(serviceMainSection);
+        }
+
+        function updateServiceStepUI() {
+            const inAddonsPhase = servicesPhase === 'addons';
+            if (serviceMainSection) serviceMainSection.hidden = inAddonsPhase;
+            if (serviceMainSummary) serviceMainSummary.hidden = !inAddonsPhase;
+            if (serviceAddonsSection) serviceAddonsSection.hidden = !inAddonsPhase;
+            if (btnConfirmMainServices) {
+                btnConfirmMainServices.hidden = inAddonsPhase;
+                btnConfirmMainServices.textContent = hasAddonServices()
+                    ? 'Continue to add-ons'
+                    : 'Continue';
+            }
+            if (btnStep2Next) btnStep2Next.hidden = !inAddonsPhase;
+            if (inAddonsPhase) updateMainServiceSummary();
+            updateContinueButtons();
+        }
+
+        function isServicesStepComplete() {
+            if (!hasMainServiceSelected()) return false;
+            if (hasAddonServices() && servicesPhase === 'main') return false;
+            return true;
         }
 
         function applyServiceSelection(el, update) {
@@ -626,20 +620,47 @@
             });
         }
 
+        function bindFormSubmit() {
+            form.addEventListener('submit', function (ev) {
+                for (let step = 1; step <= 4; step++) {
+                    if (!validateStep(step)) {
+                        ev.preventDefault();
+                        goToStep(step);
+                        return;
+                    }
+                }
+            });
+        }
+
         function validateStep(step) {
             if (step === 1) {
                 if (!getPostcode() || getPostcode().length < 5 || !postcodeValid) {
                     showToast('Please enter a valid postcode in our service area.');
                     return false;
                 }
-                if (Object.keys(selectedServices).length === 0) {
-                    showToast('Please select at least one service.');
+                if (!getAddressLine1()) {
+                    showToast('Please enter your address line 1.');
+                    return false;
+                }
+                if (!getCity()) {
+                    showToast('Please enter your city.');
                     return false;
                 }
             }
             if (step === 2) {
-                if (!postcodeValid) {
-                    showToast('Please enter a valid postcode on step 1.');
+                if (!hasMainServiceSelected()) {
+                    showToast('Please select at least one service.');
+                    return false;
+                }
+                if (hasAddonServices() && servicesPhase === 'main') {
+                    confirmMainServices();
+                    return false;
+                }
+            }
+            if (step === 3) {
+                if (!isServicesStepComplete()) {
+                    showToast('Please choose your services first.');
+                    goToStep(2);
                     return false;
                 }
                 if (!dateInput.value) {
@@ -666,13 +687,14 @@
                 if (n === step) s.setAttribute('aria-current', 'step');
                 else s.removeAttribute('aria-current');
             });
-            if (step === 2 && postcodeValid) {
-                setCalendarMode(true);
-                if (!calGrid.innerHTML) renderCalendar();
+            if (step === 2) {
+                updateServiceStepUI();
             }
-            if (step === 3) {
-                syncPostcodeDisplay();
-                loadAddressLookup();
+            if (step === 3 && postcodeValid && isServicesStepComplete()) {
+                setCalendarMode(true);
+                renderCalendar();
+            }
+            if (step === 4) {
                 updateReviewBlock();
             }
             updateContinueButtons();
@@ -680,10 +702,19 @@
         }
 
         function updateContinueButtons() {
-            const step1Ready = postcodeValid && Object.keys(selectedServices).length > 0;
+            const step1Ready = postcodeValid && isAddressComplete();
             if (btnStep1Next) btnStep1Next.disabled = !step1Ready;
-            const step2Ready = postcodeValid && !!dateInput.value && !!timeInput.value;
-            if (btnStep2Next) btnStep2Next.disabled = !step2Ready;
+
+            const mainSelected = hasMainServiceSelected();
+            if (btnConfirmMainServices) {
+                btnConfirmMainServices.disabled = !mainSelected;
+            }
+            if (btnStep2Next) {
+                btnStep2Next.disabled = !mainSelected;
+            }
+
+            const step3Ready = isServicesStepComplete() && !!dateInput.value && !!timeInput.value;
+            if (btnStep3Next) btnStep3Next.disabled = !step3Ready;
         }
 
         function bindCalendarNav() {
@@ -855,7 +886,7 @@
                 timeSlotsGrid.innerHTML = '';
 
                 if (data.error === 'postcode_required') {
-                    timeSlotsGrid.innerHTML = '<span class="text-muted small">Enter your postcode on step 1 to see available times.</span>';
+                    timeSlotsGrid.innerHTML = '<span class="text-muted small">Choose your services on step 2 to see available times.</span>';
                     return;
                 }
 
@@ -1120,9 +1151,8 @@
             const mobileBarPromoRow = document.getElementById('mobileBarPromoRow');
             const mobileBarPromo = document.getElementById('mobileBarPromo');
 
-            let compact = 'Select services to begin';
-            if (names.length) {
-                compact = names.length === 1 ? names[0] : names.length + ' services';
+            let compact = 'Enter your postcode to begin';
+            if (postcodeValid && isAddressComplete()) {
                 if (selectedDate && selectedTimeLabel) {
                     compact = parseDate(selectedDate).toLocaleDateString('en-GB', {
                         day: 'numeric', month: 'short'
@@ -1131,6 +1161,10 @@
                     compact = parseDate(selectedDate).toLocaleDateString('en-GB', {
                         day: 'numeric', month: 'short'
                     });
+                } else if (names.length) {
+                    compact = names.length === 1 ? names[0] : names.length + ' services';
+                } else {
+                    compact = getPostcode() || 'Address entered';
                 }
             }
 

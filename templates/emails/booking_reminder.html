@@ -1,56 +1,24 @@
 {% extends 'emails/base_email.html' %}
 
 {% block email_title %}Appointment Reminder — {{ site_name }}{% endblock %}
-{% block accent_color %}#0e7490{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">See you tomorrow</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #64748b;">A quick reminder about your upcoming appointment.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">See You Tomorrow</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">A quick reminder about your upcoming appointment.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.contact_first_name }},</p>
-<p style="margin: 0 0 8px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ booking.contact_first_name }},</p>
+<p style="margin: 0 0 8px; font-size: 15px; color: #1e2421;">
     This is a friendly reminder that {{ site_name }} is booked to visit you tomorrow.
     Please make sure someone is available during the time window below.
 </p>
 
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 20px 0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-    <tr>
-        <td colspan="2" style="background-color: #ecfeff; padding: 12px 16px; font-size: 13px; font-weight: 600; color: #155e75; text-transform: uppercase; letter-spacing: 0.04em;">
-            Tomorrow's visit
-        </td>
-    </tr>
-    <tr style="background-color: #ffffff;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; width: 35%; border-top: 1px solid #f1f5f9;">Services</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #1e293b; font-weight: 600; border-top: 1px solid #f1f5f9;">{{ booking.service_summary }}</td>
-    </tr>
-    <tr style="background-color: #fafafa;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">Date</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #1e293b; border-top: 1px solid #f1f5f9;">{{ booking.date|date:"l, d F Y" }}</td>
-    </tr>
-    <tr style="background-color: #ffffff;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">Time window</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #1e293b; border-top: 1px solid #f1f5f9;">
-            {{ time_window }}
-            <span style="display: block; font-size: 13px; color: #64748b; margin-top: 4px;">Approx. {{ duration_minutes }} minutes on site</span>
-        </td>
-    </tr>
-    <tr style="background-color: #fafafa;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">Address</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #1e293b; border-top: 1px solid #f1f5f9;">{{ booking.full_address }}</td>
-    </tr>
-    {% if access_notes %}
-    <tr style="background-color: #ffffff;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9; vertical-align: top;">Access notes</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #1e293b; border-top: 1px solid #f1f5f9; white-space: pre-line;">{{ access_notes }}</td>
-    </tr>
-    {% endif %}
-</table>
+{% include 'emails/includes/booking_details.html' with table_title="Tomorrow's Visit" time_window=time_window duration_minutes=duration_minutes access_notes=access_notes hide_total=True %}
 
-<p style="margin: 0; font-size: 14px; color: #64748b;">
+<p style="margin: 0; font-size: 14px; color: #6b7368;">
     Need to reschedule or update access details? Contact us at
-    <a href="mailto:{{ site_email }}" style="color: #0e7490; text-decoration: none;">{{ site_email }}</a>
-    {% if site_phone %} or call <a href="tel:{{ site_phone }}" style="color: #0e7490; text-decoration: none;">{{ site_phone }}</a>{% endif %}.
+    <a href="mailto:{{ site_email }}" style="color: #354f3f; text-decoration: none; font-weight: 600;">{{ site_email }}</a>
+    {% if site_phone %} or call <a href="tel:{{ site_phone }}" style="color: #354f3f; text-decoration: none; font-weight: 600;">{{ site_phone }}</a>{% endif %}.
 </p>
 {% endblock %}

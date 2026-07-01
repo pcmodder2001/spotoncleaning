@@ -3,39 +3,27 @@
 {% block email_title %}Booking Confirmation — {{ site_name }}{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">Booking received</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #64748b;">We've got your appointment request.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">Booking Received</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">We've got your appointment request.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.contact_first_name }},</p>
-<p style="margin: 0 0 8px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ booking.contact_first_name }},</p>
+<p style="margin: 0 0 8px; font-size: 15px; color: #1e2421;">
     Thank you for booking with {{ site_name }}. Here is a summary of your appointment:
 </p>
 
-{% include 'emails/includes/booking_details.html' with show_status=True status_bg='#fef3c7' status_color='#92400e' %}
+{% include 'emails/includes/booking_details.html' with show_status=True status_bg='#f0e6d4' status_color='#a68548' %}
 
-<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
     We'll review your booking and send a confirmation email once your appointment is confirmed.
 </p>
 {% if account_setup_url %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
     Want to view or manage this booking online? Create your account — we already have your details, so you only need to choose a password.
 </p>
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 8px 0 0;">
-    <tr>
-        <td style="border-radius: 8px; background-color: #0e7490;">
-            <a href="{{ account_setup_url }}" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">Create your account</a>
-        </td>
-    </tr>
-</table>
+{% include 'emails/includes/email_button.html' with url=account_setup_url label='Create your account' margin='8px 0 0' %}
 {% else %}
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 8px 0 0;">
-    <tr>
-        <td style="border-radius: 8px; background-color: #0e7490;">
-            <a href="{{ site_url }}/accounts/my-bookings/" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">View my bookings</a>
-        </td>
-    </tr>
-</table>
+{% include 'emails/includes/email_button.html' with url=site_url|add:'/accounts/my-bookings/' label='View my bookings' margin='8px 0 0' %}
 {% endif %}
 {% endblock %}

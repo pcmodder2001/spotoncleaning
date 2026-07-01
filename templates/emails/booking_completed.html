@@ -1,26 +1,20 @@
 {% extends 'emails/base_email.html' %}
 
 {% block email_title %}Booking Completed — {{ site_name }}{% endblock %}
-{% block accent_color %}#059669{% endblock %}
+{% block accent_color %}#3d6b4f{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">Job complete</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #64748b;">We hope your appliances are sparkling.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">Job Complete</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">We hope your appliances are sparkling.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.contact_first_name }},</p>
-<p style="margin: 0 0 8px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ booking.contact_first_name }},</p>
+<p style="margin: 0 0 8px; font-size: 15px; color: #1e2421;">
     Your <strong>{{ booking.service_summary }}</strong> appointment on {{ booking.date|date:"l, d F Y" }} has been completed.
 </p>
-<p style="margin: 0 0 24px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 24px; font-size: 15px; color: #1e2421;">
     Thank you for choosing {{ site_name }}. We'd love to hear how we did — and we're here whenever you need us again.
 </p>
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0;">
-    <tr>
-        <td style="border-radius: 8px; background-color: #0e7490;">
-            <a href="{{ site_url }}/bookings/book/" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">Book again</a>
-        </td>
-    </tr>
-</table>
+{% include 'emails/includes/email_button.html' with url=site_url|add:'/bookings/book/' label='Book again' %}
 {% endblock %}

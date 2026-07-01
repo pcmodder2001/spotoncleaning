@@ -43,5 +43,6 @@ urlpatterns = [
     path('services/<int:pk>/edit/', views.service_edit_view, name='service_edit'),
     path('services/<int:pk>/delete/', views.service_delete_view, name='service_delete'),
     path('debug/', views.debug_view, name='debug'),
+    path('debug/send-all/', views.debug_send_all_emails_view, name='debug_send_all_emails'),
     path('debug/send/<slug:email_type>/', views.debug_send_email_view, name='debug_send_email'),
 ]

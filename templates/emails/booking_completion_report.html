@@ -1,37 +1,37 @@
 {% extends 'emails/base_email.html' %}
 
 {% block email_title %}Job Completion Report — {{ site_name }}{% endblock %}
-{% block accent_color %}#059669{% endblock %}
+{% block accent_color %}#3d6b4f{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">Job completion report</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #64748b;">
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">Job Completion Report</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">
     Booking #{{ booking.pk }} · {{ booking.date|date:"l, d F Y" }}
 </p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.contact_first_name }},</p>
-<p style="margin: 0 0 24px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ booking.contact_first_name }},</p>
+<p style="margin: 0 0 24px; font-size: 15px; color: #1e2421;">
     Thank you for choosing {{ site_name }}. Below is your completion report with before/after photos
     and sign-off for <strong>{{ booking.service_summary }}</strong>.
 </p>
 
 {% for row in service_photos %}
-<div style="margin: 0 0 28px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-    <p style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #0f172a;">{{ row.name }}</p>
+<div style="margin: 0 0 28px; padding: 16px; background: #f5f1e8; border-radius: 8px; border: 1px solid #ddd5c8;">
+    <p style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #243528;">{{ row.name }}</p>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
         <tr>
             <td width="48%" valign="top" style="padding-right: 8px;">
-                <p style="margin: 0 0 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Before</p>
+                <p style="margin: 0 0 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7368;">Before</p>
                 {% if row.before_url %}
-                <img src="{{ row.before_url }}" alt="Before — {{ row.name }}" width="260" style="display: block; width: 100%; max-width: 260px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <img src="{{ row.before_url }}" alt="Before — {{ row.name }}" width="260" style="display: block; width: 100%; max-width: 260px; height: auto; border-radius: 6px; border: 1px solid #ddd5c8;">
                 {% endif %}
             </td>
             <td width="48%" valign="top" style="padding-left: 8px;">
-                <p style="margin: 0 0 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">After</p>
+                <p style="margin: 0 0 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7368;">After</p>
                 {% if row.after_url %}
-                <img src="{{ row.after_url }}" alt="After — {{ row.name }}" width="260" style="display: block; width: 100%; max-width: 260px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <img src="{{ row.after_url }}" alt="After — {{ row.name }}" width="260" style="display: block; width: 100%; max-width: 260px; height: auto; border-radius: 6px; border: 1px solid #ddd5c8;">
                 {% endif %}
             </td>
         </tr>
@@ -39,29 +39,23 @@
 </div>
 {% endfor %}
 
-<div style="margin: 0 0 24px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-    <p style="margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #0f172a;">Customer sign-off</p>
-    <p style="margin: 0 0 12px; font-size: 14px; color: #334155;">Signed by: <strong>{{ signed_by_name }}</strong></p>
+<div style="margin: 0 0 24px; padding: 16px; background: #f5f1e8; border-radius: 8px; border: 1px solid #ddd5c8;">
+    <p style="margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #243528;">Customer Sign-Off</p>
+    <p style="margin: 0 0 12px; font-size: 14px; color: #1e2421;">Signed by: <strong>{{ signed_by_name }}</strong></p>
     {% if signature_url %}
-    <img src="{{ signature_url }}" alt="Customer signature" width="220" style="display: block; max-width: 220px; height: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px;">
+    <img src="{{ signature_url }}" alt="Customer signature" width="220" style="display: block; max-width: 220px; height: auto; background: #fffcf7; border: 1px solid #ddd5c8; border-radius: 4px; padding: 8px;">
     {% endif %}
 </div>
 
-<div style="margin: 0 0 24px; padding: 16px; background: #f0fdfa; border-radius: 8px; border: 1px solid #99f6e4;">
-    <p style="margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #0f172a;">Amount</p>
+<div style="margin: 0 0 24px; padding: 16px; background: #f0e6d4; border-radius: 8px; border: 1px solid #c4a066;">
+    <p style="margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #243528;">Amount</p>
     {% if has_promo %}
-    <p style="margin: 0 0 4px; font-size: 14px; color: #64748b;">Subtotal: £{{ subtotal }}</p>
-    <p style="margin: 0 0 4px; font-size: 14px; color: #059669;">Promo {{ promo_code }}: −£{{ discount_amount }}</p>
+    <p style="margin: 0 0 4px; font-size: 14px; color: #6b7368;">Subtotal: £{{ subtotal }}</p>
+    <p style="margin: 0 0 4px; font-size: 14px; color: #3d6b4f;">Promo {{ promo_code }}: −£{{ discount_amount }}</p>
     {% endif %}
-    <p style="margin: 0; font-size: 18px; font-weight: 800; color: #0e7490;">Total: £{{ total_paid }}</p>
+    <p style="margin: 0; font-size: 18px; font-weight: 800; color: #354f3f;">Total: £{{ total_paid }}</p>
 </div>
 
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 0 8px;">
-    <tr>
-        <td style="border-radius: 8px; background-color: #0e7490;">
-            <a href="{{ report_url }}" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">View full report online</a>
-        </td>
-    </tr>
-</table>
-<p style="margin: 0; font-size: 13px; color: #64748b;">You can print or save the online report as a PDF from your browser.</p>
+{% include 'emails/includes/email_button.html' with url=report_url label='View full report online' margin='0 0 8px' %}
+<p style="margin: 0; font-size: 13px; color: #6b7368;">You can print or save the online report as a PDF from your browser.</p>
 {% endblock %}

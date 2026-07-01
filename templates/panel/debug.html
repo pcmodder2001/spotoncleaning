@@ -22,7 +22,7 @@
                     <dd class="col-sm-8"><code>{{ email_config.from_email }}</code></dd>
                     <dt class="col-sm-4">SMTP user</dt>
                     <dd class="col-sm-8"><code>{{ email_config.host_user }}</code></dd>
-                    <dt class="col-sm-4">Test recipients</dt>
+                    <dt class="col-sm-4">Default recipients</dt>
                     <dd class="col-sm-8">
                         {% if sysadmin_recipients %}
                             {% for email in sysadmin_recipients %}
@@ -41,10 +41,10 @@
             <div class="card-body">
                 <h2 class="h5 fw-bold mb-3">About this page</h2>
                 <p class="text-muted mb-2">
-                    Send sample versions of each site email to all addresses in
-                    <code>SYSADMIN_EMAILS</code>. Subjects are prefixed with <code>[TEST]</code>.
+                    Send sample versions of each site email. Subjects are prefixed with <code>[TEST]</code>.
                 </p>
                 <p class="text-muted mb-0">
+                    Enter a custom address below, or leave blank to use <code>SYSADMIN_EMAILS</code>.
                     Booking emails use your latest real booking when available, otherwise sample data.
                     Password reset links in test emails are not valid.
                 </p>
@@ -55,6 +55,30 @@
 
 <div class="panel-card card border-0">
     <div class="card-body">
+        <div class="row g-3 align-items-end mb-4">
+            <div class="col-lg-8">
+                <label for="debug-recipient" class="form-label fw-semibold">Send to</label>
+                <input
+                    type="text"
+                    id="debug-recipient"
+                    class="form-control"
+                    value="{{ posted_recipient }}"
+                    placeholder="you@example.com{% if sysadmin_recipients %}, or leave blank for {{ sysadmin_recipients|join:', ' }}{% endif %}"
+                    autocomplete="email"
+                >
+                <div class="form-text">Separate multiple addresses with commas.</div>
+            </div>
+            <div class="col-lg-4">
+                <form method="post" action="{% url 'panel:debug_send_all_emails' %}" class="debug-email-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="recipient" value="">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-envelope-check me-1"></i>Send all test emails
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <h2 class="h5 fw-bold mb-3">Email tests</h2>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -73,9 +97,10 @@
                         <td><code class="small">{{ email_test.template }}</code></td>
                         <td class="text-muted">{{ email_test.description }}</td>
                         <td class="text-end">
-                            <form method="post" action="{% url 'panel:debug_send_email' email_test.id %}">
+                            <form method="post" action="{% url 'panel:debug_send_email' email_test.id %}" class="debug-email-form d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-primary">
+                                <input type="hidden" name="recipient" value="">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-envelope me-1"></i>Send test email
                                 </button>
                             </form>
@@ -88,4 +113,23 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+(function () {
+    var recipientInput = document.getElementById('debug-recipient');
+    if (!recipientInput) return;
+
+    document.querySelectorAll('.debug-email-form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            var hidden = form.querySelector('input[name="recipient"]');
+            if (hidden) {
+                hidden.value = recipientInput.value.trim();
+            }
+        });
+    });
+})();
+</script>
 {% endblock %}

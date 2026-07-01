@@ -1,29 +1,23 @@
 {% extends 'emails/base_email.html' %}
 
 {% block email_title %}Booking Cancelled — {{ site_name }}{% endblock %}
-{% block accent_color %}#dc2626{% endblock %}
+{% block accent_color %}#b83c3c{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">Booking cancelled</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #64748b;">Your appointment has been cancelled.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">Booking Cancelled</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">Your appointment has been cancelled.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.contact_first_name }},</p>
-<p style="margin: 0 0 8px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ booking.contact_first_name }},</p>
+<p style="margin: 0 0 8px; font-size: 15px; color: #1e2421;">
     Your booking for <strong>{{ booking.service_summary }}</strong> on {{ booking.date|date:"l, d F Y" }} at {{ booking.time_slot.time|time:"H:i" }} has been cancelled.
 </p>
 
-{% include 'emails/includes/booking_details.html' with show_status=True status_bg='#fee2e2' status_color='#991b1b' %}
+{% include 'emails/includes/booking_details.html' with show_status=True status_bg='#fde8e8' status_color='#8b2e2e' %}
 
-<p style="margin: 0 0 24px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 24px; font-size: 15px; color: #1e2421;">
     If this was a mistake or you'd like to rebook, we'd be happy to help.
 </p>
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0;">
-    <tr>
-        <td style="border-radius: 8px; background-color: #0e7490;">
-            <a href="{{ site_url }}/bookings/book/" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">Book a new appointment</a>
-        </td>
-    </tr>
-</table>
+{% include 'emails/includes/email_button.html' with url=site_url|add:'/bookings/book/' label='Book a new appointment' %}
 {% endblock %}

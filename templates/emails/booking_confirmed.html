@@ -1,24 +1,24 @@
 {% extends 'emails/base_email.html' %}
 
 {% block email_title %}Booking Confirmed — {{ site_name }}{% endblock %}
-{% block accent_color %}#059669{% endblock %}
+{% block accent_color %}#3d6b4f{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">You're all booked in</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #64748b;">Your appointment has been confirmed.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">You're All Booked In</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">Your appointment has been confirmed.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #334155;">Hi {{ booking.contact_first_name }},</p>
-<p style="margin: 0 0 8px; font-size: 15px; color: #334155;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ booking.contact_first_name }},</p>
+<p style="margin: 0 0 8px; font-size: 15px; color: #1e2421;">
     Great news — your booking with {{ site_name }} is confirmed. We'll see you at the time below.
 </p>
 
-{% include 'emails/includes/booking_details.html' with show_status=True status_bg='#d1fae5' status_color='#065f46' %}
+{% include 'emails/includes/booking_details.html' with show_status=True status_bg='#e8efe9' status_color='#243528' %}
 
-<p style="margin: 0; font-size: 14px; color: #64748b;">
+<p style="margin: 0; font-size: 14px; color: #6b7368;">
     Need to make a change? Contact us at
-    <a href="mailto:{{ site_email }}" style="color: #0e7490; text-decoration: none;">{{ site_email }}</a>
-    {% if site_phone %} or call <a href="tel:{{ site_phone }}" style="color: #0e7490; text-decoration: none;">{{ site_phone }}</a>{% endif %}.
+    <a href="mailto:{{ site_email }}" style="color: #354f3f; text-decoration: none; font-weight: 600;">{{ site_email }}</a>
+    {% if site_phone %} or call <a href="tel:{{ site_phone }}" style="color: #354f3f; text-decoration: none; font-weight: 600;">{{ site_phone }}</a>{% endif %}.
 </p>
 {% endblock %}

@@ -4,6 +4,8 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.utils import timezone
 
@@ -133,6 +135,28 @@ def get_sysadmin_recipients():
     return list(settings.SYSADMIN_EMAILS)
 
 
+def parse_debug_recipients(raw_recipient=''):
+    """Resolve test recipients from optional override, else SYSADMIN_EMAILS."""
+    raw = (raw_recipient or '').strip()
+    if not raw:
+        return get_sysadmin_recipients()
+
+    emails = []
+    for part in raw.replace(';', ',').split(','):
+        email = part.strip()
+        if not email:
+            continue
+        try:
+            validate_email(email)
+        except ValidationError as exc:
+            raise ValueError(f'Invalid email address: {email}') from exc
+        emails.append(email)
+
+    if not emails:
+        return get_sysadmin_recipients()
+    return emails
+
+
 def get_sample_user():
     for email in settings.SYSADMIN_EMAILS:
         user = User.objects.filter(email__iexact=email).first()
@@ -244,12 +268,13 @@ def get_email_config_summary():
     }
 
 
-def send_test_email(email_type_id):
+def send_test_email(email_type_id, recipients=None):
     email_type = EMAIL_TEST_TYPES_BY_ID.get(email_type_id)
     if not email_type:
         return None, []
 
-    recipients = get_sysadmin_recipients()
+    if recipients is None:
+        recipients = get_sysadmin_recipients()
     if not recipients:
         return email_type, []
 
@@ -352,3 +377,15 @@ def send_test_email(email_type_id):
         recipients,
     )
     return email_type, results
+
+
+def send_all_test_emails(recipients=None):
+    """Send every test email type. Returns list of (email_meta, results) pairs."""
+    if recipients is None:
+        recipients = get_sysadmin_recipients()
+
+    summaries = []
+    for email_type in EMAIL_TEST_TYPES:
+        email_meta, results = send_test_email(email_type['id'], recipients=recipients)
+        summaries.append((email_meta, results))
+    return summaries

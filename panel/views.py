@@ -38,6 +38,8 @@ from panel.email_debug import (
     EMAIL_TEST_TYPES,
     get_email_config_summary,
     get_sysadmin_recipients,
+    parse_debug_recipients,
+    send_all_test_emails,
     send_test_email,
 )
 from services.models import Service, ServiceType
@@ -478,20 +480,14 @@ def debug_view(request):
         'email_tests': EMAIL_TEST_TYPES,
         'email_config': get_email_config_summary(),
         'sysadmin_recipients': get_sysadmin_recipients(),
+        'posted_recipient': request.GET.get('recipient', ''),
     })
 
 
-@sysadmin_required
-@require_POST
-def debug_send_email_view(request, email_type):
-    email_meta, results = send_test_email(email_type)
-    if email_meta is None:
-        messages.error(request, 'Unknown email type.')
-        return redirect('panel:debug')
-
+def _flash_email_send_results(request, email_meta, results, recipients_label):
     if not results:
-        messages.error(request, 'No sysadmin recipients configured in SYSADMIN_EMAILS.')
-        return redirect('panel:debug')
+        messages.error(request, 'No recipients configured. Enter an email address or set SYSADMIN_EMAILS.')
+        return
 
     sent = [email for email, ok in results if ok]
     failed = [email for email, ok in results if not ok]
@@ -499,18 +495,107 @@ def debug_send_email_view(request, email_type):
     if sent and not failed:
         messages.success(
             request,
-            f"Test email '{email_meta['name']}' sent to {', '.join(sent)}.",
+            f"Test email '{email_meta['name']}' sent to {recipients_label}.",
         )
     elif sent and failed:
         messages.warning(
             request,
-            f"Partially sent '{email_meta['name']}' — succeeded: {', '.join(sent)}; "
-            f"failed: {', '.join(failed)}.",
+            f"Partially sent '{email_meta['name']}' to {recipients_label} — "
+            f"succeeded: {', '.join(sent)}; failed: {', '.join(failed)}.",
         )
     else:
         messages.error(
             request,
-            f"Failed to send '{email_meta['name']}' to {', '.join(failed)}. Check server logs.",
+            f"Failed to send '{email_meta['name']}' to {recipients_label}. Check server logs.",
         )
 
+
+def _flash_bulk_email_send_results(request, summaries, recipients_label):
+    if not summaries:
+        messages.error(request, 'No email types configured.')
+        return
+
+    succeeded = []
+    partial = []
+    failed = []
+
+    for email_meta, results in summaries:
+        if not results:
+            failed.append(email_meta['name'])
+            continue
+        sent_count = sum(1 for _, ok in results if ok)
+        failed_count = sum(1 for _, ok in results if not ok)
+        if failed_count == 0:
+            succeeded.append(email_meta['name'])
+        elif sent_count == 0:
+            failed.append(email_meta['name'])
+        else:
+            partial.append(email_meta['name'])
+
+    total = len(summaries)
+    ok_count = len(succeeded)
+
+    if ok_count == total:
+        messages.success(
+            request,
+            f'All {total} test emails sent to {recipients_label}.',
+        )
+    elif ok_count == 0 and not partial:
+        messages.error(
+            request,
+            f'Failed to send test emails to {recipients_label}. Check server logs.',
+        )
+    else:
+        detail_parts = []
+        if succeeded:
+            detail_parts.append(f'sent: {", ".join(succeeded)}')
+        if partial:
+            detail_parts.append(f'partial: {", ".join(partial)}')
+        if failed:
+            detail_parts.append(f'failed: {", ".join(failed)}')
+        messages.warning(
+            request,
+            f'Sent {ok_count} of {total} test email types to {recipients_label} ({"; ".join(detail_parts)}).',
+        )
+
+
+def _debug_redirect_after_send(request):
+    from urllib.parse import urlencode
+    from django.urls import reverse
+
+    recipient = request.POST.get('recipient', '').strip()
+    if recipient:
+        return redirect(f'{reverse("panel:debug")}?{urlencode({"recipient": recipient})}')
     return redirect('panel:debug')
+
+
+@sysadmin_required
+@require_POST
+def debug_send_email_view(request, email_type):
+    try:
+        recipients = parse_debug_recipients(request.POST.get('recipient', ''))
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect('panel:debug')
+
+    email_meta, results = send_test_email(email_type, recipients=recipients)
+    if email_meta is None:
+        messages.error(request, 'Unknown email type.')
+        return redirect('panel:debug')
+
+    _flash_email_send_results(request, email_meta, results, ', '.join(recipients))
+    return _debug_redirect_after_send(request)
+
+
+@sysadmin_required
+@require_POST
+def debug_send_all_emails_view(request):
+    try:
+        recipients = parse_debug_recipients(request.POST.get('recipient', ''))
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect('panel:debug')
+
+    summaries = send_all_test_emails(recipients=recipients)
+    _flash_bulk_email_send_results(request, summaries, ', '.join(recipients))
+    return _debug_redirect_after_send(request)

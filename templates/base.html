@@ -37,9 +37,7 @@
                     <div class="site-nav-float">
                         <ul class="navbar-nav align-items-lg-center">
                         <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#about">About</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#services">Prices</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#services">Services</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#reviews">Reviews</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'website:home' %}#contact">Contact</a></li>
                         <li class="nav-item d-md-none">
                             <a class="nav-link" href="tel:{{ SITE_PHONE }}"><i class="bi bi-telephone me-1"></i>{{ SITE_PHONE }}</a>
@@ -55,7 +53,6 @@
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>
                             <li class="nav-item">
-                                <a class="nav-link nav-link-action nav-link-action--quote" href="{% url 'website:home' %}#contact">Get a quote</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link nav-link-action nav-link-action--primary" href="{% url 'bookings:create' %}">Book now</a>

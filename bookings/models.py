@@ -262,11 +262,11 @@ class Booking(models.Model):
         return bool(self.promo_code_id and self.discount_amount)
 
     def recalculate_pricing(self, *, save=True):
-        """Recompute discount from current services and attached promo code."""
+        """Recompute discount from promo code when attached; preserve manual discount otherwise."""
         if self.promo_code_id:
             self.discount_amount = self.promo_code.calculate_discount(self.total_price)
-        else:
-            self.discount_amount = Decimal('0.00')
+        elif self.discount_amount and self.discount_amount > self.total_price:
+            self.discount_amount = self.total_price
         if save and self.pk:
             self.save(update_fields=['discount_amount', 'updated_at'])
 

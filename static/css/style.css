@@ -3572,6 +3572,12 @@ body:not(.site-home) .site-navbar {
     font-size: 1rem;
 }
 
+.booking-discount-editor {
+    margin-top: 0.875rem;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--border);
+}
+
 .booking-view-actions {
     display: flex;
     flex-wrap: wrap;

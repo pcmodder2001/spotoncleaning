@@ -1,7 +1,7 @@
-{% if booking.has_promo %}
+{% if booking.discount_amount %}
 <div class="booking-price-cell">
     <div class="booking-price-line text-muted small">Subtotal &pound;{{ booking.total_price }}</div>
-    <div class="booking-price-line text-success small">&minus;&pound;{{ booking.discount_amount }} ({{ booking.promo_code.code }})</div>
+    <div class="booking-price-line text-success small">&minus;&pound;{{ booking.discount_amount }}{% if booking.promo_code %} ({{ booking.promo_code.code }}){% else %} discount{% endif %}</div>
     <div class="booking-price-line fw-semibold">&pound;{{ booking.discounted_total }}</div>
 </div>
 {% else %}

@@ -30,24 +30,49 @@
   }
 
   function pricingHtml(pricing) {
-    if (pricing.has_promo) {
+    const discount = Number(pricing.discount);
+    const subtotal = Number(pricing.subtotal);
+    const total = Number(pricing.total);
+    const hasDiscount = discount > 0 || pricing.has_discount;
+    const discountLabel = pricing.has_promo && pricing.promo_code
+      ? `Promo ${escapeHtml(pricing.promo_code)}`
+      : 'Discount';
+
+    if (hasDiscount || subtotal !== total) {
       return `
         <div class="booking-pricing booking-pricing-promo">
-          <div class="booking-pricing-row"><span>Subtotal</span><span>${money(pricing.subtotal)}</span></div>
+          <div class="booking-pricing-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
           <div class="booking-pricing-row text-success">
-            <span>Promo ${escapeHtml(pricing.promo_code)}</span>
-            <span>-${money(pricing.discount)}</span>
+            <span>${discountLabel}</span>
+            <span>-${money(discount)}</span>
           </div>
           <div class="booking-pricing-row booking-pricing-total">
-            <span>Total</span><strong>${money(pricing.total)}</strong>
+            <span>Total</span><strong>${money(total)}</strong>
           </div>
         </div>`;
     }
     return `
       <div class="booking-pricing">
         <div class="booking-pricing-row booking-pricing-total">
-          <span>Total</span><strong>${money(pricing.total)}</strong>
+          <span>Total</span><strong>${money(total)}</strong>
         </div>
+      </div>`;
+  }
+
+  function discountEditorHtml(data) {
+    if (!data.can_edit_discount) return '';
+    const pricing = data.pricing;
+    return `
+      <div class="booking-discount-editor">
+        <label class="form-label small mb-1" for="bookingDiscountInput">Discount</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text">£</span>
+          <input type="number" class="form-control" id="bookingDiscountInput"
+                 min="0" max="${escapeHtml(pricing.subtotal)}" step="0.01"
+                 value="${escapeHtml(pricing.discount)}" inputmode="decimal">
+        </div>
+        <p class="form-text mb-2">Max ${money(pricing.subtotal)} (subtotal). Saving replaces any promo code.</p>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="bookingSaveDiscountBtn">Save discount</button>
       </div>`;
   }
 
@@ -143,6 +168,7 @@
           <h6>Services</h6>
           ${servicesHtml(data.services)}
           ${pricingHtml(data.pricing)}
+          ${discountEditorHtml(data)}
         </div>
 
         ${data.notes ? `<div class="booking-view-section"><h6>Customer notes</h6><p class="mb-0">${escapeHtml(data.notes)}</p></div>` : ''}
@@ -712,6 +738,53 @@
       Swal.close();
       openManageServicesModal(booking);
     });
+    document.getElementById('bookingSaveDiscountBtn')?.addEventListener('click', function () {
+      saveBookingDiscount(booking);
+    });
+  }
+
+  function saveBookingDiscount(booking) {
+    const input = document.getElementById('bookingDiscountInput');
+    if (!input) return;
+
+    const subtotal = Number(booking.pricing.subtotal);
+    const discount = Number(input.value);
+    if (Number.isNaN(discount) || discount < 0) {
+      window.showAppToast('Enter a valid discount amount.', 'error');
+      return;
+    }
+    if (discount > subtotal) {
+      window.showAppToast('Discount cannot exceed the subtotal.', 'error');
+      return;
+    }
+
+    const body = new FormData();
+    body.append('discount_amount', discount.toFixed(2));
+
+    fetch(apiUrl(`/${booking.id}/discount/`), {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfHeader() },
+      body: body,
+    })
+      .then(function (response) {
+        return response.json().then(function (data) {
+          return { ok: response.ok, data: data };
+        });
+      })
+      .then(function ({ ok, data }) {
+        if (!ok) throw new Error(data.error || 'Could not save discount');
+        let message = 'Discount updated';
+        if (data.email_sent === true) {
+          message = 'Discount updated — customer emailed';
+        } else if (data.email_sent === false) {
+          message = 'Discount updated, but the email could not be sent';
+        }
+        window.showAppToast(message, data.email_sent === false ? 'error' : 'success');
+        openBookingView(booking.id);
+      })
+      .catch(function (error) {
+        window.showAppToast(error.message, 'error');
+      });
   }
 
   window.openBookingView = function (bookingId) {

@@ -176,6 +176,15 @@ def send_booking_created_email(booking):
     )
 
 
+def send_booking_updated_email(booking):
+    return send_notification_email(
+        subject=f'Your booking has been updated — {settings.SITE_NAME}',
+        template_name='emails/booking_updated.html',
+        context=get_booking_email_context(booking),
+        recipient=booking.contact_email,
+    )
+
+
 def send_booking_reminder_email(booking):
     from bookings.reminders import get_booking_reminder_context
 

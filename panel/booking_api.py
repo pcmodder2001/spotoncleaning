@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -6,12 +6,13 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from bookings.models import Booking, BookingPhoto, BookingStatus
-from bookings.notifications import send_booking_status_email
+from bookings.notifications import send_booking_status_email, send_booking_updated_email
 from bookings.photo_access import booking_photo_url
 from audit.actions import (
     BOOKING_JOB_COMPLETED,
     BOOKING_JOB_STARTED,
     BOOKING_SERVICES_UPDATED,
+    BOOKING_UPDATED,
 )
 from audit.services import log_action
 from panel.decorators import admin_required, panel_required
@@ -31,6 +32,7 @@ def _booking_pricing(booking):
         'subtotal': f'{subtotal:.2f}',
         'discount': f'{discount:.2f}',
         'total': f'{booking.discounted_total:.2f}',
+        'has_discount': discount > 0,
         'has_promo': booking.has_promo,
         'promo_code': booking.promo_code.code if booking.promo_code_id else None,
         'promo_description': booking.promo_code.description if booking.promo_code_id else '',
@@ -93,6 +95,10 @@ def booking_detail_payload(request, booking):
             request.user.can_manage_site
             and booking.status not in (BookingStatus.CANCELLED, BookingStatus.COMPLETED)
         ),
+        'can_edit_discount': (
+            request.user.can_manage_site
+            and booking.status not in (BookingStatus.CANCELLED, BookingStatus.COMPLETED)
+        ),
         'can_admin_edit': request.user.can_manage_site,
         'edit_url': f'/panel/bookings/{booking.pk}/edit/',
     }
@@ -146,6 +152,63 @@ def booking_update_services_api(request, pk):
 
     return JsonResponse({
         'success': True,
+        'booking': booking_detail_payload(request, booking),
+    })
+
+
+@admin_required
+@require_POST
+def booking_update_discount_api(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    if booking.status in (BookingStatus.CANCELLED, BookingStatus.COMPLETED):
+        return JsonResponse({'error': 'Cannot change discount on this booking.'}, status=400)
+
+    raw = request.POST.get('discount_amount', '').strip()
+    try:
+        discount = Decimal(raw or '0')
+    except InvalidOperation:
+        return JsonResponse({'error': 'Enter a valid discount amount.'}, status=400)
+
+    if discount < 0:
+        return JsonResponse({'error': 'Discount cannot be negative.'}, status=400)
+
+    subtotal = booking.total_price
+    if discount > subtotal:
+        return JsonResponse(
+            {'error': f'Discount cannot exceed the subtotal (£{subtotal:.2f}).'},
+            status=400,
+        )
+
+    discount = discount.quantize(Decimal('0.01'))
+    previous = booking.discount_amount or Decimal('0.00')
+    previous_promo = booking.promo_code.code if booking.promo_code_id else None
+
+    booking.discount_amount = discount
+    if discount > 0 or booking.promo_code_id:
+        booking.promo_code = None
+    booking.save(update_fields=['discount_amount', 'promo_code', 'updated_at'])
+
+    email_sent = None
+    if discount != previous:
+        email_sent = send_booking_updated_email(booking)
+
+    log_action(
+        BOOKING_UPDATED,
+        f'Updated discount on booking #{booking.pk} to £{discount:.2f}.',
+        request=request,
+        target_type='booking',
+        target_id=booking.pk,
+        target_label=f'Booking #{booking.pk}',
+        metadata={
+            'previous_discount': str(previous),
+            'previous_promo': previous_promo,
+            'discount': str(discount),
+        },
+    )
+
+    return JsonResponse({
+        'success': True,
+        'email_sent': email_sent,
         'booking': booking_detail_payload(request, booking),
     })
 
@@ -294,7 +357,7 @@ def booking_quote_api(request, pk):
     if booking.promo_code_id:
         discount = booking.promo_code.calculate_discount(subtotal)
     else:
-        discount = Decimal('0.00')
+        discount = min(booking.discount_amount or Decimal('0.00'), subtotal)
     total = max(Decimal('0.00'), subtotal - discount)
 
     return JsonResponse({
@@ -302,6 +365,7 @@ def booking_quote_api(request, pk):
             'subtotal': f'{subtotal:.2f}',
             'discount': f'{discount:.2f}',
             'total': f'{total:.2f}',
+            'has_discount': discount > 0,
             'has_promo': bool(booking.promo_code_id and discount),
             'promo_code': booking.promo_code.code if booking.promo_code_id else None,
         },

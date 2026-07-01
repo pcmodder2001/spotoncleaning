@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 import logging
 
@@ -10,7 +11,12 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 from bookings.models import Booking, BookingStatus, TimeSlot
-from bookings.notifications import send_booking_completion_report_email, send_branded_email, send_test_emails
+from bookings.notifications import (
+    get_booking_email_context,
+    send_booking_completion_report_email,
+    send_branded_email,
+    send_test_emails,
+)
 from bookings.completion_report import get_sample_completion_report_context
 from services.models import Service
 
@@ -222,6 +228,12 @@ EMAIL_TEST_TYPES = [
         'template': 'emails/booking_confirmed.html',
     },
     {
+        'id': 'booking_updated',
+        'name': 'Booking updated',
+        'description': 'Sent when staff update booking pricing (e.g. apply a manual discount).',
+        'template': 'emails/booking_updated.html',
+    },
+    {
         'id': 'booking_reminder',
         'name': 'Day-before reminder',
         'description': 'Sent the day before an appointment (date, time window, address, services, access notes).',
@@ -310,6 +322,18 @@ def send_test_email(email_type_id, recipients=None):
             f'Reminder: your appointment is tomorrow — {settings.SITE_NAME}',
             email_type['template'],
             context,
+            recipients,
+        )
+        return email_type, results
+
+    if email_type_id == 'booking_updated':
+        booking = get_sample_booking(status=BookingStatus.CONFIRMED)
+        if not booking.discount_amount:
+            booking.discount_amount = Decimal('10.00')
+        results = send_test_emails(
+            f'Your booking has been updated — {settings.SITE_NAME}',
+            email_type['template'],
+            get_booking_email_context(booking),
             recipients,
         )
         return email_type, results

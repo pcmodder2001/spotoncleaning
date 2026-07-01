@@ -58,7 +58,7 @@
         <div class="row align-items-lg-center hero-row g-4 g-lg-5">
             <div class="col-lg-6 hero-content">
                 <div class="hero-badge">
-                    <i class="bi bi-house-door"></i> Domestic &amp; commercial cleaning
+                    <i class="bi bi-house-door"></i> Domestic &amp; Commercial cleaning
                 </div>
                 <h1>Appliance Shine. Every Time.</h1>
                 <p class="hero-tagline mb-3">Professional appliance cleaning for homes that deserve the very best.</p>
@@ -67,8 +67,8 @@
                     with family-friendly products and meticulous attention to detail.
                 </p>
                 <div class="hero-cta-row">
-                    <a href="{% url 'bookings:create' %}" class="btn btn-primary btn-lg">Book a clean in 60 seconds</a>
-                    <a href="#contact" class="btn btn-outline-primary btn-lg">Get a quote</a>
+                    <a href="{% url 'bookings:create' %}" class="btn btn-primary btn-lg">BOOK A CLEAN IN 60 SECONDS</a>
+                    <a href="#contact" class="btn btn-outline-primary btn-lg">GET A QUOTE</a>
                 </div>
                 <ul class="hero-credentials" aria-label="Why customers trust us">
                     <li><i class="bi bi-shield-check"></i> Family-friendly, non-caustic products</li>
@@ -84,18 +84,19 @@
                         Domestic &amp; commercial cleaning
                     </div>
                     <img
+                    class="hero-comparison-img"
+                    src="{% static_v 'img/oven-after.jpg' %}"
+                    alt="Clean oven after professional cleaning"
+                    loading="eager"
+                >
+                    <div class="hero-comparison-clean-wrap" id="heroComparisonClean">
+
+                        <img
                         class="hero-comparison-img hero-comparison-dirty"
                         src="{% static_v 'img/oven-before.jpg' %}"
                         alt="Dirty oven before cleaning"
                         loading="eager"
                     >
-                    <div class="hero-comparison-clean-wrap" id="heroComparisonClean">
-                        <img
-                            class="hero-comparison-img"
-                            src="{% static_v 'img/oven-after.jpg' %}"
-                            alt="Clean oven after professional cleaning"
-                            loading="eager"
-                        >
                     </div>
                     <div class="hero-comparison-handle" id="heroComparisonHandle" aria-hidden="true">
                         <div class="hero-comparison-line"></div>
@@ -104,8 +105,8 @@
                             <i class="bi bi-chevron-right"></i>
                         </div>
                     </div>
-                    <span class="hero-comparison-badge hero-comparison-badge-before">Before</span>
-                    <span class="hero-comparison-badge hero-comparison-badge-after">After</span>
+                    <span class="hero-comparison-badge hero-comparison-badge-before">After</span>
+                    <span class="hero-comparison-badge hero-comparison-badge-after">Before</span>
                 </div>
                 <p class="hero-comparison-hint text-center mt-3 mb-0">
                     <i class="bi bi-arrows-expand me-1"></i> Drag to compare before &amp; after

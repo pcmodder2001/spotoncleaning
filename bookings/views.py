@@ -16,7 +16,7 @@ from bookings.models import Booking, BookingPhoto, BookingStatus
 from bookings.photo_access import can_view_booking_photo
 from bookings.notifications import send_booking_created_email
 from bookings.service_area import is_postcode_in_service_area, service_area_error_message
-from bookings.utils import cancel_booking, get_available_dates_in_month, get_available_slots_for_date
+from bookings.utils import cancel_booking, get_calendar_dates_in_month, get_available_slots_for_date
 from audit.actions import BOOKING_CANCELLED, BOOKING_CREATED
 from audit.services import log_action
 from services.catalog import split_addon_services
@@ -218,7 +218,7 @@ def available_dates_api(request):
         if month < 1 or month > 12:
             raise ValueError
     except (TypeError, ValueError):
-        return JsonResponse({'available': []})
+        return JsonResponse({'available': [], 'closed': [], 'full': []})
 
     service_ids = _parse_service_ids(request)
     postcode = request.GET.get('postcode', '').strip()
@@ -227,13 +227,19 @@ def available_dates_api(request):
         area_error = _service_area_api_error(postcode)
         if area_error:
             return area_error
-    available = get_available_dates_in_month(
+    calendar = get_calendar_dates_in_month(
         year, month,
         service_ids=service_ids or None,
         postcode=postcode,
         city=city,
     )
-    return JsonResponse({'available': available, 'year': year, 'month': month})
+    return JsonResponse({
+        'available': calendar['available'],
+        'closed': calendar['closed'],
+        'full': calendar['full'],
+        'year': year,
+        'month': month,
+    })
 
 
 @require_GET

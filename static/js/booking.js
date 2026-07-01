@@ -37,6 +37,8 @@
         let currentStep = 1;
         let viewYear, viewMonth;
         let availableDates = new Set();
+        let closedDates = new Set();
+        let fullDates = new Set();
         let selectedDate = dateInput.value || '';
         let selectedTime = timeInput.value || '';
         let selectedTimeLabel = '';
@@ -427,7 +429,7 @@
             });
         }
 
-        async function fetchAvailableDates(year, month) {
+        async function fetchCalendarDates(year, month) {
             const params = buildScheduleParams();
             params.set('year', year);
             params.set('month', month + 1);
@@ -435,9 +437,13 @@
             const data = await res.json().catch(function () { return {}; });
             if (res.status === 400 && data.error === 'outside_service_area') {
                 showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
-                return new Set();
+                return { available: new Set(), closed: new Set(), full: new Set() };
             }
-            return new Set(data.available || []);
+            return {
+                available: new Set(data.available || []),
+                closed: new Set(data.closed || []),
+                full: new Set(data.full || []),
+            };
         }
 
         async function renderCalendar() {
@@ -445,7 +451,10 @@
             calMonthLabel.textContent = new Date(viewYear, viewMonth, 1).toLocaleDateString('en-GB', {
                 month: 'long', year: 'numeric'
             });
-            availableDates = await fetchAvailableDates(viewYear, viewMonth);
+            const calendarDates = await fetchCalendarDates(viewYear, viewMonth);
+            availableDates = calendarDates.available;
+            closedDates = calendarDates.closed;
+            fullDates = calendarDates.full;
             calGrid.innerHTML = '';
 
             const firstDay = new Date(viewYear, viewMonth, 1);
@@ -457,14 +466,38 @@
             for (let d = 1; d <= lastDay.getDate(); d++) {
                 const date = new Date(viewYear, viewMonth, d);
                 const iso = formatISO(date);
+                let dayStatus = 'available';
+                if (closedDates.has(iso)) {
+                    dayStatus = 'closed';
+                } else if (fullDates.has(iso)) {
+                    dayStatus = 'full';
+                } else if (!availableDates.has(iso)) {
+                    dayStatus = 'full';
+                }
                 calGrid.appendChild(createDayCell({
                     day: d,
                     iso: iso,
                     isPast: date < today,
+                    dayStatus: dayStatus,
                     isAvailable: availableDates.has(iso),
                     isSelected: iso === selectedDate,
                 }));
             }
+        }
+
+        function createUnavailableDayCell(cell, opts, statusClass, statusLabel, title) {
+            cell.classList.add(statusClass);
+            cell.disabled = true;
+            cell.setAttribute('aria-label', 'Day ' + opts.day + ', ' + title);
+            cell.title = title;
+            const dayNum = document.createElement('span');
+            dayNum.className = 'calendar-day-num';
+            dayNum.textContent = opts.day;
+            const status = document.createElement('span');
+            status.className = 'calendar-day-status';
+            status.textContent = statusLabel;
+            cell.appendChild(dayNum);
+            cell.appendChild(status);
         }
 
         function createDayCell(opts) {
@@ -480,19 +513,12 @@
                 cell.textContent = opts.day;
                 cell.classList.add('past');
                 cell.disabled = true;
+            } else if (opts.dayStatus === 'closed') {
+                createUnavailableDayCell(cell, opts, 'closed', 'Closed', 'Closed');
+            } else if (opts.dayStatus === 'full') {
+                createUnavailableDayCell(cell, opts, 'fully-booked', 'Full', 'Fully booked');
             } else if (!opts.isAvailable) {
-                cell.classList.add('fully-booked');
-                cell.disabled = true;
-                cell.setAttribute('aria-label', 'Day ' + opts.day + ', fully booked');
-                cell.title = 'Fully booked';
-                const dayNum = document.createElement('span');
-                dayNum.className = 'calendar-day-num';
-                dayNum.textContent = opts.day;
-                const status = document.createElement('span');
-                status.className = 'calendar-day-status';
-                status.textContent = 'Full';
-                cell.appendChild(dayNum);
-                cell.appendChild(status);
+                createUnavailableDayCell(cell, opts, 'fully-booked', 'Full', 'Fully booked');
             } else {
                 cell.textContent = opts.day;
                 cell.classList.add('available');

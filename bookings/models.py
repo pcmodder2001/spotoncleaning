@@ -46,14 +46,26 @@ class WeeklySchedule(models.Model):
 
 
 class BlockedDate(models.Model):
+    class ClosureType(models.TextChoices):
+        CLOSED = 'closed', 'Closed'
+        FULL = 'full', 'Fully booked'
+
     date = models.DateField(unique=True)
     reason = models.CharField(max_length=200, blank=True)
+    closure_type = models.CharField(
+        max_length=10,
+        choices=ClosureType.choices,
+        default=ClosureType.CLOSED,
+    )
 
     class Meta:
         ordering = ['date']
 
     def __str__(self):
-        return f'{self.date} - {self.reason or "Blocked"}'
+        label = self.get_closure_type_display()
+        if self.reason:
+            return f'{self.date} — {label} ({self.reason})'
+        return f'{self.date} — {label}'
 
 
 class Availability(models.Model):

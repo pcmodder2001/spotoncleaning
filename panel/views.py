@@ -290,7 +290,13 @@ def availability_view(request):
             if date_str:
                 from datetime import datetime
                 date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-                BlockedDate.objects.get_or_create(date=date_obj, defaults={'reason': reason})
+                BlockedDate.objects.update_or_create(
+                    date=date_obj,
+                    defaults={
+                        'reason': reason,
+                        'closure_type': BlockedDate.ClosureType.CLOSED,
+                    },
+                )
                 log_action(AVAILABILITY_UPDATED, f'Blocked date {date_str}.', request=request, target_type='availability')
                 messages.success(request, f'Date {date_str} blocked.')
         elif action == 'unblock_date':

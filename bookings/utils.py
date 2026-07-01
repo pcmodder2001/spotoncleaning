@@ -7,11 +7,72 @@ from bookings.scheduling import get_feasible_slots
 from bookings.routing import coords_for_address
 
 
+def is_weekly_closed(day):
+    schedule = WeeklySchedule.objects.filter(day_of_week=day.weekday()).first()
+    return bool(schedule and not schedule.is_available)
+
+
 def is_day_available(date):
     if BlockedDate.objects.filter(date=date).exists():
         return False
-    schedule = WeeklySchedule.objects.filter(day_of_week=date.weekday()).first()
-    return schedule.is_available if schedule else True
+    return not is_weekly_closed(date)
+
+
+def get_calendar_dates_in_month(year, month, service_ids=None, postcode='', city=''):
+    """Classify each future day in the month for the booking calendar."""
+    from calendar import monthrange
+
+    today = timezone.localdate()
+    _, last_day = monthrange(year, month)
+    start = max(today, date(year, month, 1))
+    end = date(year, month, last_day)
+
+    weekly_closed = {
+        row.day_of_week
+        for row in WeeklySchedule.objects.filter(is_available=False)
+    }
+    blocked = {
+        row.date: row.closure_type
+        for row in BlockedDate.objects.filter(date__gte=start, date__lte=end)
+    }
+
+    available = []
+    closed = []
+    full = []
+
+    current = start
+    while current <= end:
+        iso = current.isoformat()
+        if current.weekday() in weekly_closed:
+            closed.append(iso)
+        elif current in blocked:
+            if blocked[current] == BlockedDate.ClosureType.FULL:
+                full.append(iso)
+            else:
+                closed.append(iso)
+        else:
+            slots = get_available_slots_for_date(
+                current,
+                service_ids=service_ids,
+                postcode=postcode,
+                city=city,
+            )
+            if slots.exists():
+                available.append(iso)
+            else:
+                full.append(iso)
+        current += timedelta(days=1)
+
+    return {'available': available, 'closed': closed, 'full': full}
+
+
+def get_available_dates_in_month(year, month, service_ids=None, postcode='', city=''):
+    return get_calendar_dates_in_month(
+        year, month,
+        service_ids=service_ids,
+        postcode=postcode,
+        city=city,
+    )['available']
 
 
 def get_available_slots_for_date(date, service_ids=None, postcode='', city='', exclude_booking_pk=None):
@@ -88,26 +149,3 @@ def cancel_booking(booking, *, notify=True):
         send_booking_status_email(booking)
     return True
 
-
-def get_available_dates_in_month(year, month, service_ids=None, postcode='', city=''):
-    from calendar import monthrange
-
-    today = timezone.localdate()
-    _, last_day = monthrange(year, month)
-    start = max(today, date(year, month, 1))
-    end = date(year, month, last_day)
-
-    dates = []
-    current = start
-    while current <= end:
-        if is_day_available(current):
-            slots = get_available_slots_for_date(
-                current,
-                service_ids=service_ids,
-                postcode=postcode,
-                city=city,
-            )
-            if slots.exists():
-                dates.append(current.isoformat())
-        current += timedelta(days=1)
-    return dates

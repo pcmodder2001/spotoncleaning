@@ -6,8 +6,9 @@
 <div class="row g-4">
     <div class="col-lg-6">
         <div class="panel-card card border-0 mb-4">
-            <div class="card-header">Available Days</div>
+            <div class="card-header">Regular closed days</div>
             <div class="card-body">
+                <p class="text-muted small mb-3">Untick any weekday you are normally closed. These show as <strong>Closed</strong> on the booking calendar (e.g. Sundays).</p>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="weekly">
@@ -17,30 +18,20 @@
                         <label class="form-check-label" for="day{{ schedule.day_of_week }}">{{ schedule.get_day_of_week_display }}</label>
                     </div>
                     {% endfor %}
-                    <button type="submit" class="btn btn-primary mt-2">Save Schedule</button>
+                    <button type="submit" class="btn btn-primary mt-2">Save schedule</button>
                 </form>
             </div>
         </div>
 
         <div class="panel-card card border-0">
-            <div class="card-header">Block Dates</div>
+            <div class="card-header">One-off dates</div>
             <div class="card-body">
-                <form method="post" action="{% url 'panel:availability_quick' %}" class="row g-2 mb-3">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="block_day_full">
-                    <div class="col-md-5">
-                        <input type="date" name="date" class="form-control" required>
-                    </div>
-                    <div class="col-md-5">
-                        <input type="text" name="reason" class="form-control" value="Fully booked" placeholder="Reason">
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-warning w-100">Mark full</button>
-                    </div>
-                </form>
                 <form method="post" class="row g-2 mb-3">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="block_date">
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold mb-1">Close a day</label>
+                    </div>
                     <div class="col-md-5">
                         <input type="date" name="date" class="form-control" required>
                     </div>
@@ -48,13 +39,37 @@
                         <input type="text" name="reason" class="form-control" placeholder="Reason (optional)">
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100">Block</button>
+                        <button type="submit" class="btn btn-secondary w-100">Close</button>
+                    </div>
+                </form>
+                <form method="post" action="{% url 'panel:availability_quick' %}" class="row g-2 mb-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="block_day_full">
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold mb-1">Mark as fully booked</label>
+                    </div>
+                    <div class="col-md-5">
+                        <input type="date" name="date" class="form-control" required>
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" name="reason" class="form-control" value="Fully booked" placeholder="Reason">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-warning w-100">Full</button>
                     </div>
                 </form>
                 <ul class="list-group list-group-flush">
                     {% for blocked in blocked_dates %}
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <span>{{ blocked.date|date:"d M Y" }}{% if blocked.reason %} — {{ blocked.reason }}{% endif %}</span>
+                        <span>
+                            {{ blocked.date|date:"d M Y" }}
+                            {% if blocked.closure_type == 'full' %}
+                                <span class="badge bg-warning text-dark ms-1">Fully booked</span>
+                            {% else %}
+                                <span class="badge bg-secondary ms-1">Closed</span>
+                            {% endif %}
+                            {% if blocked.reason %}<span class="text-muted small"> — {{ blocked.reason }}</span>{% endif %}
+                        </span>
                         <form method="post">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="unblock_date">
@@ -63,7 +78,7 @@
                         </form>
                     </li>
                     {% empty %}
-                    <li class="list-group-item text-muted px-0">No blocked dates</li>
+                    <li class="list-group-item text-muted px-0">No one-off closed or fully booked dates</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -72,7 +87,7 @@
         <div class="panel-card card border-0 mt-4">
             <div class="card-header">Copy availability</div>
             <div class="card-body">
-                <p class="text-muted small">Copy blocked dates and per-slot overrides from one week to the next.</p>
+                <p class="text-muted small">Copy closed dates and per-slot overrides from one week to the next.</p>
                 <form method="post" action="{% url 'panel:availability_quick' %}" class="row g-2">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="duplicate_week">

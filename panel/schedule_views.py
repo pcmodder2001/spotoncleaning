@@ -183,7 +183,13 @@ def availability_quick_action_view(request):
         if not date_obj:
             messages.error(request, 'Choose a valid date.')
         else:
-            BlockedDate.objects.get_or_create(date=date_obj, defaults={'reason': reason})
+            BlockedDate.objects.update_or_create(
+                date=date_obj,
+                defaults={
+                    'reason': reason,
+                    'closure_type': BlockedDate.ClosureType.FULL,
+                },
+            )
             messages.success(request, f'{date_obj.strftime("%d %b %Y")} marked as fully booked.')
             performed = True
     elif action == 'duplicate_week':
@@ -199,9 +205,13 @@ def availability_quick_action_view(request):
                 source_date = source_start + timedelta(days=offset)
                 target_date = target_start + timedelta(days=offset)
                 if BlockedDate.objects.filter(date=source_date).exists():
-                    _, created = BlockedDate.objects.get_or_create(
+                    source_block = BlockedDate.objects.get(date=source_date)
+                    _, created = BlockedDate.objects.update_or_create(
                         date=target_date,
-                        defaults={'reason': 'Copied from previous week'},
+                        defaults={
+                            'reason': source_block.reason or 'Copied from previous week',
+                            'closure_type': source_block.closure_type,
+                        },
                     )
                     if created:
                         copied_blocks += 1

@@ -141,6 +141,11 @@ class Booking(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    marketing_attribution = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='First-touch UTM tags / fbclid when the customer booked.',
+    )
 
     class Meta:
         ordering = ['-date', '-time_slot__time']

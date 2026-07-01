@@ -34,6 +34,7 @@ from audit.actions import (
 )
 from audit.services import log_action
 from panel.decorators import admin_required, panel_required, sysadmin_required
+from panel.marketing_stats import get_marketing_dashboard_context
 from panel.email_debug import (
     EMAIL_TEST_TYPES,
     get_email_config_summary,
@@ -472,6 +473,21 @@ def service_delete_view(request, pk):
     )
     messages.success(request, f'Service {name} deleted.')
     return redirect('panel:service_list')
+
+
+@admin_required
+def marketing_view(request):
+    from django.conf import settings
+
+    pixel_id = getattr(settings, 'META_PIXEL_ID', '')
+    context = get_marketing_dashboard_context(days=30)
+    context.update({
+        'meta_pixel_id': pixel_id,
+        'meta_pixel_active': bool(pixel_id),
+        'meta_events_manager_url': 'https://business.facebook.com/events_manager2',
+        'meta_ads_manager_url': 'https://adsmanager.facebook.com/',
+    })
+    return render(request, 'panel/marketing.html', context)
 
 
 @sysadmin_required

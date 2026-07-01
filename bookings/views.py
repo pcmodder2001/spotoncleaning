@@ -21,6 +21,7 @@ from audit.actions import BOOKING_CANCELLED, BOOKING_CREATED
 from audit.services import log_action
 from services.catalog import split_addon_services
 from services.models import Service, ServiceType
+from website.tracking import queue_meta_pixel_event, apply_marketing_attribution
 
 
 def create_booking_view(request):
@@ -37,6 +38,7 @@ def create_booking_view(request):
                 booking.geocode_and_set_duration(service_ids)
             else:
                 booking = form.save()
+            apply_marketing_attribution(booking, request)
             log_action(
                 BOOKING_CREATED,
                 f'New booking #{booking.pk} for {booking.contact_full_name} on {booking.date}.',
@@ -63,6 +65,13 @@ def create_booking_view(request):
                     'Your booking has been submitted successfully! '
                     'We could not send a confirmation email, but your booking is saved.',
                 )
+            queue_meta_pixel_event(
+                request,
+                'Schedule',
+                value=float(booking.total_price),
+                currency='GBP',
+                content_name='Appliance cleaning booking',
+            )
             if request.user.is_authenticated:
                 return redirect('accounts:my_bookings')
             return redirect('bookings:thank_you')

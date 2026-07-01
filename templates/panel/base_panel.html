@@ -42,6 +42,9 @@
             <a href="{% url 'panel:enquiry_list' %}" class="{% if 'enquiry' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-envelope me-2"></i>Enquiries
             </a>
+            <a href="{% url 'panel:marketing' %}" class="{% if request.resolver_match.url_name == 'marketing' %}active{% endif %}">
+                <i class="bi bi-megaphone me-2"></i>Marketing
+            </a>
             <a href="{% url 'panel:audit_log' %}" class="{% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}">
                 <i class="bi bi-journal-text me-2"></i>Audit log
             </a>

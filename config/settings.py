@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'config.middleware.CanonicalHostMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'website.middleware.MarketingAttributionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -220,6 +221,8 @@ SITE_KEYWORDS = os.environ.get(
     'professional oven cleaning, West Yorkshire, book oven clean online',
 )
 SITE_LOCAL_AREA = os.environ.get('SITE_LOCAL_AREA', 'West Yorkshire')
+# Meta (Facebook) Pixel — Events Manager → Data sources → your pixel ID (digits only)
+META_PIXEL_ID = os.environ.get('META_PIXEL_ID', '').strip()
 SERVICE_AREA_NAME = os.environ.get('SERVICE_AREA_NAME', SITE_LOCAL_AREA)
 SERVICE_AREA_ENFORCED = os.environ.get('SERVICE_AREA_ENFORCED', 'True').lower() in (
     'true', '1', 'yes',

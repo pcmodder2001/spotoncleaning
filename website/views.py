@@ -9,6 +9,7 @@ from services.catalog import split_addon_services
 from services.models import Service, ServiceType
 from website.forms import ContactForm
 from website.models import Testimonial
+from website.tracking import apply_marketing_attribution, queue_meta_pixel_event
 from audit.actions import ENQUIRY_CREATED
 from audit.services import log_action
 
@@ -34,6 +35,7 @@ def contact_submit_view(request):
         form = ContactForm(request.POST)
         if form.is_valid():
             enquiry = form.save()
+            apply_marketing_attribution(enquiry, request)
             log_action(
                 ENQUIRY_CREATED,
                 f'Contact enquiry submitted by {enquiry.name}.',
@@ -44,6 +46,11 @@ def contact_submit_view(request):
                 target_type='enquiry',
                 target_id=enquiry.pk,
                 target_label=enquiry.email,
+            )
+            queue_meta_pixel_event(
+                request,
+                'Lead',
+                content_name='Contact form',
             )
             messages.success(request, 'Thank you for your message. We will get back to you soon!')
         else:

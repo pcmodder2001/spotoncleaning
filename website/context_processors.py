@@ -1,7 +1,10 @@
 from django.conf import settings
 
+from website.tracking import meta_pixel_enabled, pop_meta_pixel_events
+
 
 def site_settings(request):
+    pixel_active = meta_pixel_enabled(request)
     return {
         'SITE_NAME': settings.SITE_NAME,
         'SITE_TAGLINE': settings.SITE_TAGLINE,
@@ -13,4 +16,6 @@ def site_settings(request):
         'SITE_KEYWORDS': settings.SITE_KEYWORDS,
         'SITE_LOCAL_AREA': settings.SITE_LOCAL_AREA,
         'SITE_DEFAULT_SEO_TITLE': settings.SITE_DEFAULT_SEO_TITLE,
+        'META_PIXEL_ID': settings.META_PIXEL_ID if pixel_active else '',
+        'meta_pixel_events': pop_meta_pixel_events(request) if pixel_active else [],
     }

@@ -22,6 +22,11 @@ class ContactMessage(models.Model):
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    marketing_attribution = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='First-touch UTM tags / fbclid when the enquiry was submitted.',
+    )
 
     class Meta:
         ordering = ['-created_at']

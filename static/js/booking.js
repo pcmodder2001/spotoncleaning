@@ -476,14 +476,25 @@
                 cell.disabled = true;
                 return cell;
             }
-            cell.textContent = opts.day;
             if (opts.isPast) {
+                cell.textContent = opts.day;
                 cell.classList.add('past');
                 cell.disabled = true;
             } else if (!opts.isAvailable) {
-                cell.classList.add('unavailable');
+                cell.classList.add('fully-booked');
                 cell.disabled = true;
+                cell.setAttribute('aria-label', 'Day ' + opts.day + ', fully booked');
+                cell.title = 'Fully booked';
+                const dayNum = document.createElement('span');
+                dayNum.className = 'calendar-day-num';
+                dayNum.textContent = opts.day;
+                const status = document.createElement('span');
+                status.className = 'calendar-day-status';
+                status.textContent = 'Full';
+                cell.appendChild(dayNum);
+                cell.appendChild(status);
             } else {
+                cell.textContent = opts.day;
                 cell.classList.add('available');
                 cell.addEventListener('click', function () { selectDate(opts.iso); });
             }

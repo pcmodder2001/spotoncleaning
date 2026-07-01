@@ -8,6 +8,17 @@
 {% block twitter_title %}Book Oven Cleaning Online | {{ SITE_NAME }}{% endblock %}
 {% block twitter_description %}Book oven, hob and extractor cleaning online with {{ SITE_NAME }}.{% endblock %}
 
+{% block meta_pixel_events %}
+{% if META_PIXEL_ID %}
+<script>
+fbq('track', 'ViewContent', {
+    content_name: 'Book a clean',
+    content_category: 'Booking',
+});
+</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="dashboard-header">
     <div class="container">
@@ -147,7 +158,7 @@
                                 </div>
                                 <p class="calendar-legend">
                                     <span class="legend-dot available"></span> Available
-                                    <span class="legend-dot unavailable"></span> Unavailable
+                                    <span class="legend-dot fully-booked"></span> Fully booked
                                 </p>
                             </div>
 

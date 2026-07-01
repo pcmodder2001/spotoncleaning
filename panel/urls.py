@@ -39,6 +39,7 @@ urlpatterns = [
     path('enquiries/<int:pk>/', views.enquiry_detail_view, name='enquiry_detail'),
     path('enquiries/<int:pk>/read/', views.enquiry_mark_read_view, name='enquiry_read'),
     path('enquiries/<int:pk>/delete/', views.enquiry_delete_view, name='enquiry_delete'),
+    path('marketing/', views.marketing_view, name='marketing'),
     path('services/', views.service_list_view, name='service_list'),
     path('services/<int:pk>/edit/', views.service_edit_view, name='service_edit'),
     path('services/<int:pk>/delete/', views.service_delete_view, name='service_delete'),

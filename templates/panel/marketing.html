@@ -1,0 +1,136 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Marketing{% endblock %}
+
+{% block panel_content %}
+<div class="row g-4 mb-4">
+    <div class="col-lg-4">
+        <div class="panel-card card border-0 h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Meta Pixel</h2>
+                {% if meta_pixel_active %}
+                    <p class="mb-2"><span class="badge bg-success">Active</span></p>
+                    <p class="small text-muted mb-2">Pixel / dataset ID:</p>
+                    <p class="mb-0"><code>{{ meta_pixel_id }}</code></p>
+                {% else %}
+                    <p class="mb-2"><span class="badge bg-secondary">Not configured</span></p>
+                    <p class="small text-muted mb-0">
+                        Add <code>META_PIXEL_ID</code> to your environment variables to enable tracking on the website.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="panel-card card border-0 h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Facebook &amp; Meta tools</h2>
+                <p class="text-muted small mb-3">
+                    Ad impressions, clicks, and spend are only available in Meta’s own dashboards — not inside this admin panel.
+                    Use the links below for full campaign stats. This page shows <strong>bookings and enquiries we recorded</strong>
+                    from Facebook ad clicks (via <code>fbclid</code> or UTM tags).
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ meta_events_manager_url }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Events Manager
+                    </a>
+                    <a href="{{ meta_ads_manager_url }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Ads Manager
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="panel-stat">
+            <h3>{{ bookings_facebook }}</h3>
+            <p>Facebook bookings ({{ days }}d)</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel-stat">
+            <h3>{{ bookings_total }}</h3>
+            <p>All bookings ({{ days }}d)</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel-stat">
+            <h3>{{ enquiries_facebook }}</h3>
+            <p>Facebook enquiries ({{ days }}d)</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel-stat">
+            <h3>{{ enquiries_total }}</h3>
+            <p>All enquiries ({{ days }}d)</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="panel-card card border-0">
+            <div class="card-header">Recent Facebook bookings</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Source</th>
+                            <th>Booked</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in recent_facebook_bookings %}
+                        <tr>
+                            <td><a href="{% url 'panel:booking_edit' booking.pk %}">#{{ booking.pk }}</a></td>
+                            <td>{{ booking.contact_full_name }}</td>
+                            <td class="small text-muted">{{ booking.source_label }}</td>
+                            <td>{{ booking.created_at|date:"d M Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-muted text-center py-4">No Facebook-attributed bookings yet in the last {{ days }} days.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel-card card border-0">
+            <div class="card-header">Recent Facebook enquiries</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Source</th>
+                            <th>Received</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enquiry in recent_facebook_enquiries %}
+                        <tr>
+                            <td><a href="{% url 'panel:enquiry_detail' enquiry.pk %}">{{ enquiry.name }}</a></td>
+                            <td class="small text-muted">{{ enquiry.source_label }}</td>
+                            <td>{{ enquiry.created_at|date:"d M Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted text-center py-4">No Facebook-attributed enquiries yet in the last {{ days }} days.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<p class="text-muted small mt-4 mb-0">
+    Attribution is first-touch: we save <code>fbclid</code> or UTM parameters when someone lands from an ad, then attach them to the booking or enquiry they submit.
+    Test with a URL like <code>?utm_source=facebook&amp;utm_campaign=test</code>.
+</p>
+{% endblock %}

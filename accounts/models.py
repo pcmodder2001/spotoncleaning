@@ -96,3 +96,65 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         if self.is_sysadmin:
             raise PermissionDenied('This system administrator account cannot be deleted.')
         super().delete(using=using, keep_parents=keep_parents)
+
+
+class SavedAddress(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='saved_addresses',
+    )
+    label = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='Optional name, e.g. Home or Work.',
+    )
+    address_line_1 = models.CharField(max_length=255)
+    address_line_2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100)
+    postcode = models.CharField(max_length=10)
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_default', '-updated_at']
+        verbose_name_plural = 'Saved addresses'
+
+    def __str__(self):
+        label = self.display_label
+        return f'{label} ({self.user.email})'
+
+    @property
+    def display_label(self):
+        if self.label:
+            return self.label
+        return self.address_line_1
+
+    @property
+    def summary(self):
+        parts = [self.address_line_1]
+        if self.address_line_2:
+            parts.append(self.address_line_2)
+        parts.append(f'{self.city} {self.postcode}')
+        return ', '.join(parts)
+
+    def as_booking_dict(self):
+        return {
+            'id': self.pk,
+            'label': self.display_label,
+            'address_line_1': self.address_line_1,
+            'address_line_2': self.address_line_2 or '',
+            'city': self.city,
+            'postcode': self.postcode,
+            'is_default': self.is_default,
+            'summary': self.summary,
+        }
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.is_default:
+            SavedAddress.objects.filter(
+                user=self.user,
+                is_default=True,
+            ).exclude(pk=self.pk).update(is_default=False)

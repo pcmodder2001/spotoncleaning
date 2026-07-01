@@ -13,7 +13,7 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="app-card card border-0">
+            <div class="app-card card border-0 mb-4">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-4">
                         <h5 class="fw-bold mb-0">Booking Details</h5>
@@ -21,14 +21,35 @@
                     </div>
                     <div class="row g-3">
                         <div class="col-sm-6"><strong>Services:</strong><br>{{ booking.service_summary }}</div>
-                        <div class="col-sm-6"><strong>Total:</strong><br>&pound;{{ booking.total_price }}</div>
                         <div class="col-sm-6"><strong>Date:</strong><br>{{ booking.date|date:"l, d F Y" }}</div>
                         <div class="col-sm-6"><strong>Time:</strong><br>{{ booking.time_slot.time|time:"H:i" }}</div>
+                        <div class="col-sm-6"><strong>Booked on:</strong><br>{{ booking.created_at|date:"d M Y H:i" }}</div>
                         <div class="col-12"><strong>Address:</strong><br>{{ booking.full_address }}</div>
                         {% if booking.notes %}
                         <div class="col-12"><strong>Notes:</strong><br>{{ booking.notes }}</div>
                         {% endif %}
-                        <div class="col-sm-6"><strong>Booked on:</strong><br>{{ booking.created_at|date:"d M Y H:i" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="app-card card border-0">
+                <div class="card-header">Pricing</div>
+                <div class="card-body p-4">
+                    <div class="booking-pricing">
+                        <div class="booking-pricing-row d-flex justify-content-between">
+                            <span>Subtotal</span>
+                            <span>&pound;{{ booking.total_price }}</span>
+                        </div>
+                        {% if booking.has_promo %}
+                        <div class="booking-pricing-row d-flex justify-content-between text-success">
+                            <span>Promo ({{ booking.promo_code.code }})</span>
+                            <span>&minus;&pound;{{ booking.discount_amount }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="booking-pricing-row booking-pricing-total d-flex justify-content-between fw-bold">
+                            <span>Total</span>
+                            <span>&pound;{{ booking.discounted_total }}</span>
+                        </div>
                     </div>
                     <div class="d-flex flex-wrap gap-2 mt-4">
                         <a href="{% url 'accounts:my_bookings' %}" class="btn btn-outline-primary">Back to Bookings</a>

@@ -23,6 +23,7 @@ from accounts.roles import UserRole
 from audit.actions import (
     AVAILABILITY_UPDATED,
     BOOKING_CANCELLED,
+    BOOKING_STATUS_CHANGED,
     BOOKING_UPDATED,
     ENQUIRY_DELETED,
     ENQUIRY_READ,
@@ -250,6 +251,45 @@ def booking_cancel_view(request, pk):
     else:
         messages.info(request, f'Booking #{booking.pk} is already cancelled.')
     return redirect('panel:booking_list')
+
+
+@admin_required
+@require_POST
+def booking_confirm_view(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    next_url = request.POST.get('next') or 'panel:booking_list'
+
+    if booking.status != BookingStatus.PENDING:
+        messages.warning(request, f'Booking #{booking.pk} is not pending and cannot be confirmed.')
+        return redirect(next_url)
+
+    booking.status = BookingStatus.CONFIRMED
+    booking.save(update_fields=['status', 'updated_at'])
+    email_sent = send_booking_status_email(booking)
+    log_action(
+        BOOKING_STATUS_CHANGED,
+        f'Confirmed booking #{booking.pk} ({booking.contact_full_name}).',
+        request=request,
+        target_type='booking',
+        target_id=booking.pk,
+        target_label=f'Booking #{booking.pk}',
+        metadata={
+            'old_status': BookingStatus.PENDING,
+            'new_status': BookingStatus.CONFIRMED,
+            'email_sent': email_sent,
+        },
+    )
+    if email_sent:
+        messages.success(
+            request,
+            f'Booking #{booking.pk} confirmed. Confirmation email sent to {booking.contact_email}.',
+        )
+    else:
+        messages.warning(
+            request,
+            f'Booking #{booking.pk} confirmed, but the confirmation email could not be sent.',
+        )
+    return redirect(next_url)
 
 
 @admin_required

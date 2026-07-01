@@ -157,9 +157,6 @@ class BookingForm(forms.ModelForm):
             service_ids = [s.pk for s in self.cleaned_data['services']]
             booking.services.set(self.cleaned_data['services'])
             booking.geocode_and_set_duration(service_ids)
-            if promo:
-                from bookings.promo import record_promo_use
-                record_promo_use(promo)
         return booking
 
 

@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, UserCreationForm
 from django.contrib.auth import get_user_model
 
+from accounts.models import SavedAddress
+
 User = get_user_model()
 
 
@@ -104,3 +106,35 @@ class CompleteAccountFromBookingForm(forms.Form):
             from django.contrib.auth.password_validation import validate_password
             validate_password(password1)
         return cleaned_data
+
+
+class SavedAddressForm(forms.ModelForm):
+    class Meta:
+        model = SavedAddress
+        fields = [
+            'label', 'address_line_1', 'address_line_2', 'city', 'postcode', 'is_default',
+        ]
+        widgets = {
+            'label': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Home, Work',
+            }),
+            'address_line_1': forms.TextInput(attrs={'class': 'form-control'}),
+            'address_line_2': forms.TextInput(attrs={'class': 'form-control'}),
+            'city': forms.TextInput(attrs={'class': 'form-control'}),
+            'postcode': forms.TextInput(attrs={'class': 'form-control'}),
+            'is_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def clean_postcode(self):
+        postcode = self.cleaned_data['postcode']
+        from bookings.routing import is_valid_uk_postcode, normalize_postcode
+        from bookings.service_area import postcode_service_area_error
+
+        normalized = normalize_postcode(postcode)
+        if not is_valid_uk_postcode(normalized):
+            raise forms.ValidationError('Please enter a valid UK postcode.')
+        area_error = postcode_service_area_error(normalized)
+        if area_error:
+            raise forms.ValidationError(area_error)
+        return normalized

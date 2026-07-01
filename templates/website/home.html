@@ -70,6 +70,13 @@
                     <a href="{% url 'bookings:create' %}" class="btn btn-primary btn-lg">BOOK A CLEAN IN 60 SECONDS</a>
                     <a href="#contact" class="btn btn-outline-primary btn-lg">GET A QUOTE</a>
                 </div>
+                <form class="hero-coverage-check" action="{% url 'bookings:create' %}" method="get">
+                    <label class="hero-coverage-label" for="heroPostcode">Check we cover your area</label>
+                    <div class="hero-coverage-row">
+                        <input type="text" name="postcode" id="heroPostcode" class="form-control" placeholder="e.g. WF6 1TN" required autocomplete="postal-code" aria-label="Your postcode">
+                        <button type="submit" class="btn btn-primary">Check &amp; book</button>
+                    </div>
+                </form>
                 <ul class="hero-credentials" aria-label="Why customers trust us">
                     <li><i class="bi bi-shield-check"></i> Family-friendly, non-caustic products</li>
                     <li><i class="bi bi-flower1"></i> Attention to detail</li>

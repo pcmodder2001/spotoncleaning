@@ -7,6 +7,7 @@
 {% block og_description %}Book oven, hob and extractor cleaning online. Choose your service, pick a date and confirm your appointment.{% endblock %}
 {% block twitter_title %}Book Oven Cleaning Online | {{ SITE_NAME }}{% endblock %}
 {% block twitter_description %}Book oven, hob and extractor cleaning online with {{ SITE_NAME }}.{% endblock %}
+{% block body_class %}booking-page{% endblock %}
 
 {% block meta_pixel_events %}
 {% if META_PIXEL_ID %}
@@ -23,36 +24,40 @@ fbq('track', 'ViewContent', {
 <div class="dashboard-header">
     <div class="container">
         <h1 class="fw-bold">Book an Appointment</h1>
-        <p class="text-muted mb-0">Choose your service, pick a date, and confirm your details</p>
+        <p class="text-muted mb-0">Check your area, choose your service, pick a date, and confirm</p>
         {% if is_guest_booking %}
         <p class="mb-0 mt-2 small">
             Already have an account?
             <a href="{% url 'accounts:login' %}?next={% url 'bookings:create' %}">Sign in</a>
             to book faster next time.
         </p>
+        {% elif prefill_address %}
+        <p class="mb-0 mt-2 small text-muted">
+            <i class="bi bi-house-check me-1"></i> We've pre-filled your default saved address.
+        </p>
         {% endif %}
     </div>
 </div>
 
-<div class="container py-4 py-lg-5">
+<div class="container py-4 py-lg-5 booking-page-container">
     <div class="row g-4 g-lg-5">
         <div class="col-lg-8">
             <div class="booking-wizard app-card card border-0">
                 <div class="booking-steps" id="bookingSteps">
-                    <div class="booking-step active" data-step="1">
+                    <button type="button" class="booking-step active" data-step="1" aria-current="step">
                         <span class="step-num">1</span>
                         <span class="step-label">Service</span>
-                    </div>
+                    </button>
                     <div class="booking-step-line"></div>
-                    <div class="booking-step" data-step="2">
+                    <button type="button" class="booking-step" data-step="2">
                         <span class="step-num">2</span>
                         <span class="step-label">Date &amp; Time</span>
-                    </div>
+                    </button>
                     <div class="booking-step-line"></div>
-                    <div class="booking-step" data-step="3">
+                    <button type="button" class="booking-step" data-step="3">
                         <span class="step-num">3</span>
                         <span class="step-label">Details</span>
-                    </div>
+                    </button>
                 </div>
 
                 <form method="post" id="bookingForm" class="booking-form" novalidate>
@@ -69,37 +74,37 @@ fbq('track', 'ViewContent', {
                     </script>
                     {% endif %}
 
-                    <!-- Step 1: Service -->
+                    <!-- Step 1: Postcode & Services -->
                     <div class="booking-panel active" data-panel="1">
                         <div class="booking-panel-body">
+                            <div class="booking-postcode-gate mb-4">
+                                <h2 class="booking-panel-title">Where are you based?</h2>
+                                <p class="booking-panel-desc mb-3">Enter your postcode first so we can confirm we cover your area and show accurate availability.</p>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="id_postcode">Postcode</label>
+                                        {{ form.postcode }}
+                                        {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
+                                        <div id="postcodeAreaError" class="alert alert-warning py-2 px-3 small mt-2 mb-0" role="alert" hidden></div>
+                                        <div class="form-text">We cover {{ SITE_LOCAL_AREA }} (e.g. LS, WF, HD, HX, BD postcodes).</div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <h2 class="booking-panel-title">What would you like cleaned?</h2>
                             <p class="booking-panel-desc">Select one or more ovens, then add any optional extras.</p>
 
                             <h3 class="service-group-title">Oven cleaning <span class="text-muted fw-normal">(select all that apply)</span></h3>
                             <div class="service-picker service-picker-oven">
                                 {% for service in oven_services %}
-                                <button type="button" class="service-pick service-pick-addon{% if selected_service and selected_service.pk == service.pk %} selected{% endif %}" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="">
-                                    <span class="service-pick-icon"><i class="bi bi-fire"></i></span>
-                                    <span class="service-pick-info">
-                                        <strong>{{ service.name }}</strong>
-                                        <small>{{ service.description|truncatewords:12 }}</small>
-                                    </span>
-                                    <span class="service-pick-price">&pound;{{ service.price }}</span>
-                                </button>
+                                {% include 'bookings/includes/service_pick.html' with icon='bi-fire' extra_class='service-pick-oven' %}
                                 {% endfor %}
                             </div>
 
                             <h3 class="service-group-title mt-4">Add-ons <span class="text-muted fw-normal">(optional)</span></h3>
                             <div class="service-picker service-picker-addon">
                                 {% for service in standard_addon_services %}
-                                <button type="button" class="service-pick {% if service.exclusive_group %}service-pick-exclusive{% else %}service-pick-addon{% endif %}" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="{{ service.exclusive_group }}">
-                                    <span class="service-pick-icon"><i class="bi bi-plus-circle"></i></span>
-                                    <span class="service-pick-info">
-                                        <strong>{{ service.name }}</strong>
-                                        <small>{{ service.description|truncatewords:12 }}</small>
-                                    </span>
-                                    <span class="service-pick-price">&pound;{{ service.price }}</span>
-                                </button>
+                                {% include 'bookings/includes/service_pick.html' %}
                                 {% endfor %}
                             </div>
 
@@ -107,14 +112,7 @@ fbq('track', 'ViewContent', {
                             <h3 class="service-group-title mt-4">Additional add-ons <span class="text-muted fw-normal">(optional)</span></h3>
                             <div class="service-picker service-picker-addon">
                                 {% for service in additional_addon_services %}
-                                <button type="button" class="service-pick service-pick-addon" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="">
-                                    <span class="service-pick-icon"><i class="bi bi-plus-circle"></i></span>
-                                    <span class="service-pick-info">
-                                        <strong>{{ service.name }}</strong>
-                                        <small>{{ service.description|truncatewords:12 }}</small>
-                                    </span>
-                                    <span class="service-pick-price">&pound;{{ service.price }}</span>
-                                </button>
+                                {% include 'bookings/includes/service_pick.html' %}
                                 {% endfor %}
                             </div>
                             {% endif %}
@@ -124,49 +122,56 @@ fbq('track', 'ViewContent', {
                             {% endif %}
                         </div>
                         <div class="booking-panel-footer">
-                            <button type="button" class="btn btn-primary btn-next" data-next="2">Continue</button>
+                            <button type="button" class="btn btn-primary btn-next" id="btnStep1Next" data-next="2" disabled>Continue</button>
                         </div>
                     </div>
 
-                    <!-- Step 2: Postcode, Calendar & Time -->
+                    <!-- Step 2: Calendar & Time -->
                     <div class="booking-panel" data-panel="2">
                         <div class="booking-panel-body">
                             <h2 class="booking-panel-title">When works for you?</h2>
-                            <p class="booking-panel-desc">Enter your {{ SITE_LOCAL_AREA }} postcode so we can calculate travel time between jobs and show accurate availability.</p>
+                            <p class="booking-panel-desc">Pick a date and time — travel between jobs is calculated automatically for your area.</p>
 
-                            <div class="row g-3 mb-4">
-                                <div class="col-md-6">
-                                    <label class="form-label" for="id_postcode">Postcode</label>
-                                    {{ form.postcode }}
-                                    {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
-                                    <div id="postcodeAreaError" class="alert alert-warning py-2 px-3 small mt-2 mb-0" role="alert" hidden></div>
-                                    <div class="form-text">We currently cover {{ SITE_LOCAL_AREA }} only (e.g. LS, WF, HD, HX, BD postcodes).</div>
-                                </div>
+                            <div class="booking-postcode-chip mb-3" id="postcodeChip" hidden>
+                                <span><i class="bi bi-geo-alt me-1"></i> Postcode: <strong id="postcodeChipValue"></strong></span>
+                                <button type="button" class="btn btn-link btn-sm p-0" data-go-step="1">Change</button>
                             </div>
 
-                            <div id="calendarSection" class="booking-calendar-wrap" hidden>
-                                <div class="booking-calendar-header">
-                                    <button type="button" class="btn btn-sm btn-light calendar-nav" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
-                                    <h3 class="calendar-month-label" id="calMonthLabel"></h3>
-                                    <button type="button" class="btn btn-sm btn-light calendar-nav" id="calNext" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+                            <div id="nextAvailableHint" class="next-available-hint" hidden>
+                                <i class="bi bi-calendar-event me-1"></i>
+                                <span>Next available: <strong id="nextAvailableLabel"></strong></span>
+                                <button type="button" class="btn btn-link btn-sm p-0 ms-1" id="nextAvailableJump" hidden>Book this date</button>
+                            </div>
+
+                            <div id="calendarSection" class="booking-calendar-wrap is-placeholder">
+                                <div class="calendar-placeholder" id="calendarPlaceholder">
+                                    <i class="bi bi-calendar3"></i>
+                                    <p>Enter your postcode on step 1 to see available dates.</p>
                                 </div>
-                                <div class="booking-calendar">
-                                    <div class="calendar-weekdays">
-                                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                                <div id="calendarActive" hidden>
+                                    <div class="booking-calendar-header">
+                                        <button type="button" class="btn btn-sm btn-light calendar-nav" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+                                        <h3 class="calendar-month-label" id="calMonthLabel"></h3>
+                                        <button type="button" class="btn btn-sm btn-light calendar-nav" id="calNext" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
                                     </div>
-                                    <div class="calendar-grid" id="calGrid"></div>
+                                    <div class="booking-calendar">
+                                        <div class="calendar-weekdays">
+                                            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                                        </div>
+                                        <div class="calendar-grid" id="calGrid"></div>
+                                    </div>
+                                    <p class="calendar-legend">
+                                        <span class="legend-dot available"></span> Available
+                                        <span class="legend-dot closed"></span> Closed
+                                        <span class="legend-dot fully-booked"></span> Fully booked
+                                    </p>
                                 </div>
-                                <p class="calendar-legend">
-                                    <span class="legend-dot available"></span> Available
-                                    <span class="legend-dot closed"></span> Closed
-                                    <span class="legend-dot fully-booked"></span> Fully booked
-                                </p>
                             </div>
 
                             <div class="time-slots-section" id="timeSlotsSection" hidden>
                                 <h3 class="time-slots-title">Available times <span id="selectedDateLabel"></span></h3>
                                 <div class="time-slots-grid" id="timeSlotsGrid"></div>
-                                <p class="time-slots-empty text-muted" id="timeSlotsEmpty" hidden>No times available for this date — try another day or check your postcode.</p>
+                                <p class="time-slots-empty text-muted" id="timeSlotsEmpty" hidden>No times available for this date — try another day.</p>
                                 <p class="time-slots-note text-muted small" id="timeSlotsNote" hidden></p>
                             </div>
 
@@ -175,15 +180,45 @@ fbq('track', 'ViewContent', {
                         </div>
                         <div class="booking-panel-footer">
                             <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="1">Back</button>
-                            <button type="button" class="btn btn-primary btn-next" data-next="3">Continue</button>
+                            <button type="button" class="btn btn-primary btn-next" id="btnStep2Next" data-next="3" disabled>Continue</button>
                         </div>
                     </div>
 
                     <!-- Step 3: Contact, Address & Confirm -->
                     <div class="booking-panel" data-panel="3">
                         <div class="booking-panel-body">
+                            <div class="booking-review-card" id="bookingReview">
+                                <div class="booking-review-header">
+                                    <h2 class="booking-panel-title mb-0">Review your booking</h2>
+                                </div>
+                                <div class="booking-review-body">
+                                    <div class="booking-review-row">
+                                        <span class="booking-review-label">Services</span>
+                                        <span class="booking-review-value" id="reviewServices">—</span>
+                                        <button type="button" class="btn btn-link btn-sm booking-review-edit" data-go-step="1">Edit</button>
+                                    </div>
+                                    <div class="booking-review-row">
+                                        <span class="booking-review-label">Date &amp; time</span>
+                                        <span class="booking-review-value" id="reviewDateTime">—</span>
+                                        <button type="button" class="btn btn-link btn-sm booking-review-edit" data-go-step="2">Edit</button>
+                                    </div>
+                                    <div class="booking-review-row">
+                                        <span class="booking-review-label">Address</span>
+                                        <span class="booking-review-value" id="reviewAddress">—</span>
+                                    </div>
+                                    <div class="booking-review-row booking-review-total">
+                                        <span class="booking-review-label">Total</span>
+                                        <span class="booking-review-value" id="reviewTotal">—</span>
+                                    </div>
+                                    <div class="booking-review-row" id="reviewPromoRow" hidden>
+                                        <span class="booking-review-label">Promo</span>
+                                        <span class="booking-review-value text-success" id="reviewPromo">—</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             {% if is_guest_booking %}
-                            <h2 class="booking-panel-title">Your contact details</h2>
+                            <h2 class="booking-panel-title mt-4">Your contact details</h2>
                             <p class="booking-panel-desc">We'll use these to confirm your appointment and send updates.</p>
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
@@ -209,13 +244,25 @@ fbq('track', 'ViewContent', {
                             {% endif %}
 
                             <h2 class="booking-panel-title">Where should we visit?</h2>
-                            <p class="booking-panel-desc">Select your address from the list, or enter it manually below.</p>
+                            <p class="booking-panel-desc">Pick a saved address or enter your details below.</p>
+
+                            {% if not is_guest_booking %}
+                            <div class="mb-4" id="savedAddressSection">
+                                <label class="form-label" for="savedAddressSelect">Saved address</label>
+                                <select id="savedAddressSelect" class="form-select">
+                                    <option value="">Enter address manually</option>
+                                </select>
+                                <div class="form-text">
+                                    <a href="{% url 'accounts:addresses' %}">Manage saved addresses</a>
+                                </div>
+                            </div>
+                            {% endif %}
 
                             {% if address_lookup_enabled %}
                             <div class="mb-4" id="addressLookupSection">
                                 <label class="form-label" for="addressLookupSelect">Select your address</label>
                                 <select id="addressLookupSelect" class="form-select" disabled>
-                                    <option value="">Enter your postcode on step 2 first…</option>
+                                    <option value="">Enter your postcode on step 1 first…</option>
                                 </select>
                                 <div class="form-text" id="addressLookupStatus"></div>
                                 <button type="button" class="btn btn-link btn-sm px-0 mt-1" id="addressManualToggle" hidden>
@@ -243,16 +290,29 @@ fbq('track', 'ViewContent', {
                                 <div class="col-md-6">
                                     <label class="form-label">Postcode</label>
                                     <input type="text" class="form-control" id="postcodeDisplay" readonly>
-                                    <div class="form-text">Set on the previous step</div>
+                                    <div class="form-text">Set on step 1</div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Promo code <span class="text-muted fw-normal">(optional)</span></label>
+                                    <label class="form-label" for="id_promo_code">Promo code <span class="text-muted fw-normal">(optional)</span></label>
                                     {{ form.promo_code }}
+                                    <div id="promoFeedback" class="small mt-1" aria-live="polite"></div>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Additional Notes <span class="text-muted fw-normal">(optional)</span></label>
                                     {{ form.notes }}
                                 </div>
+                                {% if not is_guest_booking %}
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="save_address" id="id_save_address" value="1">
+                                        <label class="form-check-label" for="id_save_address">Save this address for future bookings</label>
+                                    </div>
+                                    <div class="form-check ms-4">
+                                        <input type="checkbox" class="form-check-input" name="save_address_default" id="id_save_address_default" value="1">
+                                        <label class="form-check-label" for="id_save_address_default">Set as my default address</label>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                             </div>
                         </div>
@@ -266,7 +326,7 @@ fbq('track', 'ViewContent', {
         </div>
 
         <div class="col-lg-4">
-            <div class="booking-summary-card" id="bookingSummary">
+            <div class="booking-summary-card d-none d-lg-block" id="bookingSummary">
                 <div class="summary-header">
                     <i class="bi bi-calendar-check"></i>
                     <span>Your Booking</span>
@@ -277,12 +337,20 @@ fbq('track', 'ViewContent', {
                         <span class="summary-value" id="summaryService">{% if selected_service %}{{ selected_service.name }}{% else %}—{% endif %}</span>
                     </div>
                     <div class="summary-row">
+                        <span class="summary-label">Duration</span>
+                        <span class="summary-value" id="summaryDuration">—</span>
+                    </div>
+                    <div class="summary-row">
                         <span class="summary-label">Date</span>
                         <span class="summary-value" id="summaryDate">—</span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label">Time</span>
                         <span class="summary-value" id="summaryTime">—</span>
+                    </div>
+                    <div class="summary-row" id="summaryPromoRow" hidden>
+                        <span class="summary-label">Promo</span>
+                        <span class="summary-value text-success" id="summaryPromo">—</span>
                     </div>
                     <div class="summary-divider"></div>
                     <div class="summary-row summary-total">
@@ -312,6 +380,21 @@ fbq('track', 'ViewContent', {
         </div>
     </div>
 </div>
+
+<div class="booking-mobile-bar d-lg-none" id="bookingMobileBar">
+    <button type="button" class="booking-mobile-bar-main" id="mobileBarToggle" aria-expanded="false">
+        <span class="booking-mobile-bar-text" id="mobileBarSummary">Select services to begin</span>
+        <span class="booking-mobile-bar-price" id="mobileBarPrice">—</span>
+        <i class="bi bi-chevron-up booking-mobile-bar-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="booking-mobile-bar-details" id="mobileBarDetails" hidden>
+        <div class="booking-mobile-bar-row"><span>Services</span><span id="mobileBarServices">—</span></div>
+        <div class="booking-mobile-bar-row"><span>Duration</span><span id="mobileBarDuration">—</span></div>
+        <div class="booking-mobile-bar-row"><span>Date</span><span id="mobileBarDate">—</span></div>
+        <div class="booking-mobile-bar-row"><span>Time</span><span id="mobileBarTime">—</span></div>
+        <div class="booking-mobile-bar-row" id="mobileBarPromoRow" hidden><span>Promo</span><span id="mobileBarPromo" class="text-success">—</span></div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -319,15 +402,19 @@ fbq('track', 'ViewContent', {
     window.bookingConfig = {
         datesUrl: "{% url 'bookings:available_dates' %}",
         slotsUrl: "{% url 'bookings:available_slots' %}",
+        promoUrl: "{% url 'bookings:validate_promo' %}",
         initialService: "{{ selected_service.pk|default:'' }}",
         initialServices: [{% if form.initial.services %}{% for id in form.initial.services %}"{{ id }}"{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}],
         initialDate: "{{ form.date.value|default:'' }}",
         initialTimeSlot: "{{ form.time_slot.value|default:'' }}",
+        initialPostcode: "{{ form.postcode.value|default:'' }}",
         hasErrors: {{ form.errors|yesno:"true,false" }},
-        errorStep: {% if form.date.errors or form.time_slot.errors or form.postcode.errors %}2{% elif form.services.errors %}1{% elif form.address_line_1.errors or form.city.errors or form.guest_email.errors or form.guest_first_name.errors or form.guest_last_name.errors %}3{% else %}1{% endif %},
+        errorStep: {% if form.date.errors or form.time_slot.errors %}2{% elif form.postcode.errors or form.services.errors %}1{% elif form.address_line_1.errors or form.city.errors or form.guest_email.errors or form.guest_first_name.errors or form.guest_last_name.errors %}3{% else %}1{% endif %},
         showScheduleDebug: {{ schedule_debug|yesno:"true,false" }},
         addressesUrl: "{% url 'bookings:address_lookup' %}",
-        addressLookupEnabled: {{ address_lookup_enabled|yesno:"true,false" }}
+        addressLookupEnabled: {{ address_lookup_enabled|yesno:"true,false" }},
+        prefillAddress: {{ prefill_address_json|safe }},
+        savedAddresses: {{ saved_addresses_json|safe }}
     };
 </script>
 <script src="{% static_v 'js/booking.js' %}"></script>

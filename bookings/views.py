@@ -1,9 +1,11 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import FileResponse, Http404, JsonResponse
+from django.db import transaction
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
+import json
 import mimetypes
 
 from bookings.address_lookup import get_address_lookup_api_key
@@ -12,11 +14,17 @@ from bookings.completion_report import (
     get_completion_report_context,
 )
 from bookings.forms import BookingForm, GuestBookingForm
+from bookings.ics import build_booking_ics
 from bookings.models import Booking, BookingPhoto, BookingStatus
 from bookings.photo_access import can_view_booking_photo
 from bookings.notifications import send_booking_created_email
 from bookings.service_area import is_postcode_in_service_area, service_area_error_message
-from bookings.utils import cancel_booking, get_calendar_dates_in_month, get_available_slots_for_date
+from bookings.utils import (
+    cancel_booking,
+    find_next_available_date,
+    get_calendar_dates_in_month,
+    get_available_slots_for_date,
+)
 from audit.actions import BOOKING_CANCELLED, BOOKING_CREATED
 from audit.services import log_action
 from services.catalog import split_addon_services
@@ -24,20 +32,120 @@ from services.models import Service, ServiceType
 from website.tracking import queue_meta_pixel_event, apply_marketing_attribution
 
 
+def _booking_prefill_address(user):
+    if not user.is_authenticated:
+        return None
+    from accounts.addresses import get_default_saved_address, import_addresses_from_bookings
+
+    import_addresses_from_bookings(user)
+    saved = get_default_saved_address(user)
+    if saved:
+        return {
+            'id': saved.pk,
+            'address_line_1': saved.address_line_1,
+            'address_line_2': saved.address_line_2 or '',
+            'city': saved.city,
+            'postcode': saved.postcode,
+        }
+    last = (
+        Booking.objects.filter(user=user)
+        .exclude(status=BookingStatus.CANCELLED)
+        .order_by('-date', '-created_at')
+        .first()
+    )
+    if not last:
+        return None
+    return {
+        'address_line_1': last.address_line_1,
+        'address_line_2': last.address_line_2 or '',
+        'city': last.city,
+        'postcode': last.postcode,
+    }
+
+
+def _saved_addresses_json(user):
+    if not user.is_authenticated:
+        return '[]'
+    from accounts.addresses import get_saved_addresses_for_user, import_addresses_from_bookings
+
+    import_addresses_from_bookings(user)
+    addresses = [
+        address.as_booking_dict()
+        for address in get_saved_addresses_for_user(user)
+    ]
+    return json.dumps(addresses)
+
+
+def _booking_create_context(request, form):
+    service_id = request.GET.get('service') or request.POST.get('services')
+    selected_service = None
+    if service_id:
+        if isinstance(service_id, list):
+            service_id = service_id[0] if service_id else None
+        if service_id:
+            selected_service = Service.objects.filter(pk=service_id, active=True).first()
+
+    services = Service.objects.filter(active=True)
+    oven_services = services.filter(service_type=ServiceType.OVEN)
+    addon_services = services.filter(service_type=ServiceType.ADDON)
+    standard_addon_services, additional_addon_services = split_addon_services(addon_services)
+    prefill_address = _booking_prefill_address(request.user)
+    return {
+        'form': form,
+        'selected_service': selected_service,
+        'oven_services': oven_services,
+        'standard_addon_services': standard_addon_services,
+        'additional_addon_services': additional_addon_services,
+        'schedule_debug': settings.SCHEDULE_DEBUG,
+        'is_guest_booking': not request.user.is_authenticated,
+        'prefill_address': prefill_address,
+        'prefill_address_json': json.dumps(prefill_address) if prefill_address else 'null',
+        'saved_addresses_json': _saved_addresses_json(request.user),
+        'address_lookup_enabled': (
+            settings.ADDRESS_LOOKUP_ENABLED and bool(get_address_lookup_api_key())
+        ),
+    }
+
+
 def create_booking_view(request):
     form_class = BookingForm if request.user.is_authenticated else GuestBookingForm
     if request.method == 'POST':
         form = form_class(request.POST)
         if form.is_valid():
-            if request.user.is_authenticated:
-                booking = form.save(commit=False)
-                booking.user = request.user
-                service_ids = [s.pk for s in form.cleaned_data['services']]
-                booking.save()
-                booking.services.set(form.cleaned_data['services'])
-                booking.geocode_and_set_duration(service_ids)
-            else:
-                booking = form.save()
+            from bookings.promo import PromoError, record_promo_use
+
+            try:
+                with transaction.atomic():
+                    if request.user.is_authenticated:
+                        booking = form.save(commit=False)
+                        booking.user = request.user
+                        service_ids = [s.pk for s in form.cleaned_data['services']]
+                        booking.save()
+                        booking.services.set(form.cleaned_data['services'])
+                        booking.geocode_and_set_duration(service_ids)
+                        if request.POST.get('save_address') == '1':
+                            from accounts.addresses import save_address_for_user
+                            save_address_for_user(
+                                request.user,
+                                address_line_1=form.cleaned_data['address_line_1'],
+                                address_line_2=form.cleaned_data.get('address_line_2', ''),
+                                city=form.cleaned_data['city'],
+                                postcode=form.cleaned_data['postcode'],
+                                is_default=request.POST.get('save_address_default') == '1',
+                            )
+                    else:
+                        booking = form.save()
+
+                    promo = form.cleaned_data.get('_promo')
+                    if promo:
+                        record_promo_use(promo.pk)
+            except PromoError as exc:
+                messages.error(request, str(exc))
+                return render(
+                    request,
+                    'bookings/create.html',
+                    _booking_create_context(request, form),
+                )
             apply_marketing_attribution(booking, request)
             log_action(
                 BOOKING_CREATED,
@@ -72,46 +180,70 @@ def create_booking_view(request):
                 currency='GBP',
                 content_name='Appliance cleaning booking',
             )
-            if request.user.is_authenticated:
-                return redirect('accounts:my_bookings')
+            request.session['booking_confirmation_id'] = booking.pk
             return redirect('bookings:thank_you')
     else:
         initial = {}
         service_id = request.GET.get('service')
         if service_id:
             initial['services'] = [service_id]
+        postcode_query = request.GET.get('postcode', '').strip()
+        if postcode_query:
+            from bookings.routing import normalize_postcode
+            initial['postcode'] = normalize_postcode(postcode_query)
+        prefill = _booking_prefill_address(request.user)
+        if prefill and not postcode_query:
+            initial.setdefault('postcode', prefill['postcode'])
+        if prefill:
+            initial.setdefault('address_line_1', prefill['address_line_1'])
+            initial.setdefault('address_line_2', prefill['address_line_2'])
+            initial.setdefault('city', prefill['city'])
         form = form_class(initial=initial)
 
-    selected_service = None
-    service_id = request.GET.get('service')
-    if service_id:
-        selected_service = Service.objects.filter(pk=service_id, active=True).first()
-
-    services = Service.objects.filter(active=True)
-    oven_services = services.filter(service_type=ServiceType.OVEN)
-    addon_services = services.filter(service_type=ServiceType.ADDON)
-    standard_addon_services, additional_addon_services = split_addon_services(addon_services)
-    return render(request, 'bookings/create.html', {
-        'form': form,
-        'selected_service': selected_service,
-        'oven_services': oven_services,
-        'standard_addon_services': standard_addon_services,
-        'additional_addon_services': additional_addon_services,
-        'schedule_debug': settings.SCHEDULE_DEBUG,
-        'is_guest_booking': not request.user.is_authenticated,
-        'address_lookup_enabled': (
-            settings.ADDRESS_LOOKUP_ENABLED and bool(get_address_lookup_api_key())
-        ),
-    })
+    return render(
+        request,
+        'bookings/create.html',
+        _booking_create_context(request, form),
+    )
 
 
 def thank_you_view(request):
-    return render(request, 'bookings/thank_you.html')
+    booking_id = request.session.get('booking_confirmation_id')
+    booking = None
+    if booking_id:
+        booking = (
+            Booking.objects.filter(pk=booking_id)
+            .select_related('time_slot')
+            .prefetch_related('services')
+            .first()
+        )
+    return render(request, 'bookings/thank_you.html', {'booking': booking})
+
+
+@require_GET
+def booking_calendar_ics_view(request):
+    booking_id = request.session.get('booking_confirmation_id')
+    if not booking_id:
+        raise Http404
+    booking = get_object_or_404(
+        Booking.objects.select_related('time_slot'),
+        pk=booking_id,
+    )
+    ics_body = build_booking_ics(booking)
+    response = HttpResponse(ics_body, content_type='text/calendar; charset=utf-8')
+    response['Content-Disposition'] = (
+        f'attachment; filename="spot-on-booking-{booking.pk}.ics"'
+    )
+    return response
 
 
 @login_required
 def booking_detail_view(request, pk):
-    booking = get_object_or_404(Booking, pk=pk, user=request.user)
+    booking = get_object_or_404(
+        Booking.objects.select_related('time_slot', 'promo_code').prefetch_related('services'),
+        pk=pk,
+        user=request.user,
+    )
     return render(request, 'bookings/detail.html', {'booking': booking})
 
 
@@ -233,13 +365,20 @@ def available_dates_api(request):
         postcode=postcode,
         city=city,
     )
-    return JsonResponse({
+    payload = {
         'available': calendar['available'],
         'closed': calendar['closed'],
         'full': calendar['full'],
         'year': year,
         'month': month,
-    })
+    }
+    if postcode:
+        payload['next_available'] = find_next_available_date(
+            service_ids=service_ids or None,
+            postcode=postcode,
+            city=city,
+        )
+    return JsonResponse(payload)
 
 
 @require_GET
@@ -291,3 +430,44 @@ def available_slots_api(request):
         except Exception as exc:
             payload['debug_error'] = str(exc)
     return JsonResponse(payload)
+
+
+@require_GET
+def validate_promo_api(request):
+    code = request.GET.get('code', '').strip()
+    if not code:
+        return JsonResponse({'valid': False, 'error': 'Enter a promo code.'})
+
+    service_ids = _parse_service_ids(request)
+    if not service_ids:
+        return JsonResponse({'valid': False, 'error': 'Select at least one service first.'})
+
+    from decimal import Decimal
+
+    from bookings.promo import PromoError, get_valid_promo
+    from services.models import Service
+
+    try:
+        promo = get_valid_promo(code)
+        subtotal = sum(
+            s.price for s in Service.objects.filter(pk__in=service_ids)
+        )
+        discount = promo.calculate_discount(subtotal)
+        if discount <= 0:
+            return JsonResponse({
+                'valid': False,
+                'error': (
+                    f'This code requires a minimum order of '
+                    f'£{promo.min_order_amount:.2f}.'
+                ),
+            })
+        total = subtotal - discount
+        return JsonResponse({
+            'valid': True,
+            'code': promo.code,
+            'discount': str(discount.quantize(Decimal('0.01'))),
+            'subtotal': str(subtotal.quantize(Decimal('0.01'))),
+            'total': str(total.quantize(Decimal('0.01'))),
+        })
+    except PromoError as exc:
+        return JsonResponse({'valid': False, 'error': str(exc)})

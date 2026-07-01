@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static static_version %}
+
+{% block title %}Saved Addresses - {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <h1 class="fw-bold">Saved Addresses</h1>
+        <p class="text-muted mb-0">Manage addresses for faster booking next time</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="app-card card border-0">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <span>Your addresses</span>
+                    <button type="button" class="btn btn-sm btn-primary" id="openAddAddressModal">
+                        <i class="bi bi-plus-lg me-1"></i> Add address
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    {% if addresses %}
+                    <ul class="list-group list-group-flush">
+                        {% for address in addresses %}
+                        <li class="list-group-item px-4 py-3">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div>
+                                    <div class="fw-semibold">
+                                        {{ address.display_label }}
+                                        {% if address.is_default %}
+                                        <span class="badge bg-primary ms-1">Default</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-muted small mt-1">{{ address.summary }}</div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-1 justify-content-end">
+                                    {% if not address.is_default %}
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="set_default">
+                                        <input type="hidden" name="address_id" value="{{ address.pk }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Make default</button>
+                                    </form>
+                                    {% endif %}
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary address-edit-btn"
+                                            data-address-id="{{ address.pk }}"
+                                            data-label="{{ address.label|escape }}"
+                                            data-line1="{{ address.address_line_1|escape }}"
+                                            data-line2="{{ address.address_line_2|escape }}"
+                                            data-city="{{ address.city|escape }}"
+                                            data-postcode="{{ address.postcode|escape }}"
+                                            data-is-default="{% if address.is_default %}1{% else %}0{% endif %}">
+                                        Edit
+                                    </button>
+                                    <form method="post" class="d-inline"
+                                          data-confirm="Remove this saved address?"
+                                          data-confirm-title="Delete address?"
+                                          data-confirm-yes="Yes, remove"
+                                          data-confirm-danger="true">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="address_id" value="{{ address.pk }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="text-center py-5 px-4 text-muted">
+                        <i class="bi bi-geo-alt fs-1"></i>
+                        <p class="mt-2 mb-3">No saved addresses yet. Add one now, or tick “Save this address” when you book.</p>
+                        <button type="button" class="btn btn-primary" id="openAddAddressModalEmpty">
+                            <i class="bi bi-plus-lg me-1"></i> Add address
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <a href="{% url 'accounts:dashboard' %}" class="btn btn-link px-0">&larr; Back to dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addressModal" tabindex="-1" aria-labelledby="addressModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content address-modal-content">
+            <form method="post" id="addressForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" id="addressFormAction" value="{{ modal_action }}">
+                <input type="hidden" name="address_id" id="addressFormId" value="{% if editing %}{{ editing.pk }}{% endif %}">
+
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="addressModalTitle">
+                        {% if modal_action == 'edit' %}Edit address{% else %}Add address{% endif %}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 small">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.label.id_for_label }}">Label <span class="text-muted fw-normal">(optional)</span></label>
+                        {{ form.label }}
+                        {% if form.label.errors %}<div class="text-danger small">{{ form.label.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.address_line_1.id_for_label }}">Address line 1</label>
+                        {{ form.address_line_1 }}
+                        {% if form.address_line_1.errors %}<div class="text-danger small">{{ form.address_line_1.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.address_line_2.id_for_label }}">Address line 2 <span class="text-muted fw-normal">(optional)</span></label>
+                        {{ form.address_line_2 }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.city.id_for_label }}">City</label>
+                        {{ form.city }}
+                        {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.postcode.id_for_label }}">Postcode</label>
+                        {{ form.postcode }}
+                        {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-check">
+                        {{ form.is_default }}
+                        <label class="form-check-label" for="{{ form.is_default.id_for_label }}">Use as default address when booking</label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="addressFormSubmit">
+                        {% if modal_action == 'edit' %}Save changes{% else %}Add address{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.addressModalConfig = {
+        showOnLoad: {{ show_address_modal|yesno:"true,false" }},
+        modalAction: "{{ modal_action }}",
+    };
+</script>
+<script src="{% static_v 'js/address-modal.js' %}"></script>
+{% endblock %}

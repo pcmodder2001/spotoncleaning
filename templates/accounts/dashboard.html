@@ -57,7 +57,9 @@
                                     <th>Service</th>
                                     <th>Date</th>
                                     <th>Time</th>
+                                    <th>Price</th>
                                     <th>Status</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -66,7 +68,11 @@
                                     <td>{{ booking.service_summary }}</td>
                                     <td>{{ booking.date|date:"d M Y" }}</td>
                                     <td>{{ booking.time_slot.time|time:"H:i" }}</td>
+                                    <td class="booking-price-cell">{% include 'bookings/includes/booking_price.html' %}</td>
                                     <td><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
+                                    <td class="text-nowrap">
+                                        <a href="{% url 'bookings:detail' booking.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -89,6 +95,7 @@
                     <div class="d-grid gap-2">
                         <a href="{% url 'bookings:create' %}" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>New Booking</a>
                         <a href="{% url 'accounts:my_bookings' %}" class="btn btn-outline-primary"><i class="bi bi-list me-2"></i>My Bookings</a>
+                        <a href="{% url 'accounts:addresses' %}" class="btn btn-outline-primary"><i class="bi bi-geo-alt me-2"></i>Saved Addresses</a>
                         <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary"><i class="bi bi-person me-2"></i>Edit Profile</a>
                     </div>
                 </div>

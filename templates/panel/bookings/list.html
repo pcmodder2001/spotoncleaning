@@ -81,8 +81,20 @@
                             {% endif %}
                         </td>
                         <td><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
-                        <td>
+                        <td class="text-nowrap">
                             <button type="button" class="btn btn-sm btn-outline-primary" data-booking-view="{{ booking.pk }}">View</button>
+                            {% if can_manage_site and booking.status == 'pending' %}
+                            <form method="post"
+                                  action="{% url 'panel:booking_confirm' booking.pk %}"
+                                  class="d-inline"
+                                  data-confirm="A confirmation email will be sent to {{ booking.contact_email }}."
+                                  data-confirm-title="Confirm booking #{{ booking.pk }}?"
+                                  data-confirm-yes="Yes, confirm">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-sm btn-success">Confirm</button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}

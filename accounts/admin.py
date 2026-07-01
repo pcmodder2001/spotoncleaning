@@ -2,7 +2,13 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.core.exceptions import PermissionDenied
 
-from .models import CustomUser
+from .models import CustomUser, SavedAddress
+
+
+class SavedAddressInline(admin.TabularInline):
+    model = SavedAddress
+    extra = 0
+    fields = ('label', 'address_line_1', 'city', 'postcode', 'is_default')
 
 
 @admin.register(CustomUser)
@@ -10,6 +16,7 @@ class CustomUserAdmin(UserAdmin):
     ordering = ('email',)
     list_display = ('email', 'first_name', 'last_name', 'phone_number', 'role', 'is_staff', 'is_active')
     search_fields = ('email', 'first_name', 'last_name')
+    inlines = [SavedAddressInline]
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'phone_number')}),

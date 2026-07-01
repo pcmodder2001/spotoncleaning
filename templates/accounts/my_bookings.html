@@ -37,6 +37,7 @@
                         <th>Date</th>
                         <th>Time</th>
                         <th>Address</th>
+                        <th>Price</th>
                         <th>Status</th>
                         <th></th>
                     </tr>
@@ -48,6 +49,7 @@
                         <td>{{ booking.date|date:"d M Y" }}</td>
                         <td>{{ booking.time_slot.time|time:"H:i" }}</td>
                         <td>{{ booking.city }}, {{ booking.postcode }}</td>
+                        <td class="booking-price-cell">{% include 'bookings/includes/booking_price.html' %}</td>
                         <td><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
                         <td class="text-nowrap">
                             <a href="{% url 'bookings:detail' booking.pk %}" class="btn btn-sm btn-outline-primary">View</a>
@@ -64,7 +66,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-5">No bookings found.</td>
+                        <td colspan="7" class="text-center text-muted py-5">No bookings found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

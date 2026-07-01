@@ -75,6 +75,26 @@ def get_available_dates_in_month(year, month, service_ids=None, postcode='', cit
     )['available']
 
 
+def find_next_available_date(service_ids=None, postcode='', city='', max_months=6):
+    """Return ISO date string of the next bookable day, or None."""
+    today = timezone.localdate()
+    year, month = today.year, today.month
+    for _ in range(max_months):
+        calendar = get_calendar_dates_in_month(
+            year, month,
+            service_ids=service_ids,
+            postcode=postcode,
+            city=city,
+        )
+        if calendar['available']:
+            return calendar['available'][0]
+        month += 1
+        if month > 12:
+            month = 1
+            year += 1
+    return None
+
+
 def get_available_slots_for_date(date, service_ids=None, postcode='', city='', exclude_booking_pk=None):
     if service_ids or postcode:
         return get_feasible_slots(
@@ -142,8 +162,12 @@ def cancel_booking(booking, *, notify=True):
     """Cancel a booking and optionally notify the customer."""
     if booking.status == BookingStatus.CANCELLED:
         return False
+    promo_id = booking.promo_code_id
     booking.status = BookingStatus.CANCELLED
     booking.save(update_fields=['status', 'updated_at'])
+    if promo_id:
+        from bookings.promo import release_promo_use
+        release_promo_use(promo_id)
     if notify:
         from bookings.notifications import send_booking_status_email
         send_booking_status_email(booking)

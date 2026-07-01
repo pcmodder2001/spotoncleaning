@@ -1553,6 +1553,18 @@ body.site-home .hero-section::before {
     align-items: center;
     gap: 0.375rem;
     min-width: 72px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: default;
+}
+
+.booking-step.completed {
+    cursor: pointer;
+}
+
+.booking-step.completed:hover .step-label {
+    color: var(--primary);
 }
 
 .booking-step .step-num {
@@ -1722,6 +1734,308 @@ body.site-home .hero-section::before {
 
 .service-pick-info small {
     display: block;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.service-pick-more {
+    display: inline-block;
+    margin-top: 0.375rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--primary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.service-pick-more:hover {
+    color: var(--primary-dark);
+}
+
+.service-pick-full {
+    margin-top: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.booking-postcode-gate {
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.booking-postcode-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+}
+
+.next-available-hint {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.625rem 0.875rem;
+    margin-bottom: 1rem;
+    background: var(--primary-light);
+    border: 1px solid rgba(var(--primary-rgb), 0.15);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    color: var(--primary-dark);
+}
+
+.booking-calendar-wrap.is-placeholder {
+    min-height: 280px;
+    position: relative;
+}
+
+.calendar-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 280px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    background: var(--bg);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--text-muted);
+}
+
+.calendar-placeholder i {
+    font-size: 2rem;
+    opacity: 0.45;
+}
+
+.calendar-placeholder p {
+    margin: 0;
+    max-width: 20rem;
+    font-size: 0.9375rem;
+}
+
+.booking-review-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.booking-review-header {
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.booking-review-body {
+    padding: 0.25rem 1.25rem 1rem;
+}
+
+.booking-review-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.5rem 1rem;
+    align-items: start;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9375rem;
+}
+
+.booking-review-row:last-child {
+    border-bottom: none;
+}
+
+.booking-review-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.booking-review-value {
+    grid-column: 1 / -1;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.booking-review-edit {
+    grid-column: 3;
+    grid-row: 1;
+    white-space: nowrap;
+}
+
+.booking-review-total .booking-review-value {
+    font-size: 1.125rem;
+    color: var(--primary);
+}
+
+body.booking-page {
+    padding-bottom: 5rem;
+}
+
+@media (min-width: 992px) {
+    body.booking-page {
+        padding-bottom: 0;
+    }
+}
+
+.booking-mobile-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1040;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.booking-mobile-bar-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: none;
+    background: var(--surface);
+    text-align: left;
+    cursor: pointer;
+}
+
+.booking-mobile-bar-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.booking-mobile-bar-price {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.booking-mobile-bar-chevron {
+    color: var(--text-muted);
+    transition: transform var(--transition);
+}
+
+.booking-mobile-bar-main[aria-expanded="true"] .booking-mobile-bar-chevron {
+    transform: rotate(180deg);
+}
+
+.booking-mobile-bar-details {
+    padding: 0 1rem 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.booking-mobile-bar-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    font-size: 0.8125rem;
+}
+
+.booking-mobile-bar-row span:first-child {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.booking-mobile-bar-row span:last-child {
+    text-align: right;
+    font-weight: 600;
+}
+
+.booking-confirmation-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.booking-confirmation-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.booking-confirmation-row:last-child {
+    border-bottom: none;
+}
+
+.booking-confirmation-total strong {
+    font-size: 1.125rem;
+    color: var(--primary);
+}
+
+.hero-coverage-check {
+    margin-top: 1.25rem;
+    max-width: 28rem;
+}
+
+.hero-coverage-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.hero-coverage-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.hero-coverage-row .form-control {
+    flex: 1;
+    min-width: 0;
+}
+
+.hero-coverage-row .btn {
+    white-space: nowrap;
+}
+
+.address-modal-content {
+    border: none;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.address-modal-content .modal-header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.address-modal-content .modal-footer {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+}
     color: var(--text-muted);
     font-size: 0.8125rem;
     line-height: 1.4;

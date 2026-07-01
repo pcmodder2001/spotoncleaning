@@ -16,6 +16,17 @@
         const cityInput = document.getElementById('id_city');
         const postcodeDisplay = document.getElementById('postcodeDisplay');
         const calendarSection = document.getElementById('calendarSection');
+        const calendarPlaceholder = document.getElementById('calendarPlaceholder');
+        const calendarActive = document.getElementById('calendarActive');
+        const postcodeChip = document.getElementById('postcodeChip');
+        const postcodeChipValue = document.getElementById('postcodeChipValue');
+        const nextAvailableHint = document.getElementById('nextAvailableHint');
+        const nextAvailableLabel = document.getElementById('nextAvailableLabel');
+        const nextAvailableJump = document.getElementById('nextAvailableJump');
+        const btnStep1Next = document.getElementById('btnStep1Next');
+        const btnStep2Next = document.getElementById('btnStep2Next');
+        const promoInput = document.getElementById('id_promo_code');
+        const promoFeedback = document.getElementById('promoFeedback');
         const panels = document.querySelectorAll('.booking-panel');
         const steps = document.querySelectorAll('.booking-step');
         const calGrid = document.getElementById('calGrid');
@@ -33,6 +44,10 @@
         const addressLookupSelect = document.getElementById('addressLookupSelect');
         const addressLookupStatus = document.getElementById('addressLookupStatus');
         const addressManualToggle = document.getElementById('addressManualToggle');
+        const mobileBarToggle = document.getElementById('mobileBarToggle');
+        const mobileBarDetails = document.getElementById('mobileBarDetails');
+        const savedAddressSelect = document.getElementById('savedAddressSelect');
+        const savedAddressSection = document.getElementById('savedAddressSection');
 
         let currentStep = 1;
         let viewYear, viewMonth;
@@ -46,16 +61,28 @@
         let postcodeDebounce = null;
         let loadedAddresses = [];
         let addressLookupLoadedFor = '';
+        let postcodeValid = false;
+        let nextAvailableDate = null;
+        let promoState = { valid: false, discount: 0, code: '', total: 0 };
+        let savedAddresses = Array.isArray(cfg.savedAddresses) ? cfg.savedAddresses : [];
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         initViewMonth();
         bindServicePicker();
+        bindServiceExpand();
         bindNavigation();
+        bindStepIndicators();
+        bindGoStepLinks();
         bindCalendarNav();
         bindPostcodeInput();
         bindAddressLookup();
+        bindPromoField();
+        bindMobileBar();
+        bindAddressReviewFields();
+        bindSavedAddresses();
+        applyPrefillAddress();
         initFromConfig();
 
         async function initFromConfig() {
@@ -63,26 +90,88 @@
                 ? cfg.initialServices
                 : (cfg.initialService ? [cfg.initialService] : []);
             ids.forEach(function (id) {
-                const btn = document.querySelector('.service-pick[data-service-id="' + id + '"]');
-                if (btn) applyServiceSelection(btn, false);
+                const el = document.querySelector('.service-pick[data-service-id="' + id + '"]');
+                if (el) applyServiceSelection(el, false);
             });
             syncServiceInputs();
             syncPostcodeDisplay();
+            updatePostcodeChip();
             if (cfg.hasErrors) {
                 goToStep(parseInt(cfg.errorStep, 10) || 1);
             }
             if (getPostcode()) {
-                calendarSection.hidden = false;
-                if (showScheduleDebug) {
-                    showDebugWaiting('Postcode <strong>' + escapeHtml(getPostcode()) + '</strong> set. <strong>Click a date</strong> on the calendar to load travel time debug.');
-                }
-                await renderCalendar();
+                await onPostcodeChanged();
                 if (selectedDate) {
+                    setCalendarMode(true);
                     await selectDate(selectedDate, false);
                     if (selectedTime) highlightTimeSlot(selectedTime);
                 }
+            } else {
+                setCalendarMode(false);
             }
             updateSummary();
+            updateContinueButtons();
+        }
+
+        function applyPrefillAddress() {
+            if (!cfg.prefillAddress) return;
+            const prefill = cfg.prefillAddress;
+            applyAddressFields(prefill, false);
+            if (prefill.id && savedAddressSelect) {
+                savedAddressSelect.value = String(prefill.id);
+            }
+        }
+
+        function bindSavedAddresses() {
+            if (!savedAddressSelect) return;
+            if (!savedAddresses.length) {
+                if (savedAddressSection) savedAddressSection.hidden = true;
+                return;
+            }
+            savedAddresses.forEach(function (addr) {
+                const option = document.createElement('option');
+                option.value = String(addr.id);
+                option.textContent = addr.label + ' — ' + addr.summary;
+                if (addr.is_default) option.selected = true;
+                savedAddressSelect.appendChild(option);
+            });
+            savedAddressSelect.addEventListener('change', function () {
+                if (!this.value) return;
+                const addr = savedAddresses.find(function (item) {
+                    return String(item.id) === this.value;
+                }, this);
+                if (addr) applySavedAddress(addr);
+            });
+
+            ['id_address_line_1', 'id_address_line_2', 'id_city'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', function () {
+                        if (savedAddressSelect.value) savedAddressSelect.value = '';
+                    });
+                }
+            });
+        }
+
+        async function applySavedAddress(addr) {
+            await applyAddressFields(addr, true);
+        }
+
+        async function applyAddressFields(addr, refreshSchedule) {
+            const line1 = document.getElementById('id_address_line_1');
+            const line2 = document.getElementById('id_address_line_2');
+            if (line1) line1.value = addr.address_line_1 || '';
+            if (line2) line2.value = addr.address_line_2 || '';
+            if (cityInput) cityInput.value = addr.city || '';
+            const previousPostcode = getPostcode();
+            if (postcodeInput && addr.postcode) {
+                postcodeInput.value = addr.postcode;
+                syncPostcodeDisplay();
+            }
+            updateReviewBlock();
+            if (refreshSchedule && addr.postcode && addr.postcode !== previousPostcode) {
+                await onPostcodeChanged();
+            }
         }
 
         function getPostcode() {
@@ -94,15 +183,35 @@
         }
 
         function syncPostcodeDisplay() {
-            if (postcodeDisplay) {
-                postcodeDisplay.value = getPostcode();
+            if (postcodeDisplay) postcodeDisplay.value = getPostcode();
+            updatePostcodeChip();
+        }
+
+        function updatePostcodeChip() {
+            const postcode = getPostcode();
+            if (postcodeChip && postcodeChipValue) {
+                if (postcode && postcodeValid) {
+                    postcodeChipValue.textContent = postcode;
+                    postcodeChip.hidden = false;
+                } else {
+                    postcodeChip.hidden = true;
+                }
             }
+        }
+
+        function setCalendarMode(active) {
+            if (!calendarSection) return;
+            calendarSection.classList.toggle('is-placeholder', !active);
+            if (calendarPlaceholder) calendarPlaceholder.hidden = active;
+            if (calendarActive) calendarActive.hidden = !active;
         }
 
         function bindPostcodeInput() {
             if (!postcodeInput) return;
             postcodeInput.addEventListener('input', function () {
                 syncPostcodeDisplay();
+                postcodeValid = false;
+                updateContinueButtons();
                 clearTimeout(postcodeDebounce);
                 postcodeDebounce = setTimeout(onPostcodeChanged, 500);
             });
@@ -120,8 +229,11 @@
                 postcodeAreaError.textContent = message;
                 postcodeAreaError.hidden = false;
             }
-            calendarSection.hidden = true;
-            timeSlotsSection.hidden = true;
+            postcodeValid = false;
+            setCalendarMode(false);
+            if (timeSlotsSection) timeSlotsSection.hidden = true;
+            updateContinueButtons();
+            updatePostcodeChip();
         }
 
         async function validatePostcodeServiceArea(postcode) {
@@ -149,32 +261,61 @@
             const postcode = getPostcode();
             if (postcode.length < 5) {
                 clearPostcodeAreaError();
-                calendarSection.hidden = true;
-                timeSlotsSection.hidden = true;
+                postcodeValid = false;
+                setCalendarMode(false);
+                if (timeSlotsSection) timeSlotsSection.hidden = true;
+                updateNextAvailableHint(null);
                 if (showScheduleDebug) showDebugWaiting('Enter a valid UK postcode (e.g. WF6 1TN) to begin.');
+                updateContinueButtons();
                 return;
             }
             const inArea = await validatePostcodeServiceArea(postcode);
             if (!inArea) return;
 
-            calendarSection.hidden = false;
+            postcodeValid = true;
+            setCalendarMode(true);
             selectedDate = '';
             selectedTime = '';
             selectedTimeLabel = '';
             dateInput.value = '';
             timeInput.value = '';
-            timeSlotsSection.hidden = true;
+            if (timeSlotsSection) timeSlotsSection.hidden = true;
             if (showScheduleDebug) {
-                showDebugWaiting('Postcode <strong>' + escapeHtml(postcode) + '</strong> set. Now <strong>click a date</strong> on the calendar to load travel time debug for each slot.');
+                showDebugWaiting('Postcode <strong>' + escapeHtml(postcode) + '</strong> set. Now <strong>click a date</strong> on the calendar.');
             }
             await renderCalendar();
+            loadAddressLookup();
+            updateContinueButtons();
+            updatePostcodeChip();
+        }
+
+        function updateNextAvailableHint(isoDate) {
+            nextAvailableDate = isoDate || null;
+            if (!nextAvailableHint || !nextAvailableLabel) return;
+            if (!isoDate) {
+                nextAvailableHint.hidden = true;
+                return;
+            }
+            nextAvailableLabel.textContent = parseDate(isoDate).toLocaleDateString('en-GB', {
+                weekday: 'long', day: 'numeric', month: 'long'
+            });
+            nextAvailableHint.hidden = false;
+            if (nextAvailableJump) {
+                nextAvailableJump.hidden = false;
+                nextAvailableJump.onclick = function () {
+                    const d = parseDate(isoDate);
+                    viewYear = d.getFullYear();
+                    viewMonth = d.getMonth();
+                    selectDate(isoDate);
+                };
+            }
         }
 
         function resetAddressLookup() {
             loadedAddresses = [];
             addressLookupLoadedFor = '';
             if (!addressLookupSelect) return;
-            addressLookupSelect.innerHTML = '<option value="">Enter your postcode on step 2 first…</option>';
+            addressLookupSelect.innerHTML = '<option value="">Enter your postcode on step 1 first…</option>';
             addressLookupSelect.disabled = true;
             addressLookupSelect.value = '';
             if (addressLookupStatus) addressLookupStatus.textContent = '';
@@ -196,6 +337,13 @@
             }
         }
 
+        function bindAddressReviewFields() {
+            ['id_address_line_1', 'id_address_line_2', 'id_city'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', updateReviewBlock);
+            });
+        }
+
         function applySelectedAddress(index) {
             const addr = loadedAddresses[parseInt(index, 10)];
             if (!addr) return;
@@ -208,13 +356,14 @@
                 postcodeInput.value = addr.postcode;
                 syncPostcodeDisplay();
             }
+            updateReviewBlock();
         }
 
         async function loadAddressLookup() {
             if (!cfg.addressLookupEnabled || !cfg.addressesUrl || !addressLookupSelect) return;
 
             const postcode = getPostcode();
-            if (!postcode || postcode.length < 5) {
+            if (!postcode || postcode.length < 5 || !postcodeValid) {
                 resetAddressLookup();
                 return;
             }
@@ -251,7 +400,7 @@
 
                 if (addressLookupStatus) {
                     if (data.error === 'postcode_not_found') {
-                        addressLookupStatus.textContent = 'No addresses found for this postcode. Enter your address manually below.';
+                        addressLookupStatus.textContent = 'No addresses found. Enter your address manually below.';
                     } else if (loadedAddresses.length) {
                         addressLookupStatus.textContent = loadedAddresses.length + ' address(es) found — select yours from the list.';
                     } else {
@@ -295,48 +444,68 @@
         }
 
         function bindServicePicker() {
-            document.querySelectorAll('.service-pick-exclusive').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    const group = btn.dataset.exclusiveGroup;
-                    document.querySelectorAll('.service-pick[data-exclusive-group="' + group + '"]').forEach(function (b) {
-                        b.classList.remove('selected');
-                        delete selectedServices[b.dataset.serviceId];
-                    });
-                    applyServiceSelection(btn, true);
-                    onServicesChanged();
-                });
-            });
-            document.querySelectorAll('.service-pick-addon').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    const id = btn.dataset.serviceId;
-                    if (btn.classList.contains('selected')) {
-                        btn.classList.remove('selected');
-                        delete selectedServices[id];
+            document.querySelectorAll('.service-pick').forEach(function (el) {
+                el.addEventListener('click', function (ev) {
+                    if (ev.target.closest('.service-pick-more')) return;
+                    if (el.classList.contains('service-pick-exclusive')) {
+                        const group = el.dataset.exclusiveGroup;
+                        document.querySelectorAll('.service-pick[data-exclusive-group="' + group + '"]').forEach(function (item) {
+                            item.classList.remove('selected');
+                            delete selectedServices[item.dataset.serviceId];
+                        });
+                        applyServiceSelection(el, true);
                     } else {
-                        applyServiceSelection(btn, true);
+                        const id = el.dataset.serviceId;
+                        if (el.classList.contains('selected')) {
+                            el.classList.remove('selected');
+                            delete selectedServices[id];
+                        } else {
+                            applyServiceSelection(el, true);
+                        }
                     }
                     onServicesChanged();
+                });
+                el.addEventListener('keydown', function (ev) {
+                    if (ev.key === 'Enter' || ev.key === ' ') {
+                        ev.preventDefault();
+                        el.click();
+                    }
+                });
+            });
+        }
+
+        function bindServiceExpand() {
+            document.querySelectorAll('.service-pick-more').forEach(function (btn) {
+                btn.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    const expanded = btn.getAttribute('aria-expanded') === 'true';
+                    const full = btn.nextElementSibling;
+                    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                    if (full) full.hidden = expanded;
+                    btn.textContent = expanded ? "What's included" : 'Hide details';
                 });
             });
         }
 
         async function onServicesChanged() {
-            if (currentStep === 2 && getPostcode()) {
-                if (selectedDate) {
+            if (promoInput && promoInput.value.trim()) validatePromoField();
+            if (postcodeValid) {
+                if (currentStep === 2 && selectedDate) {
                     await loadTimeSlots(selectedDate);
-                } else {
+                } else if (postcodeValid) {
                     await renderCalendar();
                 }
             }
+            updateContinueButtons();
         }
 
-        function applyServiceSelection(btn, update) {
-            const id = btn.dataset.serviceId;
-            btn.classList.add('selected');
+        function applyServiceSelection(el, update) {
+            const id = el.dataset.serviceId;
+            el.classList.add('selected');
             selectedServices[id] = {
-                name: btn.dataset.serviceName,
-                price: parseFloat(btn.dataset.servicePrice),
-                duration: parseInt(btn.dataset.serviceDuration, 10) || 60,
+                name: el.dataset.serviceName,
+                price: parseFloat(el.dataset.servicePrice),
+                duration: parseInt(el.dataset.serviceDuration, 10) || 60,
             };
             if (update) {
                 syncServiceInputs();
@@ -375,16 +544,102 @@
             });
         }
 
+        function bindStepIndicators() {
+            steps.forEach(function (stepBtn) {
+                stepBtn.addEventListener('click', function () {
+                    const target = parseInt(stepBtn.dataset.step, 10);
+                    if (target === currentStep) return;
+                    if (target < currentStep) {
+                        goToStep(target);
+                        return;
+                    }
+                    for (let s = currentStep; s < target; s++) {
+                        if (!validateStep(s)) return;
+                    }
+                    goToStep(target);
+                });
+            });
+        }
+
+        function bindGoStepLinks() {
+            document.querySelectorAll('[data-go-step]').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    goToStep(parseInt(link.dataset.goStep, 10));
+                });
+            });
+        }
+
+        function bindPromoField() {
+            if (!promoInput || !cfg.promoUrl) return;
+            promoInput.addEventListener('blur', validatePromoField);
+        }
+
+        async function validatePromoField() {
+            if (!promoInput || !cfg.promoUrl) return;
+            const code = promoInput.value.trim();
+            if (!code) {
+                promoState = { valid: false, discount: 0, code: '', total: 0 };
+                setPromoFeedback('');
+                updateSummary();
+                return;
+            }
+            if (!Object.keys(selectedServices).length) {
+                setPromoFeedback('Select at least one service first.', 'error');
+                return;
+            }
+            try {
+                const params = buildScheduleParams();
+                params.set('code', code);
+                const res = await fetch(cfg.promoUrl + '?' + params.toString());
+                const data = await res.json().catch(function () { return {}; });
+                if (data.valid) {
+                    promoState = {
+                        valid: true,
+                        discount: parseFloat(data.discount),
+                        code: data.code,
+                        total: parseFloat(data.total),
+                    };
+                    setPromoFeedback('Code applied — you save £' + parseFloat(data.discount).toFixed(2), 'success');
+                } else {
+                    promoState = { valid: false, discount: 0, code: '', total: 0 };
+                    setPromoFeedback(data.error || 'Invalid promo code.', 'error');
+                }
+            } catch (err) {
+                promoState = { valid: false, discount: 0, code: '', total: 0 };
+                setPromoFeedback('Could not validate promo code.', 'error');
+            }
+            updateSummary();
+        }
+
+        function setPromoFeedback(message, type) {
+            if (!promoFeedback) return;
+            promoFeedback.textContent = message || '';
+            promoFeedback.className = 'small mt-1' + (type === 'success' ? ' text-success' : type === 'error' ? ' text-danger' : '');
+        }
+
+        function bindMobileBar() {
+            if (!mobileBarToggle || !mobileBarDetails) return;
+            mobileBarToggle.addEventListener('click', function () {
+                const open = mobileBarDetails.hidden;
+                mobileBarDetails.hidden = !open;
+                mobileBarToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        }
+
         function validateStep(step) {
             if (step === 1) {
+                if (!getPostcode() || getPostcode().length < 5 || !postcodeValid) {
+                    showToast('Please enter a valid postcode in our service area.');
+                    return false;
+                }
                 if (Object.keys(selectedServices).length === 0) {
                     showToast('Please select at least one service.');
                     return false;
                 }
             }
             if (step === 2) {
-                if (!getPostcode() || getPostcode().length < 5) {
-                    showToast('Please enter your postcode so we can check travel times.');
+                if (!postcodeValid) {
+                    showToast('Please enter a valid postcode on step 1.');
                     return false;
                 }
                 if (!dateInput.value) {
@@ -408,15 +663,31 @@
                 const n = parseInt(s.dataset.step, 10);
                 s.classList.toggle('active', n === step);
                 s.classList.toggle('completed', n < step);
+                if (n === step) s.setAttribute('aria-current', 'step');
+                else s.removeAttribute('aria-current');
             });
+            if (step === 2 && postcodeValid) {
+                setCalendarMode(true);
+                if (!calGrid.innerHTML) renderCalendar();
+            }
             if (step === 3) {
                 syncPostcodeDisplay();
                 loadAddressLookup();
+                updateReviewBlock();
             }
+            updateContinueButtons();
             window.scrollTo({ top: form.offsetTop - 100, behavior: 'smooth' });
         }
 
+        function updateContinueButtons() {
+            const step1Ready = postcodeValid && Object.keys(selectedServices).length > 0;
+            if (btnStep1Next) btnStep1Next.disabled = !step1Ready;
+            const step2Ready = postcodeValid && !!dateInput.value && !!timeInput.value;
+            if (btnStep2Next) btnStep2Next.disabled = !step2Ready;
+        }
+
         function bindCalendarNav() {
+            if (!calPrev || !calNext) return;
             calPrev.addEventListener('click', async function () {
                 viewMonth -= 1;
                 if (viewMonth < 0) { viewMonth = 11; viewYear -= 1; }
@@ -437,17 +708,18 @@
             const data = await res.json().catch(function () { return {}; });
             if (res.status === 400 && data.error === 'outside_service_area') {
                 showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
-                return { available: new Set(), closed: new Set(), full: new Set() };
+                return { available: new Set(), closed: new Set(), full: new Set(), nextAvailable: null };
             }
             return {
                 available: new Set(data.available || []),
                 closed: new Set(data.closed || []),
                 full: new Set(data.full || []),
+                nextAvailable: data.next_available || null,
             };
         }
 
         async function renderCalendar() {
-            if (!getPostcode()) return;
+            if (!getPostcode() || !postcodeValid || !calGrid) return;
             calMonthLabel.textContent = new Date(viewYear, viewMonth, 1).toLocaleDateString('en-GB', {
                 month: 'long', year: 'numeric'
             });
@@ -455,6 +727,7 @@
             availableDates = calendarDates.available;
             closedDates = calendarDates.closed;
             fullDates = calendarDates.full;
+            updateNextAvailableHint(calendarDates.nextAvailable);
             calGrid.innerHTML = '';
 
             const firstDay = new Date(viewYear, viewMonth, 1);
@@ -542,6 +815,15 @@
             timeSlotsSection.hidden = false;
             await loadTimeSlots(iso);
             updateSummary();
+            updateContinueButtons();
+            scrollToElement(timeSlotsSection);
+        }
+
+        function scrollToElement(el) {
+            if (!el) return;
+            const offset = window.innerWidth < 992 ? 120 : 80;
+            const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+            window.scrollTo({ top: top, behavior: 'smooth' });
         }
 
         async function loadTimeSlots(iso) {
@@ -562,20 +844,18 @@
                     timeSlotsGrid.innerHTML = '';
                     return;
                 }
-                if (!res.ok) {
-                    throw new Error('Server returned ' + res.status);
-                }
+                if (!res.ok) throw new Error('Server returned ' + res.status);
 
                 if (showScheduleDebug && data.debug) {
                     renderScheduleDebug(data.debug, selectedTime);
                 } else if (showScheduleDebug) {
-                    showDebugWaiting('No debug data returned from server. Restart the server and ensure SCHEDULE_DEBUG is enabled.');
+                    showDebugWaiting('No debug data returned from server.');
                 }
 
                 timeSlotsGrid.innerHTML = '';
 
                 if (data.error === 'postcode_required') {
-                    timeSlotsGrid.innerHTML = '<span class="text-muted small">Enter your postcode above to see available times.</span>';
+                    timeSlotsGrid.innerHTML = '<span class="text-muted small">Enter your postcode on step 1 to see available times.</span>';
                     return;
                 }
 
@@ -608,13 +888,14 @@
                             renderScheduleDebug(data.debug, selectedTime, slot.time);
                         }
                         updateSummary();
+                        updateContinueButtons();
                     });
                     timeSlotsGrid.appendChild(btn);
                 });
             } catch (e) {
                 timeSlotsGrid.innerHTML = '<span class="text-danger small">Could not load times.</span>';
                 if (showScheduleDebug) {
-                    showDebugWaiting('Error loading schedule debug: <strong>' + escapeHtml(e.message) + '</strong>. Check you are logged in and the server is running.');
+                    showDebugWaiting('Error loading schedule debug: <strong>' + escapeHtml(e.message) + '</strong>.');
                 }
             }
         }
@@ -624,6 +905,14 @@
             const hours = Math.floor(minutes / 60);
             const mins = minutes % 60;
             return mins ? hours + ' hr ' + mins + ' mins' : hours + ' hr';
+        }
+
+        function formatDurationShort(minutes) {
+            if (!minutes) return '—';
+            if (minutes < 60) return '~' + minutes + ' mins';
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return mins ? '~' + hours + ' hr ' + mins + ' mins' : '~' + hours + ' hr';
         }
 
         function renderScheduleDebug(debug, selectedSlotId, selectedSlotTime) {
@@ -725,18 +1014,81 @@
             });
         }
 
+        function getSubtotal() {
+            return Object.values(selectedServices).reduce(function (sum, s) {
+                return sum + s.price;
+            }, 0);
+        }
+
+        function getDisplayTotal() {
+            const subtotal = getSubtotal();
+            if (promoState.valid && promoState.total > 0) return promoState.total;
+            return subtotal;
+        }
+
+        function formatAddressSummary() {
+            const line1 = document.getElementById('id_address_line_1');
+            const line2 = document.getElementById('id_address_line_2');
+            const parts = [];
+            if (line1 && line1.value.trim()) parts.push(line1.value.trim());
+            if (line2 && line2.value.trim()) parts.push(line2.value.trim());
+            const city = getCity();
+            const postcode = getPostcode();
+            if (city) parts.push(city);
+            if (postcode) parts.push(postcode);
+            return parts.length ? parts.join(', ') : '—';
+        }
+
+        function updateReviewBlock() {
+            const reviewServices = document.getElementById('reviewServices');
+            const reviewDateTime = document.getElementById('reviewDateTime');
+            const reviewAddress = document.getElementById('reviewAddress');
+            const reviewTotal = document.getElementById('reviewTotal');
+            const reviewPromoRow = document.getElementById('reviewPromoRow');
+            const reviewPromo = document.getElementById('reviewPromo');
+
+            const names = Object.values(selectedServices).map(function (s) { return s.name; });
+            if (reviewServices) reviewServices.textContent = names.length ? names.join(', ') : '—';
+
+            let dateTime = '—';
+            if (selectedDate) {
+                dateTime = parseDate(selectedDate).toLocaleDateString('en-GB', {
+                    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+                });
+                if (selectedTimeLabel) dateTime += ' at ' + selectedTimeLabel;
+            }
+            if (reviewDateTime) reviewDateTime.textContent = dateTime;
+            if (reviewAddress) reviewAddress.textContent = formatAddressSummary();
+
+            const total = getDisplayTotal();
+            if (reviewTotal) reviewTotal.textContent = total > 0 ? '£' + total.toFixed(2) : '—';
+
+            if (reviewPromoRow && reviewPromo) {
+                if (promoState.valid) {
+                    reviewPromo.textContent = promoState.code + ' (−£' + promoState.discount.toFixed(2) + ')';
+                    reviewPromoRow.hidden = false;
+                } else {
+                    reviewPromoRow.hidden = true;
+                }
+            }
+        }
+
         function updateSummary() {
             const elService = document.getElementById('summaryService');
+            const elDuration = document.getElementById('summaryDuration');
             const elDate = document.getElementById('summaryDate');
             const elTime = document.getElementById('summaryTime');
             const elPrice = document.getElementById('summaryPrice');
+            const summaryPromoRow = document.getElementById('summaryPromoRow');
+            const summaryPromo = document.getElementById('summaryPromo');
 
             const names = Object.values(selectedServices).map(function (s) { return s.name; });
-            const total = Object.values(selectedServices).reduce(function (sum, s) {
-                return sum + s.price;
-            }, 0);
+            const subtotal = getSubtotal();
+            const total = getDisplayTotal();
+            const duration = getEstimatedDuration();
 
             if (elService) elService.textContent = names.length ? names.join(', ') : '—';
+            if (elDuration) elDuration.textContent = formatDurationShort(duration);
             if (elPrice) elPrice.textContent = total > 0 ? '£' + total.toFixed(2) : '—';
             if (selectedDate && elDate) {
                 elDate.textContent = parseDate(selectedDate).toLocaleDateString('en-GB', {
@@ -744,6 +1096,62 @@
                 });
             }
             if (elTime) elTime.textContent = selectedTimeLabel || '—';
+
+            if (summaryPromoRow && summaryPromo) {
+                if (promoState.valid) {
+                    summaryPromo.textContent = '−£' + promoState.discount.toFixed(2);
+                    summaryPromoRow.hidden = false;
+                } else {
+                    summaryPromoRow.hidden = true;
+                }
+            }
+
+            updateMobileBar(names, duration, total, subtotal);
+            updateReviewBlock();
+        }
+
+        function updateMobileBar(names, duration, total, subtotal) {
+            const mobileBarSummary = document.getElementById('mobileBarSummary');
+            const mobileBarPrice = document.getElementById('mobileBarPrice');
+            const mobileBarServices = document.getElementById('mobileBarServices');
+            const mobileBarDuration = document.getElementById('mobileBarDuration');
+            const mobileBarDate = document.getElementById('mobileBarDate');
+            const mobileBarTime = document.getElementById('mobileBarTime');
+            const mobileBarPromoRow = document.getElementById('mobileBarPromoRow');
+            const mobileBarPromo = document.getElementById('mobileBarPromo');
+
+            let compact = 'Select services to begin';
+            if (names.length) {
+                compact = names.length === 1 ? names[0] : names.length + ' services';
+                if (selectedDate && selectedTimeLabel) {
+                    compact = parseDate(selectedDate).toLocaleDateString('en-GB', {
+                        day: 'numeric', month: 'short'
+                    }) + ' · ' + selectedTimeLabel;
+                } else if (selectedDate) {
+                    compact = parseDate(selectedDate).toLocaleDateString('en-GB', {
+                        day: 'numeric', month: 'short'
+                    });
+                }
+            }
+
+            if (mobileBarSummary) mobileBarSummary.textContent = compact;
+            if (mobileBarPrice) mobileBarPrice.textContent = total > 0 ? '£' + total.toFixed(2) : (subtotal > 0 ? '£' + subtotal.toFixed(2) : '—');
+            if (mobileBarServices) mobileBarServices.textContent = names.length ? names.join(', ') : '—';
+            if (mobileBarDuration) mobileBarDuration.textContent = formatDurationShort(duration);
+            if (mobileBarDate) {
+                mobileBarDate.textContent = selectedDate
+                    ? parseDate(selectedDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+                    : '—';
+            }
+            if (mobileBarTime) mobileBarTime.textContent = selectedTimeLabel || '—';
+            if (mobileBarPromoRow && mobileBarPromo) {
+                if (promoState.valid) {
+                    mobileBarPromo.textContent = '−£' + promoState.discount.toFixed(2);
+                    mobileBarPromoRow.hidden = false;
+                } else {
+                    mobileBarPromoRow.hidden = true;
+                }
+            }
         }
 
         function parseDate(iso) {

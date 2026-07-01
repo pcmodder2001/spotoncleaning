@@ -8,7 +8,7 @@ from django.contrib.auth.views import (
     PasswordResetDoneView,
     PasswordResetView,
 )
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -39,7 +39,9 @@ from .forms import (
     LoginForm,
     ProfileForm,
     RegistrationForm,
+    SavedAddressForm,
 )
+from .models import SavedAddress
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -190,7 +192,10 @@ def complete_account_from_booking_view(request, token=None):
 @login_required
 def dashboard_view(request):
     today = timezone.localdate()
-    bookings = Booking.objects.filter(user=request.user)
+    booking_qs = Booking.objects.filter(user=request.user).select_related(
+        'time_slot', 'promo_code',
+    ).prefetch_related('services')
+    bookings = booking_qs
     upcoming = bookings.filter(
         date__gte=today,
     ).exclude(status=BookingStatus.CANCELLED).order_by('date', 'time_slot__time')[:5]
@@ -207,13 +212,95 @@ def dashboard_view(request):
 @login_required
 def my_bookings_view(request):
     status_filter = request.GET.get('status', '')
-    bookings = Booking.objects.filter(user=request.user)
+    bookings = (
+        Booking.objects.filter(user=request.user)
+        .select_related('time_slot', 'promo_code')
+        .prefetch_related('services')
+        .order_by('-date', '-created_at')
+    )
     if status_filter:
         bookings = bookings.filter(status=status_filter)
     return render(request, 'accounts/my_bookings.html', {
         'bookings': bookings,
         'status_filter': status_filter,
         'status_choices': BookingStatus.choices,
+    })
+
+
+@login_required
+def saved_addresses_view(request):
+    from accounts.addresses import import_addresses_from_bookings
+
+    imported = import_addresses_from_bookings(request.user)
+    if imported:
+        messages.info(
+            request,
+            f'We imported {imported} address{"es" if imported != 1 else ""} from your past bookings.',
+        )
+
+    editing = None
+    show_address_modal = False
+    modal_action = 'add'
+    form = SavedAddressForm()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            modal_action = 'add'
+            form = SavedAddressForm(request.POST)
+            if form.is_valid():
+                address = form.save(commit=False)
+                address.user = request.user
+                address.save()
+                messages.success(request, 'Address saved.')
+                return redirect('accounts:addresses')
+            show_address_modal = True
+        elif action == 'edit':
+            modal_action = 'edit'
+            editing = get_object_or_404(
+                SavedAddress,
+                pk=request.POST.get('address_id'),
+                user=request.user,
+            )
+            form = SavedAddressForm(request.POST, instance=editing)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Address updated.')
+                return redirect('accounts:addresses')
+            show_address_modal = True
+        elif action == 'delete':
+            address = get_object_or_404(
+                SavedAddress,
+                pk=request.POST.get('address_id'),
+                user=request.user,
+            )
+            was_default = address.is_default
+            address.delete()
+            if was_default:
+                next_address = SavedAddress.objects.filter(user=request.user).first()
+                if next_address:
+                    next_address.is_default = True
+                    next_address.save(update_fields=['is_default', 'updated_at'])
+            messages.success(request, 'Address removed.')
+            return redirect('accounts:addresses')
+        elif action == 'set_default':
+            address = get_object_or_404(
+                SavedAddress,
+                pk=request.POST.get('address_id'),
+                user=request.user,
+            )
+            address.is_default = True
+            address.save(update_fields=['is_default', 'updated_at'])
+            messages.success(request, f'"{address.display_label}" is now your default address.')
+            return redirect('accounts:addresses')
+
+    addresses = SavedAddress.objects.filter(user=request.user)
+    return render(request, 'accounts/addresses.html', {
+        'addresses': addresses,
+        'form': form,
+        'editing': editing,
+        'show_address_modal': show_address_modal,
+        'modal_action': modal_action,
     })
 
 

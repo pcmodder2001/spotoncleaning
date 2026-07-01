@@ -1,0 +1,10 @@
+<div class="service-pick {% if service.exclusive_group %}service-pick-exclusive{% else %}service-pick-addon{% endif %}{% if extra_class %} {{ extra_class }}{% endif %}{% if selected_service and selected_service.pk == service.pk %} selected{% endif %}" data-service-id="{{ service.pk }}" data-service-name="{{ service.name }}" data-service-price="{{ service.price }}" data-service-duration="{{ service.duration_minutes }}" data-exclusive-group="{{ service.exclusive_group|default:'' }}" role="button" tabindex="0">
+    <span class="service-pick-icon"><i class="bi {{ icon|default:'bi-plus-circle' }}"></i></span>
+    <span class="service-pick-info">
+        <strong>{{ service.name }}</strong>
+        <small class="service-pick-teaser">{{ service.description|truncatewords:12 }}</small>
+        <button type="button" class="service-pick-more" aria-expanded="false">What's included</button>
+        <div class="service-pick-full" hidden>{{ service.description|linebreaksbr }}</div>
+    </span>
+    <span class="service-pick-price">&pound;{{ service.price }}</span>
+</div>

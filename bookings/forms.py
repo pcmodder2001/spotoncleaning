@@ -9,6 +9,7 @@ from bookings.models import Booking, BookingStatus, TimeSlot
 from bookings.scheduling import validate_booking_schedule
 from bookings.utils import get_available_slots_for_date, get_time_slots_for_booking_edit
 from services.models import Service, ServiceType
+from website.legal import accept_terms_field
 
 User = get_user_model()
 
@@ -177,6 +178,7 @@ class GuestBookingForm(BookingForm):
         required=False,
         widget=forms.TextInput(attrs={'class': 'form-control'}),
     )
+    accept_terms = accept_terms_field()
 
     def clean_guest_email(self):
         email = self.cleaned_data['guest_email'].lower().strip()

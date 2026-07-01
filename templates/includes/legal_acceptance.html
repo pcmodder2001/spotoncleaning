@@ -1,0 +1,14 @@
+<div class="legal-acceptance{% if extra_class %} {{ extra_class }}{% endif %}">
+    <div class="form-check">
+        {{ field }}
+        <label class="form-check-label" for="{{ field.id_for_label }}">
+            I agree to the
+            <a href="{% url 'website:terms' %}" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>
+            and
+            <a href="{% url 'website:privacy' %}" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+        </label>
+    </div>
+    {% if field.errors %}
+    <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+    {% endif %}
+</div>

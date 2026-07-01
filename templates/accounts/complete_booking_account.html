@@ -43,6 +43,7 @@
                                 {{ form.password2 }}
                                 {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors.0 }}</div>{% endif %}
                             </div>
+                            {% include 'includes/legal_acceptance.html' with field=form.accept_terms extra_class='mb-4' %}
                             <button type="submit" class="btn btn-primary w-100">Create account</button>
                         </form>
 

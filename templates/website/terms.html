@@ -1,8 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}Terms & Conditions | {{ SITE_NAME }}{% endblock %}
-{% block meta_description %}Terms and conditions for using {{ SITE_NAME }} website and booking services.{% endblock %}
-{% block meta_robots %}noindex, follow{% endblock %}
+{% block meta_description %}Terms and conditions for using {{ SITE_NAME }} website and booking professional oven and appliance cleaning services.{% endblock %}
 
 {% block content %}
 <div class="legal-page">
@@ -12,16 +11,117 @@
                 <div class="legal-content">
                     <span class="section-eyebrow">Legal</span>
                     <h1>Terms &amp; Conditions</h1>
-                    <p class="text-muted mb-4">Last updated: {% now "F Y" %}</p>
-                    <p>By using the {{ SITE_NAME }} website and booking services, you agree to these terms and conditions.</p>
-                    <h4>Bookings</h4>
-                    <p>All bookings are subject to availability and confirmation. We reserve the right to reschedule appointments with reasonable notice.</p>
-                    <h4>Cancellation</h4>
-                    <p>Please provide at least 24 hours notice if you need to cancel or reschedule your appointment.</p>
-                    <h4>Liability</h4>
-                    <p>We are fully insured. Our liability is limited to the value of the service provided.</p>
-                    <h4>Contact</h4>
-                    <p class="mb-0">For questions about these terms, contact us at <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a>.</p>
+                    <p class="text-muted mb-4">Last updated: {{ LEGAL_LAST_UPDATED }}</p>
+
+                    <p>
+                        These Terms &amp; Conditions (“Terms”) govern your use of the {{ SITE_NAME }} website
+                        and your booking of our oven and appliance cleaning services in {{ SITE_LOCAL_AREA }}.
+                        By creating an account, submitting a booking, or using our website, you agree to these Terms
+                        and our <a href="{% url 'website:privacy' %}">Privacy Policy</a>.
+                    </p>
+
+                    <h4>1. About us</h4>
+                    <p>
+                        {{ SITE_NAME }} provides professional oven, hob, extractor, and related appliance cleaning services.
+                        Contact: <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a> ·
+                        <a href="tel:{{ SITE_PHONE }}">{{ SITE_PHONE }}</a>.
+                    </p>
+
+                    <h4>2. Services &amp; pricing</h4>
+                    <ul>
+                        <li>Services, descriptions, and prices are shown on our website at the time of booking.</li>
+                        <li>Prices include the services selected unless stated otherwise. Optional add-ons are charged separately.</li>
+                        <li>Promotional codes and discounts are subject to their specific terms and cannot be combined unless we agree otherwise.</li>
+                        <li>We reserve the right to correct obvious pricing errors before a booking is confirmed.</li>
+                    </ul>
+
+                    <h4>3. Bookings &amp; confirmation</h4>
+                    <ul>
+                        <li>When you submit a booking online, you are making an offer to purchase services at the price shown.</li>
+                        <li>A booking is confirmed once we accept it and send you a confirmation (by email or through your account).</li>
+                        <li>You must provide accurate contact details, address, and access information.</li>
+                        <li>Appointment times are estimated. We plan routes to arrive within your booked time slot, but occasional delays may occur due to traffic or prior jobs.</li>
+                        <li>We may refuse or cancel a booking if we cannot safely access the property, if the area is outside our service coverage, or for other reasonable business reasons.</li>
+                    </ul>
+
+                    <h4>4. Access to your property</h4>
+                    <ul>
+                        <li>You (or someone aged 18 or over on your behalf) must provide safe access to the appliances being cleaned.</li>
+                        <li>Please ensure ovens and appliances are cool and safe to work on unless we agree otherwise.</li>
+                        <li>Tell us about parking, gate codes, pets, or other access requirements in your booking notes.</li>
+                        <li>If we cannot gain access at the scheduled time, the appointment may be treated as a missed appointment (see cancellations).</li>
+                    </ul>
+
+                    <h4>5. Cancellations &amp; rescheduling</h4>
+                    <ul>
+                        <li>Please give us at least <strong>24 hours’ notice</strong> to cancel or reschedule without charge.</li>
+                        <li>Cancellations with less than 24 hours’ notice, or failure to provide access at the appointment time, may incur a charge of up to the full booking value at our discretion.</li>
+                        <li>You may cancel eligible bookings through your online account or by contacting us directly.</li>
+                        <li>We may need to reschedule due to illness, vehicle breakdown, or severe weather. We will notify you as soon as possible and offer an alternative appointment.</li>
+                    </ul>
+
+                    <h4>6. Your responsibilities</h4>
+                    <ul>
+                        <li>Ensure appliances are in a cleanable condition and free from hazardous substances where possible.</li>
+                        <li>Remove personal items from areas to be cleaned where practical.</li>
+                        <li>Disclose any faults, damage, or special requirements before we begin work.</li>
+                        <li>Keep your account login details secure if you register with us.</li>
+                    </ul>
+
+                    <h4>7. Our responsibilities</h4>
+                    <ul>
+                        <li>We will carry out services with reasonable care and skill using professional-grade, eco-friendly products where stated.</li>
+                        <li>Our technicians are fully insured and DBS checked.</li>
+                        <li>We will treat your home and property with respect.</li>
+                    </ul>
+
+                    <h4>8. Liability</h4>
+                    <ul>
+                        <li>We are insured for public liability. Our liability for loss or damage arising from our negligence is limited to the amount you paid for the affected service, except where law does not allow such limitation (including death or personal injury caused by our negligence, or fraud).</li>
+                        <li>We are not responsible for pre-existing damage, faults, or wear and tear revealed during cleaning.</li>
+                        <li>Please report any concerns about our work within 48 hours of completion so we can inspect and resolve them fairly.</li>
+                    </ul>
+
+                    <h4>9. Accounts</h4>
+                    <ul>
+                        <li>If you create an account, you must provide accurate information and keep it up to date.</li>
+                        <li>You are responsible for activity under your account unless you tell us it has been compromised.</li>
+                        <li>We may suspend or close accounts that breach these Terms or are used fraudulently.</li>
+                    </ul>
+
+                    <h4>10. Website use</h4>
+                    <ul>
+                        <li>You must not misuse our website (e.g. attempt unauthorised access, introduce malware, or scrape content without permission).</li>
+                        <li>Content on this website is owned by or licensed to {{ SITE_NAME }} and must not be copied without consent.</li>
+                    </ul>
+
+                    <h4>11. Complaints</h4>
+                    <p>
+                        If you are unhappy with our service, please contact us at
+                        <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a> as soon as possible.
+                        We will investigate and respond within a reasonable time.
+                    </p>
+
+                    <h4>12. Changes to these Terms</h4>
+                    <p>
+                        We may update these Terms from time to time. The “Last updated” date will change accordingly.
+                        Material changes will be communicated where appropriate. Continued use of our services after changes
+                        constitutes acceptance of the revised Terms.
+                    </p>
+
+                    <h4>13. Governing law</h4>
+                    <p>
+                        These Terms are governed by the laws of England and Wales.
+                        Disputes are subject to the exclusive jurisdiction of the courts of England and Wales,
+                        without prejudice to your statutory rights as a consumer.
+                    </p>
+
+                    <h4>14. Contact</h4>
+                    <p class="mb-0">
+                        Questions about these Terms:
+                        <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a> ·
+                        <a href="tel:{{ SITE_PHONE }}">{{ SITE_PHONE }}</a>
+                    </p>
                 </div>
             </div>
         </div>

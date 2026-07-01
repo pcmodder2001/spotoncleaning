@@ -323,6 +323,11 @@ fbq('track', 'ViewContent', {
                                     <label class="form-label">Additional Notes <span class="text-muted fw-normal">(optional)</span></label>
                                     {{ form.notes }}
                                 </div>
+                                {% if is_guest_booking %}
+                                <div class="col-12">
+                                    {% include 'includes/legal_acceptance.html' with field=form.accept_terms %}
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="booking-panel-footer">
@@ -418,7 +423,8 @@ fbq('track', 'ViewContent', {
         initialTimeSlot: "{{ form.time_slot.value|default:'' }}",
         initialPostcode: "{{ form.postcode.value|default:'' }}",
         hasErrors: {{ form.errors|yesno:"true,false" }},
-        errorStep: {% if form.date.errors or form.time_slot.errors %}3{% elif form.services.errors %}2{% elif form.postcode.errors or form.address_line_1.errors or form.city.errors %}1{% elif form.guest_email.errors or form.guest_first_name.errors or form.guest_last_name.errors %}4{% else %}1{% endif %},
+        errorStep: {% if form.date.errors or form.time_slot.errors %}3{% elif form.services.errors %}2{% elif form.postcode.errors or form.address_line_1.errors or form.city.errors %}1{% elif form.accept_terms.errors or form.guest_email.errors or form.guest_first_name.errors or form.guest_last_name.errors %}4{% else %}1{% endif %},
+        isGuestBooking: {{ is_guest_booking|yesno:"true,false" }},
         showScheduleDebug: {{ schedule_debug|yesno:"true,false" }},
         prefillAddress: {{ prefill_address_json|safe }},
         savedAddresses: {{ saved_addresses_json|safe }}

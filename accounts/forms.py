@@ -3,6 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, Us
 from django.contrib.auth import get_user_model
 
 from accounts.models import SavedAddress
+from website.legal import accept_terms_field
 
 User = get_user_model()
 
@@ -14,6 +15,7 @@ class RegistrationForm(UserCreationForm):
     phone_number = forms.CharField(max_length=20, widget=forms.TextInput(attrs={'class': 'form-control'}))
     password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
     password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    accept_terms = accept_terms_field()
 
     class Meta:
         model = User
@@ -95,6 +97,7 @@ class CompleteAccountFromBookingForm(forms.Form):
             'autocomplete': 'new-password',
         }),
     )
+    accept_terms = accept_terms_field()
 
     def clean(self):
         cleaned_data = super().clean()

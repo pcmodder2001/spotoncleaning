@@ -2784,6 +2784,26 @@ body.page-panel .site-footer {
     line-height: 1.75;
 }
 
+.legal-content ul {
+    color: var(--text-secondary);
+    line-height: 1.75;
+    padding-left: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.legal-content ul li + li {
+    margin-top: 0.35rem;
+}
+
+.legal-acceptance .form-check-label {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.legal-acceptance .form-check-label a {
+    font-weight: 600;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Top bar (OvenWow-style contact strip)                                      */
 /* -------------------------------------------------------------------------- */

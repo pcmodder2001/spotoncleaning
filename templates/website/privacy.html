@@ -2,7 +2,6 @@
 
 {% block title %}Privacy Policy | {{ SITE_NAME }}{% endblock %}
 {% block meta_description %}Privacy policy for {{ SITE_NAME }}. How we collect, use and protect your personal information when you use our website and booking services.{% endblock %}
-{% block meta_robots %}noindex, follow{% endblock %}
 
 {% block content %}
 <div class="legal-page">
@@ -12,14 +11,121 @@
                 <div class="legal-content">
                     <span class="section-eyebrow">Legal</span>
                     <h1>Privacy Policy</h1>
-                    <p class="text-muted mb-4">Last updated: {% now "F Y" %}</p>
-                    <p>{{ SITE_NAME }} is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your personal information when you use our website and booking services.</p>
-                    <h4>Information We Collect</h4>
-                    <p>We collect information you provide when registering, booking appointments, or contacting us, including your name, email address, phone number, and address.</p>
-                    <h4>How We Use Your Information</h4>
-                    <p>We use your information to process bookings, communicate about appointments, and improve our services.</p>
-                    <h4>Contact</h4>
-                    <p class="mb-0">For privacy-related enquiries, contact us at <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a>.</p>
+                    <p class="text-muted mb-4">Last updated: {{ LEGAL_LAST_UPDATED }}</p>
+
+                    <p>
+                        {{ SITE_NAME }} (“we”, “us”, “our”) is committed to protecting your privacy.
+                        This policy explains how we collect, use, store, and protect personal information
+                        when you visit our website, create an account, or book our oven and appliance
+                        cleaning services in {{ SITE_LOCAL_AREA }}.
+                    </p>
+
+                    <h4>1. Who we are</h4>
+                    <p>
+                        {{ SITE_NAME }} is the data controller responsible for your personal data.
+                        If you have any questions about this policy or how we handle your information,
+                        contact us at <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a>
+                        or call <a href="tel:{{ SITE_PHONE }}">{{ SITE_PHONE }}</a>.
+                    </p>
+
+                    <h4>2. Information we collect</h4>
+                    <p>We may collect and process the following personal data:</p>
+                    <ul>
+                        <li><strong>Identity &amp; contact details</strong> — name, email address, phone number.</li>
+                        <li><strong>Account information</strong> — login email and encrypted password if you register.</li>
+                        <li><strong>Booking details</strong> — service address, postcode, appointment date and time, services booked, notes you provide (e.g. access instructions), and pricing including discounts or promo codes.</li>
+                        <li><strong>Payment-related information</strong> — we do not store full card details on our servers; any payment processing is handled by our payment provider. We may retain records of amounts paid and invoices.</li>
+                        <li><strong>Job records</strong> — before/after photos, completion signatures, and technician notes where applicable.</li>
+                        <li><strong>Communications</strong> — emails, messages, and enquiry form submissions.</li>
+                        <li><strong>Technical data</strong> — IP address, browser type, device information, and cookies (see section 8).</li>
+                        <li><strong>Marketing attribution</strong> — UTM parameters or referral tags (e.g. from advertising campaigns) when you arrive on our site.</li>
+                    </ul>
+
+                    <h4>3. How we use your information</h4>
+                    <p>We use personal data to:</p>
+                    <ul>
+                        <li>Process and manage bookings and appointments.</li>
+                        <li>Confirm, remind you about, and update you on your appointments.</li>
+                        <li>Provide customer support and respond to enquiries.</li>
+                        <li>Manage your account and saved addresses.</li>
+                        <li>Send service-related emails and SMS reminders (where you have provided a mobile number).</li>
+                        <li>Improve our website, services, and scheduling.</li>
+                        <li>Meet legal, tax, and insurance obligations.</li>
+                        <li>Prevent fraud and protect our business.</li>
+                    </ul>
+                    <p><strong>Legal bases (UK GDPR):</strong> we rely on contract (to fulfil bookings), legitimate interests (to run and improve our business), consent (where you opt in to marketing or accept cookies where required), and legal obligation where applicable.</p>
+
+                    <h4>4. Marketing</h4>
+                    <p>
+                        We may send you service updates and appointment notifications by email or SMS as part of your booking.
+                        We will only send promotional marketing messages if you have opted in or where permitted by law.
+                        You can opt out of marketing at any time by contacting us or using unsubscribe links where provided.
+                    </p>
+
+                    <h4>5. Sharing your information</h4>
+                    <p>We do not sell your personal data. We may share information with:</p>
+                    <ul>
+                        <li>Service providers who help us operate our website, email, SMS, hosting, or payment processing (under strict confidentiality).</li>
+                        <li>Professional advisers (e.g. accountants, insurers) where necessary.</li>
+                        <li>Regulators or law enforcement if required by law.</li>
+                    </ul>
+                    <p>Some providers may process data outside the UK; where this occurs we ensure appropriate safeguards are in place.</p>
+
+                    <h4>6. How long we keep data</h4>
+                    <p>
+                        We retain personal data only as long as necessary for the purposes above.
+                        Booking and account records are typically kept for up to six years for tax, insurance, and dispute purposes,
+                        unless a longer period is required by law. Marketing preferences are kept until you withdraw consent.
+                    </p>
+
+                    <h4>7. Your rights</h4>
+                    <p>Under UK data protection law you have the right to:</p>
+                    <ul>
+                        <li>Access the personal data we hold about you.</li>
+                        <li>Request correction of inaccurate data.</li>
+                        <li>Request erasure in certain circumstances.</li>
+                        <li>Object to or restrict processing in certain circumstances.</li>
+                        <li>Request data portability where applicable.</li>
+                        <li>Withdraw consent at any time (where processing is based on consent).</li>
+                    </ul>
+                    <p>
+                        To exercise your rights, contact <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a>.
+                        You also have the right to complain to the Information Commissioner's Office (ICO) at
+                        <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">ico.org.uk</a>.
+                    </p>
+
+                    <h4>8. Cookies &amp; analytics</h4>
+                    <p>
+                        Our website uses essential cookies to keep the site working (e.g. login sessions and booking progress).
+                        We may also use analytics and advertising tools (such as Meta/Facebook Pixel) to understand how
+                        visitors use our site and measure advertising performance. You can control non-essential cookies
+                        through your browser settings.
+                    </p>
+
+                    <h4>9. Security</h4>
+                    <p>
+                        We take appropriate technical and organisational measures to protect your data against
+                        unauthorised access, loss, or misuse. Passwords are stored securely. No method of transmission
+                        over the internet is 100% secure, but we work to safeguard your information.
+                    </p>
+
+                    <h4>10. Children</h4>
+                    <p>
+                        Our services are not directed at children under 16 and we do not knowingly collect data from them.
+                        If you believe a child has provided us with personal data, please contact us and we will delete it.
+                    </p>
+
+                    <h4>11. Changes to this policy</h4>
+                    <p>
+                        We may update this Privacy Policy from time to time. The “Last updated” date at the top will change
+                        when we do. Continued use of our website or services after changes constitutes acceptance of the updated policy.
+                    </p>
+
+                    <h4>12. Contact</h4>
+                    <p class="mb-0">
+                        For privacy enquiries: <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a> ·
+                        <a href="tel:{{ SITE_PHONE }}">{{ SITE_PHONE }}</a>
+                    </p>
                 </div>
             </div>
         </div>

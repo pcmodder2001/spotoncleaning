@@ -15,6 +15,7 @@ def site_settings(request):
         'SITE_DESCRIPTION': settings.SITE_DESCRIPTION,
         'SITE_KEYWORDS': settings.SITE_KEYWORDS,
         'SITE_LOCAL_AREA': settings.SITE_LOCAL_AREA,
+        'LEGAL_LAST_UPDATED': settings.LEGAL_LAST_UPDATED,
         'SITE_DEFAULT_SEO_TITLE': settings.SITE_DEFAULT_SEO_TITLE,
         'META_PIXEL_ID': settings.META_PIXEL_ID if pixel_active else '',
         'meta_pixel_events': pop_meta_pixel_events(request) if pixel_active else [],

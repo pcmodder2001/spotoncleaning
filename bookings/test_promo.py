@@ -57,6 +57,7 @@ class PromoUsageTests(TestCase):
             'guest_first_name': 'Guest',
             'guest_last_name': 'User',
             'guest_email': 'guest@example.com',
+            'accept_terms': True,
         })
         self.assertTrue(form.is_valid())
         booking = form.save()

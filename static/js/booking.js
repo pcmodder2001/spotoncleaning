@@ -52,6 +52,8 @@
         const mobileBarDetails = document.getElementById('mobileBarDetails');
         const savedAddressSelect = document.getElementById('savedAddressSelect');
         const savedAddressSection = document.getElementById('savedAddressSection');
+        const acceptTermsInput = document.getElementById('id_accept_terms');
+        const isGuestBooking = cfg.isGuestBooking === true;
 
         let currentStep = 1;
         let viewYear, viewMonth;
@@ -669,6 +671,12 @@
                 }
                 if (!timeInput.value) {
                     showToast('Please select a time slot.');
+                    return false;
+                }
+            }
+            if (step === 4 && isGuestBooking) {
+                if (!acceptTermsInput || !acceptTermsInput.checked) {
+                    showToast('Please accept the Terms & Conditions and Privacy Policy.');
                     return false;
                 }
             }

@@ -36,12 +36,22 @@ class SiteMatrixStatusMiddleware:
     """
     Check SiteMatrix whether this client site should stay live.
     Fail open if SiteMatrix is unreachable. Result is cached to limit API calls.
+    Static and media requests are always passed through so the offline page can load assets.
     """
 
     _startup_logged = False
 
     def __init__(self, get_response):
         self.get_response = get_response
+
+    @staticmethod
+    def _is_static_or_media_request(request):
+        from django.conf import settings
+
+        path = request.path.lstrip('/')
+        static_prefix = settings.STATIC_URL.lstrip('/')
+        media_prefix = settings.MEDIA_URL.lstrip('/')
+        return path.startswith(static_prefix) or path.startswith(media_prefix)
 
     def __call__(self, request):
         from django.conf import settings
@@ -52,7 +62,7 @@ class SiteMatrixStatusMiddleware:
             log_startup_status()
             SiteMatrixStatusMiddleware._startup_logged = True
 
-        if settings.SITEMATRIX_ENABLED:
+        if settings.SITEMATRIX_ENABLED and not self._is_static_or_media_request(request):
             from config.sitematrix import is_site_active, render_unavailable_page
 
             if not is_site_active(request.path):

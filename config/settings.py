@@ -58,9 +58,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'config.middleware.SiteMatrixStatusMiddleware',
-    'config.middleware.CanonicalHostMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'config.middleware.CanonicalHostMiddleware',
+    'config.middleware.SiteMatrixStatusMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'website.middleware.MarketingAttributionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -143,9 +143,11 @@ STATIC_CACHE_VERSIONS = build_static_cache_versions(
     'img/logo-alt.png',
     'img/favicon.png',
     'img/apple-touch-icon.png',
+    'img/sitematrix-logo.png',
     'img/oven-before.jpg',
     'img/oven-after.jpg',
     'css/style.css',
+    'css/sitematrix-offline.css',
     'js/main.js',
     'js/toast.js',
     'js/booking.js',

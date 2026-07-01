@@ -1,4 +1,4 @@
-{% load static %}
+{% load static static_version %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,13 +9,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/sitematrix-offline.css' %}">
+  <link rel="stylesheet" href="{% static_v 'css/sitematrix-offline.css' %}">
 </head>
 <body class="offline-page">
   <main class="offline-shell">
     <div class="offline-card">
       <div class="offline-brand">
-        <img src="{% static 'img/sitematrix-logo.png' %}" alt="SiteMatrix" class="offline-logo" width="56" height="56">
+        <img src="{% static_v 'img/sitematrix-logo.png' %}" alt="SiteMatrix" class="offline-logo" width="56" height="56">
         <span class="offline-brand-text">SiteMatrix</span>
       </div>
 

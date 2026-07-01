@@ -179,7 +179,7 @@ DEFAULT_FROM_EMAIL = os.environ.get(
 )
 
 SITE_NAME = 'Spot On Appliance Cleaning'
-SITE_TAGLINE = 'Appliance shine, Every time.'
+SITE_TAGLINE = 'Appliance Shine. Every Time.'
 SITE_PHONE = '07123 456789'
 SITE_EMAIL = 'info@spotonappliancecleaning.co.uk'
 SITE_ADDRESS = 'Serving customers across the local area'

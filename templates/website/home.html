@@ -58,27 +58,31 @@
         <div class="row align-items-lg-center hero-row g-4 g-lg-5">
             <div class="col-lg-6 hero-content">
                 <div class="hero-badge">
-                    <i class="bi bi-shield-check"></i> Trusted across {{ SITE_LOCAL_AREA }}
+                    <i class="bi bi-house-door"></i> Domestic &amp; commercial cleaning
                 </div>
-                <h1>Professional Oven &amp; Appliance Cleaning</h1>
-                <p class="hero-tagline mb-3">{{ SITE_TAGLINE }}</p>
+                <h1>Appliance Shine. Every Time.</h1>
+                <p class="hero-tagline mb-3">Professional appliance cleaning for homes that deserve the very best.</p>
                 <p class="lead mb-4">
-                    We bring your kitchen back to showroom condition — expert technicians, family-friendly products,
-                    and results you can see the moment we finish.
+                    From ovens and Agas to hobs, extractors and fridges — we bring every appliance back to showroom condition
+                    with family-friendly products and meticulous attention to detail.
                 </p>
                 <div class="hero-cta-row">
-                    <a href="{% url 'bookings:create' %}" class="btn btn-primary btn-lg">Book online</a>
+                    <a href="{% url 'bookings:create' %}" class="btn btn-primary btn-lg">Book a clean in 60 seconds</a>
                     <a href="#contact" class="btn btn-outline-primary btn-lg">Get a quote</a>
                 </div>
                 <ul class="hero-credentials" aria-label="Why customers trust us">
-                    <li><i class="bi bi-check-lg"></i> Fully insured &amp; DBS checked</li>
-                    <li><i class="bi bi-check-lg"></i> Uniformed technicians</li>
-                    <li><i class="bi bi-check-lg"></i> Eco-friendly products</li>
-                    <li><i class="bi bi-check-lg"></i> Trained specialists</li>
+                    <li><i class="bi bi-shield-check"></i> Family-friendly, non-caustic products</li>
+                    <li><i class="bi bi-flower1"></i> Attention to detail</li>
+                    <li><i class="bi bi-hand-thumbs-up"></i> Friendly &amp; reliable service</li>
+                    <li><i class="bi bi-award"></i> Fully insured &amp; DBS checked</li>
                 </ul>
             </div>
             <div class="col-lg-6 hero-image mt-2 mt-lg-0">
                 <div class="hero-comparison rounded-4" id="heroComparison" data-split="50">
+                    <div class="hero-domestic-badge" aria-hidden="true">
+                        <i class="bi bi-house-door"></i>
+                        Domestic &amp; commercial cleaning
+                    </div>
                     <img
                         class="hero-comparison-img hero-comparison-dirty"
                         src="{% static_v 'img/oven-before.jpg' %}"
@@ -116,7 +120,7 @@
         <div class="row g-4 g-lg-5 align-items-start">
             <div class="col-lg-5">
                 <span class="section-eyebrow">Why choose us</span>
-                <h2 class="section-title text-lg-start">The Spot On Difference</h2>
+                <h2 class="section-title text-lg-start">Why Choose Spot On?</h2>
                 <div class="why-spot-intro text-lg-start mx-lg-0 mb-4">
                     <p>At {{ SITE_NAME }}, we take a spot-on approach — delivering a thorough, efficient clean with zero hassle.</p>
                     <p>We turn up on time, treat your home with respect, and get the job done properly. No shortcuts, no mess — just results.</p>
@@ -135,30 +139,30 @@
                 <div class="row g-3 mt-2">
                     <div class="col-sm-6">
                         <div class="feature-tile">
+                            <div class="feature-tile-icon"><i class="bi bi-stars"></i></div>
+                            <h3>Specialist cleaning</h3>
+                            <p>Expert oven and appliance specialists — not general cleaners.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="feature-tile">
                             <div class="feature-tile-icon"><i class="bi bi-shield-check"></i></div>
-                            <h3>A service you can trust</h3>
-                            <p>Expert cleaners who treat your home with care every visit.</p>
+                            <h3>Reliable &amp; trusted</h3>
+                            <p>Fully insured, DBS checked, and consistently on time.</p>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="feature-tile">
-                            <div class="feature-tile-icon"><i class="bi bi-tag"></i></div>
-                            <h3>Affordable prices</h3>
-                            <p>Transparent pricing online — no hidden fees or surprises.</p>
+                            <div class="feature-tile-icon"><i class="bi bi-flower1"></i></div>
+                            <h3>Appliances last longer</h3>
+                            <p>Regular deep cleans help protect and extend appliance life.</p>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="feature-tile">
-                            <div class="feature-tile-icon"><i class="bi bi-grid-3x3-gap"></i></div>
-                            <h3>More than ovens</h3>
-                            <p>Hobs, extractors, fridges, microwaves and add-on appliances.</p>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="feature-tile">
-                            <div class="feature-tile-icon"><i class="bi bi-star"></i></div>
-                            <h3>Customers love us</h3>
-                            <p>Consistently high ratings from happy local customers.</p>
+                            <div class="feature-tile-icon"><i class="bi bi-heart"></i></div>
+                            <h3>We care</h3>
+                            <p>Your home treated with respect — every visit, every time.</p>
                         </div>
                     </div>
                 </div>
@@ -181,7 +185,7 @@
             <div class="col-md-4">
                 <a href="{% url 'bookings:create' %}" class="promo-tile promo-tile--book">
                     <span class="promo-tile-label">Book online</span>
-                    <h3>Combine oven, hob &amp; extractor</h3>
+                    <h3>Book a clean in 60 seconds</h3>
                     <p>Pick your services and choose a slot that suits you.</p>
                     <span class="promo-tile-link">Book now <i class="bi bi-arrow-right"></i></span>
                 </a>
@@ -372,10 +376,10 @@
         <div class="quote-band-inner">
             <div class="row g-4 g-lg-5">
                 <div class="col-lg-5">
-                    <span class="section-eyebrow section-eyebrow--light">We're here to help</span>
+                    <span class="section-eyebrow section-eyebrow--light">Get in touch today</span>
                     <h2 class="section-title text-lg-start quote-band-title">Request a quote</h2>
                     <p class="quote-band-lead">
-                        Want to get your oven gleaming again? Fill in the form and a member of our team will get back to you.
+                        Ready for appliances that shine? Send us a message and we&rsquo;ll get back to you as soon as we can.
                     </p>
                     <div class="quote-band-contact">
                         <a href="tel:{{ SITE_PHONE }}" class="quote-contact-item">

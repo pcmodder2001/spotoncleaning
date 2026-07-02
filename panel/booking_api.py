@@ -89,7 +89,7 @@ def booking_detail_payload(request, booking):
         'signed_by_name': booking.signed_by_name,
         'has_signature': bool(booking.completion_signature),
         'completion_signature': booking.completion_signature if booking.completion_signature else None,
-        'can_start': booking.status in (BookingStatus.PENDING, BookingStatus.CONFIRMED),
+        'can_start': booking.status == BookingStatus.CONFIRMED,
         'can_complete': booking.status == BookingStatus.IN_PROGRESS,
         'can_manage_services': (
             request.user.can_manage_site
@@ -217,8 +217,11 @@ def booking_update_discount_api(request, pk):
 @require_POST
 def booking_start_job_api(request, pk):
     booking = get_object_or_404(Booking, pk=pk)
-    if booking.status not in (BookingStatus.PENDING, BookingStatus.CONFIRMED):
-        return JsonResponse({'error': 'This booking cannot be started.'}, status=400)
+    if booking.status != BookingStatus.CONFIRMED:
+        return JsonResponse(
+            {'error': 'Confirm this booking before starting the job.'},
+            status=400,
+        )
 
     services = list(booking.get_services())
     if not services:

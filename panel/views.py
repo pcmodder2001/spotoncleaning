@@ -17,12 +17,14 @@ from bookings.models import (
     WeeklySchedule,
 )
 from bookings.checklist import checklist_from_post, merge_checklist
+from bookings.promo import release_promo_use
 from bookings.utils import cancel_booking
 from bookings.notifications import send_booking_status_email
 from accounts.roles import UserRole
 from audit.actions import (
     AVAILABILITY_UPDATED,
     BOOKING_CANCELLED,
+    BOOKING_DELETED,
     BOOKING_STATUS_CHANGED,
     BOOKING_UPDATED,
     ENQUIRY_DELETED,
@@ -173,6 +175,7 @@ def booking_list_view(request):
         'date_filter': date_filter,
         'status_choices': BookingStatus.choices,
         'can_manage_site': request.user.can_manage_site,
+        'is_sysadmin': request.user.is_sysadmin,
     })
 
 
@@ -289,6 +292,33 @@ def booking_confirm_view(request, pk):
             request,
             f'Booking #{booking.pk} confirmed, but the confirmation email could not be sent.',
         )
+    return redirect(next_url)
+
+
+@sysadmin_required
+@require_POST
+def booking_delete_view(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    next_url = request.POST.get('next') or 'panel:booking_list'
+    booking_id = booking.pk
+    customer = booking.contact_full_name
+
+    if booking.promo_code_id and booking.status != BookingStatus.CANCELLED:
+        release_promo_use(booking.promo_code_id)
+
+    for photo in booking.photos.all():
+        photo.image.delete(save=False)
+
+    booking.delete()
+    log_action(
+        BOOKING_DELETED,
+        f'Deleted booking #{booking_id} ({customer}).',
+        request=request,
+        target_type='booking',
+        target_id=booking_id,
+        target_label=f'Booking #{booking_id}',
+    )
+    messages.success(request, f'Booking #{booking_id} deleted.')
     return redirect(next_url)
 
 

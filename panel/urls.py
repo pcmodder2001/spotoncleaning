@@ -23,6 +23,7 @@ urlpatterns = [
     path('bookings/<int:pk>/edit/', views.booking_edit_view, name='booking_edit'),
     path('bookings/<int:pk>/confirm/', views.booking_confirm_view, name='booking_confirm'),
     path('bookings/<int:pk>/cancel/', views.booking_cancel_view, name='booking_cancel'),
+    path('bookings/<int:pk>/delete/', views.booking_delete_view, name='booking_delete'),
     path(
         'bookings/<int:pk>/photos/<int:photo_pk>/delete/',
         schedule_views.booking_photo_delete_view,

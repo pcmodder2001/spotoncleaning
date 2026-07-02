@@ -180,6 +180,7 @@
         ${jobPhotosHtml(data.services)}
         ${signOffHtml(data)}
 
+        ${data.status === 'pending' && data.can_admin_edit ? `<p class="text-muted small mb-2">Confirm this booking before the job can be started.</p>` : ''}
         <div class="booking-view-actions">
           ${data.can_start ? `<button type="button" class="btn btn-primary booking-action-btn" id="bookingStartBtn"><i class="bi bi-play-fill me-2"></i>Start job</button>` : ''}
           ${data.can_complete ? `<button type="button" class="btn btn-success booking-action-btn" id="bookingCompleteBtn"><i class="bi bi-check-circle me-2"></i>Complete job</button>` : ''}

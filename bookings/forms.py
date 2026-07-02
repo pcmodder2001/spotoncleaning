@@ -217,7 +217,10 @@ class AdminBookingForm(forms.ModelForm):
         ]
         widgets = {
             'user': forms.Select(attrs={'class': 'form-select'}),
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'date': forms.DateInput(
+                attrs={'class': 'form-control', 'type': 'date'},
+                format='%Y-%m-%d',
+            ),
             'time_slot': forms.Select(attrs={'class': 'form-select'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
             'address_line_1': forms.TextInput(attrs={'class': 'form-control'}),
@@ -229,6 +232,7 @@ class AdminBookingForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['date'].input_formats = ['%Y-%m-%d']
         self.fields['user'].queryset = User.objects.order_by('first_name', 'last_name', 'email')
         self.fields['user'].required = False
 
@@ -272,8 +276,8 @@ class AdminBookingForm(forms.ModelForm):
             try:
                 return datetime.strptime(self.data['date'], '%Y-%m-%d').date()
             except ValueError:
-                return None
-        if self.instance.pk and not self.data:
+                pass
+        if self.instance.pk and self.instance.date:
             return self.instance.date
         return None
 
@@ -324,6 +328,15 @@ class AdminBookingForm(forms.ModelForm):
             )
             if not ok:
                 raise forms.ValidationError(message)
+
+        if (
+            status == BookingStatus.IN_PROGRESS
+            and self.instance.pk
+            and self.instance.status != BookingStatus.IN_PROGRESS
+        ):
+            raise forms.ValidationError(
+                'Confirm the booking first, then use Start job in the booking view to begin work.'
+            )
 
         if (
             status == BookingStatus.COMPLETED

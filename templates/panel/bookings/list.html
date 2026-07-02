@@ -28,7 +28,7 @@
 </form>
 
 {% if can_manage_site %}
-<form method="post" action="{% url 'panel:booking_bulk' %}">
+<form method="post" action="{% url 'panel:booking_bulk' %}" id="bookingBulkForm">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ request.get_full_path }}">
 
@@ -42,6 +42,7 @@
         <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
         <span class="text-muted small">Select bookings below, then choose an action.</span>
     </div>
+</form>
 {% endif %}
 
     <div class="panel-card card border-0">
@@ -64,7 +65,7 @@
                 <tbody>
                     {% for booking in bookings %}
                     <tr>
-                        {% if can_manage_site %}<td><input type="checkbox" name="booking_ids" value="{{ booking.pk }}" class="booking-select"></td>{% endif %}
+                        {% if can_manage_site %}<td><input type="checkbox" name="booking_ids" value="{{ booking.pk }}" class="booking-select" form="bookingBulkForm"></td>{% endif %}
                         <td>#{{ booking.pk }}</td>
                         <td>{{ booking.contact_full_name }}<br><small class="text-muted">{{ booking.contact_email }}</small></td>
                         <td>{{ booking.service_summary }}</td>
@@ -95,6 +96,19 @@
                                 <button type="submit" class="btn btn-sm btn-success">Confirm</button>
                             </form>
                             {% endif %}
+                            {% if is_sysadmin %}
+                            <form method="post"
+                                  action="{% url 'panel:booking_delete' booking.pk %}"
+                                  class="d-inline"
+                                  data-confirm="Booking #{{ booking.pk }} for {{ booking.contact_full_name }} will be permanently removed."
+                                  data-confirm-title="Delete booking #{{ booking.pk }}?"
+                                  data-confirm-yes="Yes, delete"
+                                  data-confirm-danger="true">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
@@ -104,9 +118,6 @@
             </table>
         </div>
     </div>
-{% if can_manage_site %}
-</form>
-{% endif %}
 {% endblock %}
 
 {% block extra_js %}

@@ -21,6 +21,7 @@ BOOKING_BULK_CONFIRM = 'booking.bulk_confirm'
 BOOKING_BULK_CANCEL = 'booking.bulk_cancel'
 BOOKING_BULK_EXPORT = 'booking.bulk_export'
 BOOKING_PHOTO_DELETED = 'booking.photo_deleted'
+BOOKING_DELETED = 'booking.deleted'
 
 # Users
 USER_UPDATED = 'user.updated'
@@ -58,6 +59,7 @@ ACTION_LABELS = {
     BOOKING_BULK_CANCEL: 'Bulk cancelled bookings',
     BOOKING_BULK_EXPORT: 'Exported bookings',
     BOOKING_PHOTO_DELETED: 'Deleted job photo',
+    BOOKING_DELETED: 'Deleted booking',
     USER_UPDATED: 'Updated user',
     USER_DELETED: 'Deleted user',
     AVAILABILITY_UPDATED: 'Updated availability',
@@ -99,6 +101,7 @@ ACTION_CATEGORIES = {
     BOOKING_BULK_CANCEL: 'booking',
     BOOKING_BULK_EXPORT: 'booking',
     BOOKING_PHOTO_DELETED: 'booking',
+    BOOKING_DELETED: 'booking',
     USER_UPDATED: 'user',
     USER_DELETED: 'user',
     AVAILABILITY_UPDATED: 'admin',

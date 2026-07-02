@@ -283,6 +283,15 @@ class Booking(models.Model):
         )
         return appointment > timezone.now()
 
+    @property
+    def is_reschedulable(self):
+        if self.status not in (BookingStatus.PENDING, BookingStatus.CONFIRMED):
+            return False
+        appointment = timezone.make_aware(
+            datetime.combine(self.date, self.time_slot.time)
+        )
+        return appointment > timezone.now()
+
     def geocode_and_set_duration(self, service_ids=None):
         from bookings.routing import coords_for_address
         from bookings.scheduling import get_service_duration_minutes

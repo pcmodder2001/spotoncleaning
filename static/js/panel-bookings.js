@@ -809,9 +809,15 @@
   };
 
   document.addEventListener('click', function (event) {
-    const button = event.target.closest('[data-booking-view]');
-    if (!button) return;
+    const standalone = event.target.closest('[data-booking-view]:not(td)');
+    if (standalone) {
+      event.preventDefault();
+      openBookingView(standalone.dataset.bookingView);
+      return;
+    }
+    const cell = event.target.closest('td.booking-list-cell[data-booking-view]');
+    if (!cell) return;
     event.preventDefault();
-    openBookingView(button.dataset.bookingView);
+    openBookingView(cell.dataset.bookingView);
   });
 })();

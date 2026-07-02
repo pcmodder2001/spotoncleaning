@@ -185,6 +185,26 @@ def send_booking_updated_email(booking):
     )
 
 
+def send_booking_rescheduled_email(booking, *, needs_confirmation=False):
+    context = get_booking_email_context(booking)
+    context['needs_confirmation'] = needs_confirmation
+    return send_notification_email(
+        subject=f'Your appointment has been rescheduled — {settings.SITE_NAME}',
+        template_name='emails/booking_rescheduled.html',
+        context=context,
+        recipient=booking.contact_email,
+    )
+
+
+def send_enquiry_received_email(enquiry):
+    return send_notification_email(
+        subject=f'We received your message — {settings.SITE_NAME}',
+        template_name='emails/enquiry_received.html',
+        context={'enquiry': enquiry},
+        recipient=enquiry.email,
+    )
+
+
 def send_booking_reminder_email(booking):
     from bookings.reminders import get_booking_reminder_context
 

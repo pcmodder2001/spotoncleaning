@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/bookings/<int:pk>/start/', booking_api.booking_start_job_api, name='booking_start_job_api'),
     path('api/bookings/<int:pk>/complete/', booking_api.booking_complete_job_api, name='booking_complete_job_api'),
     path('bookings/', views.booking_list_view, name='booking_list'),
+    path('bookings/create/', views.booking_create_view, name='booking_create'),
     path('bookings/bulk/', schedule_views.booking_bulk_action_view, name='booking_bulk'),
     path('bookings/<int:pk>/edit/', views.booking_edit_view, name='booking_edit'),
     path('bookings/<int:pk>/confirm/', views.booking_confirm_view, name='booking_confirm'),

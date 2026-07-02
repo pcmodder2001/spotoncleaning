@@ -1514,6 +1514,18 @@ body.site-home .hero-section::before {
     background: var(--bg);
 }
 
+.booking-list-row {
+    cursor: default;
+}
+
+.booking-list-cell {
+    cursor: pointer;
+}
+
+.booking-list-row .booking-row-actions {
+    cursor: default;
+}
+
 /* Status badges */
 .badge {
     font-weight: 600;

@@ -2,12 +2,13 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from bookings.forms import AdminBookingForm, BookingForm
+from bookings.forms import AdminBookingForm, AdminCreateBookingForm, BookingForm
 from bookings.models import (
     BlockedDate,
     Booking,
@@ -19,11 +20,12 @@ from bookings.models import (
 from bookings.checklist import checklist_from_post, merge_checklist
 from bookings.promo import release_promo_use
 from bookings.utils import cancel_booking
-from bookings.notifications import send_booking_status_email
+from bookings.notifications import send_booking_created_email, send_booking_status_email
 from accounts.roles import UserRole
 from audit.actions import (
     AVAILABILITY_UPDATED,
     BOOKING_CANCELLED,
+    BOOKING_CREATED,
     BOOKING_DELETED,
     BOOKING_STATUS_CHANGED,
     BOOKING_UPDATED,
@@ -168,14 +170,60 @@ def booking_list_view(request):
         bookings = bookings.filter(status=status)
     if date_filter:
         bookings = bookings.filter(date=date_filter)
+    bookings = bookings.order_by('-date', '-time_slot__time', '-pk')
+    paginator = Paginator(bookings, 50)
+    page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'panel/bookings/list.html', {
-        'bookings': bookings,
+        'page_obj': page_obj,
         'query': query,
         'status_filter': status,
         'date_filter': date_filter,
         'status_choices': BookingStatus.choices,
         'can_manage_site': request.user.can_manage_site,
         'is_sysadmin': request.user.is_sysadmin,
+    })
+
+
+@admin_required
+def booking_create_view(request):
+    if request.method == 'POST':
+        form = AdminCreateBookingForm(request.POST)
+        if form.is_valid():
+            booking = form.save()
+            log_action(
+                BOOKING_CREATED,
+                f'Admin created booking #{booking.pk} for {booking.contact_full_name} on {booking.date}.',
+                request=request,
+                target_type='booking',
+                target_id=booking.pk,
+                target_label=f'Booking #{booking.pk}',
+                metadata={'created_by_admin': True, 'services': booking.service_summary},
+            )
+            if booking.status == BookingStatus.CONFIRMED:
+                email_sent = send_booking_status_email(booking)
+            else:
+                email_sent = send_booking_created_email(booking)
+            if email_sent:
+                messages.success(request, f'Booking #{booking.pk} created and the customer has been emailed.')
+            else:
+                messages.success(
+                    request,
+                    f'Booking #{booking.pk} created, but the customer email could not be sent.',
+                )
+            return redirect('panel:booking_edit', pk=booking.pk)
+    else:
+        form = AdminCreateBookingForm()
+
+    selected_service_ids = set()
+    if form.is_bound and form.data.getlist('services'):
+        selected_service_ids = {int(pk) for pk in form.data.getlist('services') if pk.isdigit()}
+
+    services = form.fields['services'].queryset
+    return render(request, 'panel/bookings/create.html', {
+        'form': form,
+        'oven_services': services.filter(service_type=ServiceType.OVEN),
+        'addon_services': services.filter(service_type=ServiceType.ADDON),
+        'selected_service_ids': selected_service_ids,
     })
 
 
@@ -241,6 +289,7 @@ def booking_edit_view(request, pk):
 @require_POST
 def booking_cancel_view(request, pk):
     booking = get_object_or_404(Booking, pk=pk)
+    next_url = request.POST.get('next') or 'panel:booking_list'
     if cancel_booking(booking):
         log_action(
             BOOKING_CANCELLED,
@@ -253,7 +302,7 @@ def booking_cancel_view(request, pk):
         messages.success(request, f'Booking #{booking.pk} cancelled.')
     else:
         messages.info(request, f'Booking #{booking.pk} is already cancelled.')
-    return redirect('panel:booking_list')
+    return redirect(next_url)
 
 
 @admin_required

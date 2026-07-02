@@ -369,3 +369,108 @@ class AdminBookingStatusForm(forms.ModelForm):
         model = Booking
         fields = ['status']
         widgets = {'status': forms.Select(attrs={'class': 'form-select'})}
+
+
+class AdminCreateBookingForm(AdminBookingForm):
+    guest_first_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    guest_last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    guest_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': 'form-control'}),
+    )
+    guest_phone = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields['status'].initial = BookingStatus.PENDING
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user = cleaned_data.get('user')
+        if not user:
+            for field_name, label in (
+                ('guest_first_name', 'First name'),
+                ('guest_last_name', 'Last name'),
+                ('guest_email', 'Email'),
+            ):
+                if not cleaned_data.get(field_name):
+                    self.add_error(field_name, f'{label} is required when no customer account is selected.')
+        return cleaned_data
+
+    def save(self, commit=True):
+        booking = super().save(commit=False)
+        user = self.cleaned_data.get('user')
+        if user:
+            booking.guest_email = ''
+            booking.guest_first_name = ''
+            booking.guest_last_name = ''
+            booking.guest_phone = ''
+        else:
+            booking.guest_email = self.cleaned_data['guest_email']
+            booking.guest_first_name = self.cleaned_data['guest_first_name']
+            booking.guest_last_name = self.cleaned_data['guest_last_name']
+            booking.guest_phone = self.cleaned_data.get('guest_phone', '')
+        if commit:
+            booking.save()
+            service_ids = [s.pk for s in self.cleaned_data['services']]
+            booking.services.set(self.cleaned_data['services'])
+            booking.geocode_and_set_duration(service_ids)
+            booking.recalculate_pricing(save=True)
+        return booking
+
+
+class RescheduleBookingForm(forms.Form):
+    date = forms.DateField(
+        widget=forms.HiddenInput(attrs={'id': 'id_date'}),
+        input_formats=['%Y-%m-%d'],
+    )
+    time_slot = forms.ModelChoiceField(
+        queryset=TimeSlot.objects.none(),
+        widget=forms.HiddenInput(attrs={'id': 'id_time_slot'}),
+    )
+
+    def __init__(self, *args, booking=None, **kwargs):
+        self.booking = booking
+        super().__init__(*args, **kwargs)
+        self.fields['date'].input_formats = ['%Y-%m-%d']
+        self.fields['time_slot'].queryset = TimeSlot.objects.filter(active=True)
+        if booking and not self.data:
+            self.fields['date'].initial = booking.date
+            self.fields['time_slot'].initial = booking.time_slot_id
+
+    def clean_date(self):
+        date = self.cleaned_data['date']
+        if date < timezone.localdate():
+            raise forms.ValidationError('Please select a future date.')
+        return date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        date = cleaned_data.get('date')
+        time_slot = cleaned_data.get('time_slot')
+        if date and time_slot and self.booking:
+            service_ids = list(self.booking.get_services().values_list('pk', flat=True))
+            ok, message = validate_booking_schedule(
+                date,
+                time_slot.time,
+                service_ids,
+                self.booking.postcode,
+                city=self.booking.city,
+                exclude_booking_pk=self.booking.pk,
+            )
+            if not ok:
+                raise forms.ValidationError(message)
+        return cleaned_data

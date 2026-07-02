@@ -4,28 +4,33 @@
 {% block panel_title %}Bookings{% endblock %}
 
 {% block panel_content %}
-<form method="get" class="row g-2 mb-3">
-    <div class="col-md-4">
-        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search customer or address">
-    </div>
-    <div class="col-md-3">
-        <select name="status" class="form-select">
-            <option value="">All statuses</option>
-            {% for value, label in status_choices %}
-            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-md-3">
-        <input type="date" name="date" value="{{ date_filter }}" class="form-control">
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Filter</button>
-    </div>
-    <div class="col-auto">
-        <a href="{% url 'panel:schedule' %}{% if date_filter %}?date={{ date_filter }}{% endif %}" class="btn btn-outline-primary">Schedule view</a>
-    </div>
-</form>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <form method="get" class="row g-2 flex-grow-1">
+        <div class="col-md-4">
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search customer or address">
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select">
+                <option value="">All statuses</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'panel:schedule' %}{% if date_filter %}?date={{ date_filter }}{% endif %}" class="btn btn-outline-primary">Schedule view</a>
+        </div>
+    </form>
+    {% if can_manage_site %}
+    <a href="{% url 'panel:booking_create' %}" class="btn btn-success">Create booking</a>
+    {% endif %}
+</div>
 
 {% if can_manage_site %}
 <form method="post" action="{% url 'panel:booking_bulk' %}" id="bookingBulkForm">
@@ -63,16 +68,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for booking in bookings %}
-                    <tr>
-                        {% if can_manage_site %}<td><input type="checkbox" name="booking_ids" value="{{ booking.pk }}" class="booking-select" form="bookingBulkForm"></td>{% endif %}
-                        <td>#{{ booking.pk }}</td>
-                        <td>{{ booking.contact_full_name }}<br><small class="text-muted">{{ booking.contact_email }}</small></td>
-                        <td>{{ booking.service_summary }}</td>
-                        <td>{{ booking.date|date:"d M Y" }}</td>
-                        <td>{{ booking.time_slot.time|time:"H:i" }}</td>
-                        <td>{{ booking.city }}, {{ booking.postcode }}</td>
-                        <td class="booking-price-cell">
+                    {% for booking in page_obj %}
+                    <tr class="booking-list-row">
+                        {% if can_manage_site %}<td class="booking-row-actions"><input type="checkbox" name="booking_ids" value="{{ booking.pk }}" class="booking-select" form="bookingBulkForm"></td>{% endif %}
+                        <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">#{{ booking.pk }}</td>
+                        <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{{ booking.contact_full_name }}<br><small class="text-muted">{{ booking.contact_email }}</small></td>
+                        <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{{ booking.service_summary }}</td>
+                        <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{{ booking.date|date:"d M Y" }}</td>
+                        <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{{ booking.time_slot.time|time:"H:i" }}</td>
+                        <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{{ booking.city }}, {{ booking.postcode }}</td>
+                        <td class="booking-list-cell booking-price-cell" data-booking-view="{{ booking.pk }}">
                             {% if booking.discount_amount %}
                             <div class="booking-price-line text-muted small">Subtotal £{{ booking.total_price }}</div>
                             <div class="booking-price-line text-success small">−£{{ booking.discount_amount }}{% if booking.promo_code %} ({{ booking.promo_code.code }}){% else %} discount{% endif %}</div>
@@ -81,9 +86,21 @@
                             <span class="fw-semibold">£{{ booking.total_price }}</span>
                             {% endif %}
                         </td>
-                        <td><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
-                        <td class="text-nowrap">
-                            <button type="button" class="btn btn-sm btn-outline-primary" data-booking-view="{{ booking.pk }}">View</button>
+                        <td class="booking-list-cell" data-booking-view="{{ booking.pk }}"><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
+                        <td class="text-nowrap booking-row-actions">
+                            {% if can_manage_site and booking.status != 'cancelled' %}
+                            <form method="post"
+                                  action="{% url 'panel:booking_cancel' booking.pk %}"
+                                  class="d-inline"
+                                  data-confirm="The customer will be notified by email."
+                                  data-confirm-title="Cancel booking #{{ booking.pk }}?"
+                                  data-confirm-yes="Yes, cancel booking"
+                                  data-confirm-danger="true">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                            </form>
+                            {% endif %}
                             {% if can_manage_site and booking.status == 'pending' %}
                             <form method="post"
                                   action="{% url 'panel:booking_confirm' booking.pk %}"
@@ -118,6 +135,20 @@
             </table>
         </div>
     </div>
+
+{% if page_obj.has_other_pages %}
+<nav class="mt-3">
+    <ul class="pagination pagination-sm justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status_filter }}&date={{ date_filter }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status_filter }}&date={{ date_filter }}">Next</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

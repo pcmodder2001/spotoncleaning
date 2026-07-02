@@ -10,6 +10,7 @@ from services.models import Service, ServiceType
 from website.forms import ContactForm
 from website.models import Testimonial
 from website.tracking import apply_marketing_attribution, queue_meta_pixel_event
+from bookings.notifications import send_enquiry_received_email
 from audit.actions import ENQUIRY_CREATED
 from audit.services import log_action
 
@@ -52,6 +53,7 @@ def contact_submit_view(request):
                 'Lead',
                 content_name='Contact form',
             )
+            send_enquiry_received_email(enquiry)
             messages.success(request, 'Thank you for your message. We will get back to you soon!')
         else:
             messages.error(request, 'Please correct the errors in the contact form.')

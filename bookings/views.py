@@ -12,11 +12,11 @@ from bookings.completion_report import (
     booking_from_completion_report_token,
     get_completion_report_context,
 )
-from bookings.forms import BookingForm, GuestBookingForm
+from bookings.forms import BookingForm, GuestBookingForm, RescheduleBookingForm
 from bookings.ics import build_booking_ics
 from bookings.models import Booking, BookingPhoto, BookingStatus
 from bookings.photo_access import can_view_booking_photo
-from bookings.notifications import send_booking_created_email
+from bookings.notifications import send_booking_created_email, send_booking_rescheduled_email
 from bookings.service_area import is_postcode_in_service_area, service_area_error_message
 from bookings.utils import (
     cancel_booking,
@@ -24,7 +24,7 @@ from bookings.utils import (
     get_calendar_dates_in_month,
     get_available_slots_for_date,
 )
-from audit.actions import BOOKING_CANCELLED, BOOKING_CREATED
+from audit.actions import BOOKING_CANCELLED, BOOKING_CREATED, BOOKING_RESCHEDULED
 from audit.services import log_action
 from services.catalog import split_addon_services
 from services.models import Service, ServiceType
@@ -240,7 +240,10 @@ def booking_detail_view(request, pk):
         pk=pk,
         user=request.user,
     )
-    return render(request, 'bookings/detail.html', {'booking': booking})
+    return render(request, 'bookings/detail.html', {
+        'booking': booking,
+        'show_completion_report': booking.status == BookingStatus.COMPLETED,
+    })
 
 
 def completion_report_view(request, pk):
@@ -307,6 +310,80 @@ def cancel_booking_view(request, pk):
     return redirect('accounts:my_bookings')
 
 
+@login_required
+def reschedule_booking_view(request, pk):
+    booking = get_object_or_404(
+        Booking.objects.select_related('time_slot').prefetch_related('services'),
+        pk=pk,
+        user=request.user,
+    )
+    if not booking.is_reschedulable:
+        messages.error(request, 'This booking cannot be rescheduled.')
+        return redirect('bookings:detail', pk=booking.pk)
+
+    if request.method == 'POST':
+        form = RescheduleBookingForm(request.POST, booking=booking)
+        if form.is_valid():
+            old_date = booking.date
+            old_time = booking.time_slot.time
+            was_confirmed = booking.status == BookingStatus.CONFIRMED
+            booking.date = form.cleaned_data['date']
+            booking.time_slot = form.cleaned_data['time_slot']
+            booking.status = BookingStatus.PENDING
+            booking.reminder_sent_at = None
+            booking.save(update_fields=[
+                'date', 'time_slot', 'status', 'reminder_sent_at', 'updated_at',
+            ])
+            send_booking_rescheduled_email(booking, needs_confirmation=was_confirmed)
+            log_action(
+                BOOKING_RESCHEDULED,
+                (
+                    f'Customer rescheduled booking #{booking.pk} from '
+                    f'{old_date} {old_time.strftime("%H:%M")} to '
+                    f'{booking.date} {booking.time_slot.time.strftime("%H:%M")}.'
+                ),
+                request=request,
+                user=request.user,
+                target_type='booking',
+                target_id=booking.pk,
+                target_label=f'Booking #{booking.pk}',
+                metadata={
+                    'old_date': old_date.isoformat(),
+                    'old_time': old_time.strftime('%H:%M'),
+                    'new_date': booking.date.isoformat(),
+                    'new_time': booking.time_slot.time.strftime('%H:%M'),
+                },
+            )
+            if was_confirmed:
+                messages.success(
+                    request,
+                    'Your appointment has been rescheduled. We will confirm the new date and time shortly.',
+                )
+            else:
+                messages.success(request, 'Your appointment has been rescheduled.')
+            return redirect('bookings:detail', pk=booking.pk)
+    else:
+        form = RescheduleBookingForm(booking=booking)
+
+    service_ids = list(booking.get_services().values_list('pk', flat=True))
+    initial_date = ''
+    initial_time_slot = ''
+    if form.is_bound:
+        initial_date = form.data.get('date', '')
+        initial_time_slot = form.data.get('time_slot', '')
+    elif booking:
+        initial_date = booking.date.isoformat()
+        initial_time_slot = str(booking.time_slot_id)
+
+    return render(request, 'bookings/reschedule.html', {
+        'booking': booking,
+        'form': form,
+        'service_ids_json': json.dumps(service_ids),
+        'initial_date': initial_date,
+        'initial_time_slot': initial_time_slot,
+    })
+
+
 def _parse_service_ids(request):
     ids = request.GET.getlist('services') or request.GET.get('services', '').split(',')
     return [int(pk) for pk in ids if str(pk).strip().isdigit()]
@@ -339,11 +416,17 @@ def available_dates_api(request):
         area_error = _service_area_api_error(postcode)
         if area_error:
             return area_error
+    exclude_booking_pk = request.GET.get('exclude_booking')
+    if exclude_booking_pk and str(exclude_booking_pk).isdigit():
+        exclude_booking_pk = int(exclude_booking_pk)
+    else:
+        exclude_booking_pk = None
     calendar = get_calendar_dates_in_month(
         year, month,
         service_ids=service_ids or None,
         postcode=postcode,
         city=city,
+        exclude_booking_pk=exclude_booking_pk,
     )
     payload = {
         'available': calendar['available'],
@@ -357,6 +440,7 @@ def available_dates_api(request):
             service_ids=service_ids or None,
             postcode=postcode,
             city=city,
+            exclude_booking_pk=exclude_booking_pk,
         )
     return JsonResponse(payload)
 
@@ -375,6 +459,11 @@ def available_slots_api(request):
     service_ids = _parse_service_ids(request)
     postcode = request.GET.get('postcode', '').strip()
     city = request.GET.get('city', '').strip()
+    exclude_booking_pk = request.GET.get('exclude_booking')
+    if exclude_booking_pk and str(exclude_booking_pk).isdigit():
+        exclude_booking_pk = int(exclude_booking_pk)
+    else:
+        exclude_booking_pk = None
 
     if not postcode:
         return JsonResponse({'slots': [], 'error': 'postcode_required'})
@@ -393,6 +482,7 @@ def available_slots_api(request):
         service_ids=service_ids or None,
         postcode=postcode,
         city=city,
+        exclude_booking_pk=exclude_booking_pk,
     )
     payload = {
         'slots': [{'id': s.pk, 'time': s.time.strftime('%H:%M')} for s in slots],

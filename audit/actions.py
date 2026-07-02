@@ -13,6 +13,7 @@ BOOKING_CREATED = 'booking.created'
 BOOKING_CANCELLED = 'booking.cancelled'
 BOOKING_STATUS_CHANGED = 'booking.status_changed'
 BOOKING_UPDATED = 'booking.updated'
+BOOKING_RESCHEDULED = 'booking.rescheduled'
 BOOKING_SERVICES_UPDATED = 'booking.services_updated'
 BOOKING_JOB_STARTED = 'booking.job_started'
 BOOKING_JOB_COMPLETED = 'booking.job_completed'
@@ -51,6 +52,7 @@ ACTION_LABELS = {
     BOOKING_CANCELLED: 'Cancelled booking',
     BOOKING_STATUS_CHANGED: 'Changed booking status',
     BOOKING_UPDATED: 'Updated booking',
+    BOOKING_RESCHEDULED: 'Rescheduled booking',
     BOOKING_SERVICES_UPDATED: 'Updated booking services',
     BOOKING_JOB_STARTED: 'Started job',
     BOOKING_JOB_COMPLETED: 'Completed job',
@@ -93,6 +95,7 @@ ACTION_CATEGORIES = {
     BOOKING_CANCELLED: 'booking',
     BOOKING_STATUS_CHANGED: 'booking',
     BOOKING_UPDATED: 'booking',
+    BOOKING_RESCHEDULED: 'booking',
     BOOKING_SERVICES_UPDATED: 'booking',
     BOOKING_JOB_STARTED: 'booking',
     BOOKING_JOB_COMPLETED: 'booking',

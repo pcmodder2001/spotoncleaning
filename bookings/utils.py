@@ -18,7 +18,7 @@ def is_day_available(date):
     return not is_weekly_closed(date)
 
 
-def get_calendar_dates_in_month(year, month, service_ids=None, postcode='', city=''):
+def get_calendar_dates_in_month(year, month, service_ids=None, postcode='', city='', exclude_booking_pk=None):
     """Classify each future day in the month for the booking calendar."""
     from calendar import monthrange
 
@@ -56,6 +56,7 @@ def get_calendar_dates_in_month(year, month, service_ids=None, postcode='', city
                 service_ids=service_ids,
                 postcode=postcode,
                 city=city,
+                exclude_booking_pk=exclude_booking_pk,
             )
             if slots.exists():
                 available.append(iso)
@@ -75,7 +76,7 @@ def get_available_dates_in_month(year, month, service_ids=None, postcode='', cit
     )['available']
 
 
-def find_next_available_date(service_ids=None, postcode='', city='', max_months=6):
+def find_next_available_date(service_ids=None, postcode='', city='', max_months=6, exclude_booking_pk=None):
     """Return ISO date string of the next bookable day, or None."""
     today = timezone.localdate()
     year, month = today.year, today.month
@@ -85,6 +86,7 @@ def find_next_available_date(service_ids=None, postcode='', city='', max_months=
             service_ids=service_ids,
             postcode=postcode,
             city=city,
+            exclude_booking_pk=exclude_booking_pk,
         )
         if calendar['available']:
             return calendar['available'][0]

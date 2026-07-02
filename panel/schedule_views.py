@@ -82,9 +82,17 @@ def booking_bulk_action_view(request):
     count = bookings.count()
 
     if action == 'confirm':
-        updated = bookings.exclude(status=BookingStatus.CANCELLED).update(status=BookingStatus.CONFIRMED)
-        for booking in bookings.filter(status=BookingStatus.CONFIRMED):
-            send_booking_status_email(booking)
+        pending_bookings = list(
+            bookings.filter(status=BookingStatus.PENDING).select_related('time_slot')
+        )
+        updated = len(pending_bookings)
+        if updated:
+            Booking.objects.filter(
+                pk__in=[booking.pk for booking in pending_bookings],
+            ).update(status=BookingStatus.CONFIRMED)
+            for booking in pending_bookings:
+                booking.status = BookingStatus.CONFIRMED
+                send_booking_status_email(booking)
         log_action(
             BOOKING_BULK_CONFIRM,
             f'Confirmed {updated} booking(s).',
@@ -93,7 +101,10 @@ def booking_bulk_action_view(request):
             target_label=f'{updated} bookings',
             metadata={'booking_ids': booking_ids, 'count': updated},
         )
-        messages.success(request, f'{updated} booking(s) confirmed.')
+        if updated:
+            messages.success(request, f'{updated} pending booking(s) confirmed.')
+        else:
+            messages.info(request, 'No pending bookings were selected to confirm.')
     elif action == 'cancel':
         cancelled = 0
         cancelled_ids = []

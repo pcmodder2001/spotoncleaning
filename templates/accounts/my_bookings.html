@@ -53,6 +53,12 @@
                         <td><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
                         <td class="text-nowrap">
                             <a href="{% url 'bookings:detail' booking.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                            {% if booking.status == 'completed' %}
+                            <a href="{% url 'bookings:completion_report' booking.pk %}" class="btn btn-sm btn-outline-secondary">Report</a>
+                            {% endif %}
+                            {% if booking.is_reschedulable %}
+                            <a href="{% url 'bookings:reschedule' booking.pk %}" class="btn btn-sm btn-outline-secondary">Reschedule</a>
+                            {% endif %}
                             {% if booking.is_cancellable %}
                             <form method="post" action="{% url 'bookings:cancel' booking.pk %}" class="d-inline"
                                   data-confirm="Are you sure you want to cancel this booking?"

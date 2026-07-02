@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static static_version %}
+
+{% block title %}Reschedule Booking #{{ booking.pk }} - {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <h1 class="fw-bold">Reschedule booking</h1>
+        <p class="text-muted mb-0">{{ booking.service_summary }} — currently {{ booking.date|date:"d M Y" }} at {{ booking.time_slot.time|time:"H:i" }}</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="app-card card border-0">
+                <div class="card-body p-4">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+
+                    <p class="text-muted mb-4">
+                        Choose a new date and time for your appointment at {{ booking.city }}, {{ booking.postcode }}.
+                        Only available dates and times are shown — closed and fully booked days cannot be selected.
+                        {% if booking.status == 'confirmed' %}
+                        After rescheduling, your booking will return to pending until we confirm the new slot.
+                        {% endif %}
+                    </p>
+
+                    <form method="post" id="rescheduleForm">
+                        {% csrf_token %}
+                        {{ form.date }}
+                        {{ form.time_slot }}
+                        {% if form.date.errors %}<div class="text-danger small mb-2">{{ form.date.errors.0 }}</div>{% endif %}
+                        {% if form.time_slot.errors %}<div class="text-danger small mb-2">{{ form.time_slot.errors.0 }}</div>{% endif %}
+
+                        {% include 'bookings/includes/schedule_picker.html' %}
+
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary" id="rescheduleSubmit" disabled>Save new date &amp; time</button>
+                            <a href="{% url 'bookings:detail' booking.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.schedulePickerConfig = {
+    datesUrl: "{% url 'bookings:available_dates' %}",
+    slotsUrl: "{% url 'bookings:available_slots' %}",
+    serviceIds: {{ service_ids_json|safe }},
+    postcode: "{{ booking.postcode|escapejs }}",
+    city: "{{ booking.city|escapejs }}",
+    excludeBookingId: {{ booking.pk }},
+    initialDate: "{{ initial_date|escapejs }}",
+    initialTimeSlotId: "{{ initial_time_slot|escapejs }}",
+    estimatedDurationMinutes: {{ booking.estimated_duration_minutes|default:60 }},
+    submitButtonId: 'rescheduleSubmit',
+};
+</script>
+<script src="{% static_v 'js/booking-schedule-picker.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.initBookingSchedulePicker && window.schedulePickerConfig) {
+        window.initBookingSchedulePicker(window.schedulePickerConfig);
+    }
+    document.getElementById('rescheduleForm')?.addEventListener('submit', function (event) {
+        const dateInput = document.getElementById('id_date');
+        const timeInput = document.getElementById('id_time_slot');
+        if (!dateInput?.value || !timeInput?.value) {
+            event.preventDefault();
+            if (window.showAppToast) {
+                window.showAppToast('Please select an available date and time.', 'error');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

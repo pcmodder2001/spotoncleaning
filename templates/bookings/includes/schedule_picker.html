@@ -1,0 +1,33 @@
+<div id="nextAvailableHint" class="next-available-hint" hidden>
+    <i class="bi bi-calendar-event me-1"></i>
+    <span>Next available: <strong id="nextAvailableLabel"></strong></span>
+    <button type="button" class="btn btn-link btn-sm p-0 ms-1" id="nextAvailableJump" hidden>Book this date</button>
+</div>
+
+<div id="calendarSection" class="booking-calendar-wrap">
+    <div id="calendarActive">
+        <div class="booking-calendar-header">
+            <button type="button" class="btn btn-sm btn-light calendar-nav" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+            <h3 class="calendar-month-label" id="calMonthLabel"></h3>
+            <button type="button" class="btn btn-sm btn-light calendar-nav" id="calNext" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+        </div>
+        <div class="booking-calendar">
+            <div class="calendar-weekdays">
+                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+            <div class="calendar-grid" id="calGrid"></div>
+        </div>
+        <p class="calendar-legend">
+            <span class="legend-dot available"></span> Available
+            <span class="legend-dot closed"></span> Closed
+            <span class="legend-dot fully-booked"></span> Fully booked
+        </p>
+    </div>
+</div>
+
+<div class="time-slots-section" id="timeSlotsSection" hidden>
+    <h3 class="time-slots-title">Available times <span id="selectedDateLabel"></span></h3>
+    <div class="time-slots-grid" id="timeSlotsGrid"></div>
+    <p class="time-slots-empty text-muted" id="timeSlotsEmpty" hidden>No times available for this date — try another day.</p>
+    <p class="time-slots-note text-muted small" id="timeSlotsNote" hidden></p>
+</div>

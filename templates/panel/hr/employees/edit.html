@@ -1,0 +1,89 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}HR — {{ staff_user.full_name }}{% endblock %}
+
+{% block panel_content %}
+{% include 'panel/hr/includes/hr_nav.html' %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="panel-card card border-0">
+            <div class="card-body p-4">
+                <p class="text-muted small mb-3">{{ staff_user.email }} · {{ staff_user.get_role_display }}</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Employee number</label>
+                            <input type="text" name="employee_number" value="{{ profile.employee_number }}" class="form-control">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Job title</label>
+                            <input type="text" name="job_title" value="{{ profile.job_title }}" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Employment type</label>
+                            <select name="employment_type" class="form-select">
+                                {% for value, label in employment_types %}
+                                <option value="{{ value }}" {% if profile.employment_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Start date</label>
+                            <input type="date" name="start_date" value="{{ profile.start_date|date:'Y-m-d' }}" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">End date</label>
+                            <input type="date" name="end_date" value="{{ profile.end_date|date:'Y-m-d' }}" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Hourly rate (£)</label>
+                            <input type="number" step="0.01" min="0" name="hourly_rate" value="{{ profile.hourly_rate }}" class="form-control" placeholder="For contract documents">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Emergency contact</label>
+                            <input type="text" name="emergency_contact_name" value="{{ profile.emergency_contact_name }}" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Relationship</label>
+                            <input type="text" name="emergency_contact_relationship" value="{{ profile.emergency_contact_relationship }}" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Emergency phone</label>
+                            <input type="text" name="emergency_contact_phone" value="{{ profile.emergency_contact_phone }}" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Address</label>
+                            <input type="text" name="address_line" value="{{ profile.address_line }}" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">HR notes (admin only)</label>
+                            <textarea name="notes" rows="3" class="form-control">{{ profile.notes }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" {% if profile.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">Active employee</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="{% url 'panel:hr_onboarding' %}?employee={{ staff_user.pk }}" class="btn btn-outline-primary">Onboarding</a>
+                        <a href="{% url 'panel:hr_employee_list' %}" class="btn btn-outline-secondary">Back</a>
+                    </div>
+                </form>
+                <form method="post" class="mt-3"
+                      data-confirm="This will remove all current onboarding tasks and recreate the default checklist."
+                      data-confirm-title="Reset onboarding?"
+                      data-confirm-yes="Yes, reset">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reset_onboarding">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Reset onboarding checklist</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

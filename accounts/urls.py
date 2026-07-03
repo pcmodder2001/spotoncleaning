@@ -6,6 +6,7 @@ app_name = 'accounts'
 
 urlpatterns = [
     path('register/', views.register_view, name='register'),
+    path('join/<token>/', views.register_from_invite_view, name='register_invite'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('complete-account/', views.complete_account_from_booking_view, name='complete_account'),

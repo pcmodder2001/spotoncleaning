@@ -1,0 +1,67 @@
+{% extends 'hr/documents/base_document.html' %}
+
+{% block document_body %}
+<h1>Contract of Employment</h1>
+<p class="doc-meta">{{ employer_name }} · {{ today_formatted }}</p>
+
+<p>This contract is between <strong>{{ employer_name }}</strong> of {{ employer_address }} (the “Employer”) and <strong>{{ employee_name }}</strong> (the “Employee”).</p>
+
+<h2>1. Commencement and job title</h2>
+<p>Your employment begins on <strong>{{ start_date|date:"d F Y" }}</strong> as <strong>{{ job_title }}</strong>. Your normal place of work is West Yorkshire and surrounding areas, travelling to customer properties as required.</p>
+
+<h2>2. Employment status</h2>
+<p>You are employed on a <strong>{{ employment_type|lower }}</strong> basis. Continued employment is subject to satisfactory completion of onboarding, including right-to-work checks and, where applicable, a satisfactory DBS disclosure.</p>
+
+<h2>3. Duties</h2>
+<p>You will carry out appliance cleaning and related services to the standard set out in company procedures, including:</p>
+<ul>
+    <li>Arriving on time, professionally presented, and with required equipment.</li>
+    <li>Following health &amp; safety, COSHH and customer care procedures.</li>
+    <li>Completing job records, photos and checklists in the company panel/app.</li>
+    <li>Treating customer property, keys and information with care and confidentiality.</li>
+</ul>
+<p>The Employer may reasonably vary your duties according to business needs.</p>
+
+<h2>4. Hours of work</h2>
+<p>Your working hours will be as notified in your rota. You may be required to work additional hours at busy periods. Any overtime will be paid or time off in lieu in line with company policy and statutory requirements.</p>
+
+<h2>5. Remuneration</h2>
+<p>Your rate of pay is <strong>{{ hourly_rate_display }}</strong>, paid monthly in arrears by bank transfer, subject to deductions for tax, National Insurance and other lawful deductions. Payslips will be provided electronically via the staff HR portal.</p>
+
+<h2>6. Holiday and sickness</h2>
+<p>You are entitled to paid holiday in accordance with the Working Time Regulations (currently 5.6 weeks per year pro rata). Holiday must be agreed in advance. Sickness absence must be reported as soon as practicable following company absence procedures.</p>
+
+<h2>7. Probationary period</h2>
+<p>The first three months of employment are probationary. During probation either party may terminate employment with one week’s notice. The Employer may extend probation where performance or conduct requires further assessment.</p>
+
+<h2>8. Notice periods</h2>
+<p>After successful completion of probation, either party may terminate employment by giving not less than <strong>four weeks’</strong> written notice, unless a longer period is required by law or agreed in writing.</p>
+
+<h2>9. Confidentiality and data protection</h2>
+<p>You must not disclose confidential information relating to the Employer, its customers or staff. You must comply with the Employee Privacy Notice and all data protection policies.</p>
+
+<h2>10. Health &amp; safety</h2>
+<p>You must take reasonable care for your own health and safety and that of others affected by your work, follow all training and instructions, and report hazards or incidents promptly.</p>
+
+<h2>11. Company property</h2>
+<p>Uniform, tools, vehicles, keys, devices and materials issued to you remain company property and must be returned on demand or on termination of employment.</p>
+
+<h2>12. Disciplinary and grievance</h2>
+<p>The Employer’s disciplinary and grievance procedures apply and are available in the Employee Handbook. These do not form part of your contract unless expressly stated.</p>
+
+<h2>13. Governing law</h2>
+<p>This contract is governed by the laws of England and Wales.</p>
+
+<div class="signature-block">
+    <div>
+        <p><strong>For and on behalf of {{ employer_name }}</strong></p>
+        <p>Name: {{ employer_rep_name }}</p>
+        <p>Date: {{ today_formatted }}</p>
+    </div>
+    <div>
+        <p><strong>Employee</strong></p>
+        <p>Name: {{ employee_name }}</p>
+        <p>Date: {% if task.is_completed %}{{ task.acknowledged_at|date:"d F Y" }}{% else %}_________________{% endif %}</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'hr/documents/base_document.html' %}
+
+{% block document_body %}
+<h1>Consent to DBS Check</h1>
+<p class="doc-meta">{{ site_name }} · {{ today_formatted }}</p>
+
+<p>Some roles at {{ employer_name }} involve working in customer homes and may require a criminal record check through the Disclosure and Barring Service (DBS).</p>
+
+<h2>Applicant details</h2>
+<ul>
+    <li><strong>Name:</strong> {{ employee_name }}</li>
+    <li><strong>Date of birth:</strong> (to be confirmed from ID documents)</li>
+    <li><strong>Address:</strong> {% if employee_address %}{{ employee_address }}{% else %}To be confirmed{% endif %}</li>
+    <li><strong>Position applied for:</strong> {{ job_title }}</li>
+</ul>
+
+<h2>Consent</h2>
+<p>I understand that {{ employer_name }} may apply for a DBS check at the appropriate level for my role. I consent to:</p>
+<ol>
+    <li>The processing of my personal data for the purpose of obtaining a DBS certificate.</li>
+    <li>The secure storage and use of the certificate result in accordance with DBS code of practice and data protection law.</li>
+    <li>Providing proof of identity and address documents as requested.</li>
+</ol>
+
+<p>I understand that a criminal record will not necessarily bar me from employment. Each case is considered individually in line with the company’s recruitment policy and the nature of the role.</p>
+
+<p>I confirm the information I have provided is accurate and I will notify the company of any change in circumstances that may affect this check.</p>
+{% endblock %}

@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 
 from accounts.account_types import AccountType
 from accounts.models import BusinessProfile, Property, SavedAddress
+from accounts.roles import UserRole
 from website.legal import accept_terms_field
 
 User = get_user_model()
@@ -76,6 +77,62 @@ class RegistrationForm(UserCreationForm):
                     company_name=self.cleaned_data['company_name'].strip(),
                     invoice_email=self.cleaned_data['invoice_email'].lower().strip(),
                 )
+        return user
+
+
+class EmployeeInviteRegistrationForm(UserCreationForm):
+    first_name = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
+    phone_number = forms.CharField(max_length=20, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    accept_terms = accept_terms_field()
+
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name', 'phone_number']
+
+    def __init__(self, *args, invite=None, **kwargs):
+        self.invite = invite
+        super().__init__(*args, **kwargs)
+        if 'username' in self.fields:
+            del self.fields['username']
+        if invite:
+            self.fields['email'].initial = invite.email
+            if invite.first_name:
+                self.fields['first_name'].initial = invite.first_name
+            if invite.last_name:
+                self.fields['last_name'].initial = invite.last_name
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].lower()
+        if self.invite and email != self.invite.email.lower():
+            raise forms.ValidationError('This invitation is for a different email address.')
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account with this email already exists. Try logging in instead.')
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = UserRole.ENGINEER
+        user.is_staff = True
+        user.phone_number = self.cleaned_data.get('phone_number', '')
+        if commit:
+            user.save()
+            from hr.invites import accept_invite
+            from hr.services import create_default_onboarding, ensure_employee_profile
+
+            profile = ensure_employee_profile(user)
+            if profile and self.invite:
+                profile.job_title = self.invite.job_title
+                profile.employment_type = self.invite.employment_type
+                profile.start_date = self.invite.start_date
+                profile.hourly_rate = self.invite.hourly_rate
+                profile.save()
+                if not profile.onboarding_tasks.exists():
+                    create_default_onboarding(profile)
+                accept_invite(self.invite, user)
         return user
 
 

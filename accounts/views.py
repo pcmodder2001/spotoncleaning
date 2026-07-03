@@ -37,6 +37,7 @@ from .forms import (
     BusinessProfileForm,
     CompleteAccountFromBookingForm,
     CustomPasswordChangeForm,
+    EmployeeInviteRegistrationForm,
     LoginForm,
     ProfileForm,
     PropertyForm,
@@ -100,6 +101,58 @@ def register_view(request):
     })
 
 
+def register_from_invite_view(request, token):
+    from hr.invites import get_valid_invite
+
+    if request.user.is_authenticated:
+        if request.user.can_access_panel:
+            return redirect('panel:hr_onboarding')
+        return redirect('accounts:dashboard')
+
+    invite = get_valid_invite(token)
+    if not invite:
+        messages.error(
+            request,
+            'This invitation link is invalid or has expired. Ask your manager to send a new one.',
+        )
+        return redirect('accounts:login')
+
+    if User.objects.filter(email__iexact=invite.email).exists():
+        messages.info(
+            request,
+            'An account already exists for this email. Log in to continue your onboarding.',
+        )
+        return redirect(f'{reverse("accounts:login")}?next={reverse("panel:hr_onboarding")}')
+
+    if request.method == 'POST':
+        form = EmployeeInviteRegistrationForm(request.POST, invite=invite)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            log_action(
+                AUTH_REGISTER,
+                f'Registered via employee invite ({user.email}).',
+                request=request,
+                user=user,
+                target_type='user',
+                target_id=user.pk,
+                target_label=user.email,
+                metadata={'invite_id': invite.pk},
+            )
+            messages.success(
+                request,
+                'Welcome aboard! Please complete your onboarding checklist below.',
+            )
+            return redirect('panel:hr_onboarding')
+    else:
+        form = EmployeeInviteRegistrationForm(invite=invite)
+
+    return render(request, 'accounts/register_invite.html', {
+        'form': form,
+        'invite': invite,
+    })
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('accounts:dashboard')
@@ -121,6 +174,11 @@ def login_view(request):
                 request.session.set_expiry(0)
             messages.success(request, f'Welcome back, {user.first_name}!')
             next_url = request.GET.get('next') or request.POST.get('next')
+            if not next_url and user.can_access_panel and not user.can_manage_site:
+                from hr.services import onboarding_incomplete
+                if onboarding_incomplete(user):
+                    return redirect('panel:hr_onboarding')
+                return redirect('panel:dashboard')
             return redirect(next_url or 'accounts:dashboard')
     else:
         form = LoginForm()

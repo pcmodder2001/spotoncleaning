@@ -1,0 +1,30 @@
+{% extends 'hr/documents/base_document.html' %}
+
+{% block document_body %}
+<h1>Right to Work in the UK — Employee Declaration</h1>
+<p class="doc-meta">{{ site_name }} · {{ today_formatted }}</p>
+
+<p>Under the Immigration, Asylum and Nationality Act 2006, {{ employer_name }} is required to check that all employees have the right to work in the United Kingdom before employment starts and, where applicable, before employment ends.</p>
+
+<h2>Employee details</h2>
+<ul>
+    <li><strong>Name:</strong> {{ employee_name }}</li>
+    <li><strong>Email:</strong> {{ employee_email }}</li>
+    <li><strong>Job title:</strong> {{ job_title }}</li>
+    <li><strong>Start date:</strong> {{ start_date|date:"d F Y" }}</li>
+</ul>
+
+<h2>Declaration</h2>
+<p>I confirm that:</p>
+<ol>
+    <li>I am legally entitled to work in the United Kingdom in the role offered.</li>
+    <li>I will provide original documents (or a valid Home Office share code where applicable) for inspection before or on my start date.</li>
+    <li>I will notify {{ employer_name }} immediately if my right to work changes, expires or is withdrawn.</li>
+    <li>The information I provide is true and complete. I understand that providing false information may result in disciplinary action, including dismissal, and possible referral to the authorities.</li>
+</ol>
+
+<h2>Documents to be checked by the employer</h2>
+<p>Your manager will record which documents were checked (e.g. passport, biometric residence permit, share code result) and the date of check. Copies may be retained in line with Home Office guidance.</p>
+
+<p><em>Note: This form is an employee declaration only. The employer must complete a separate document check and retain evidence in accordance with current Home Office guidance.</em></p>
+{% endblock %}

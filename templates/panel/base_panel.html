@@ -23,6 +23,11 @@
             <a href="{% url 'panel:schedule' %}" class="{% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
                 <i class="bi bi-calendar3 me-2"></i>Schedule
             </a>
+            {% if user.role == 'engineer' or user.role == 'admin' or user.is_sysadmin %}
+            <a href="{% url 'panel:hr_dashboard' %}" class="{% if 'hr_' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-person-badge me-2"></i>{% if user.can_manage_site %}HR{% else %}My HR{% endif %}
+            </a>
+            {% endif %}
             {% if user.can_manage_site %}
             <a href="{% url 'panel:user_list' %}" class="{% if 'user' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-people me-2"></i>Users

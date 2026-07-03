@@ -1,0 +1,35 @@
+{% extends 'emails/base_email.html' %}
+
+{% block email_title %}Join {{ site_name }}{% endblock %}
+
+{% block email_heading %}
+<h1 style="margin: 0 0 16px; font-size: 22px; font-weight: 700; color: #1e2421;">You're invited to join the team</h1>
+{% endblock %}
+
+{% block email_content %}
+<p style="margin: 0 0 16px;">Hello{% if invite.first_name %} {{ invite.first_name }}{% endif %},</p>
+
+<p style="margin: 0 0 16px;">
+    You have been invited to join <strong>{{ site_name }}</strong> as <strong>{{ invite.job_title }}</strong>.
+    Use the button below to create your staff account and complete your onboarding documents.
+</p>
+
+{% if personal_message %}
+<p style="margin: 0 0 16px; padding: 16px; background: #f5f1e8; border-radius: 8px; font-style: italic;">{{ personal_message|linebreaksbr }}</p>
+{% endif %}
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
+    <tr>
+        <td style="border-radius: 8px; background-color: #354f3f;">
+            <a href="{{ invite_url }}" style="display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">Create your account</a>
+        </td>
+    </tr>
+</table>
+
+<p style="margin: 0 0 8px; font-size: 14px; color: #5c6560;">
+    This link expires on <strong>{{ invite_expires|date:"d F Y" }}</strong>.
+</p>
+<p style="margin: 0; font-size: 13px; color: #8a928c; word-break: break-all;">
+    If the button does not work, copy and paste this URL into your browser:<br>{{ invite_url }}
+</p>
+{% endblock %}

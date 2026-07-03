@@ -58,6 +58,12 @@ User = get_user_model()
 
 @panel_required
 def dashboard_view(request):
+    from hr.services import redirect_if_onboarding_required
+
+    onboarding_redirect = redirect_if_onboarding_required(request)
+    if onboarding_redirect:
+        return onboarding_redirect
+
     today = timezone.localdate()
     stats = {
         'total_users': User.objects.count(),

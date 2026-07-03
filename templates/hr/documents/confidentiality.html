@@ -1,0 +1,38 @@
+{% extends 'hr/documents/base_document.html' %}
+
+{% block document_body %}
+<h1>Confidentiality &amp; Non-Disclosure Agreement</h1>
+<p class="doc-meta">{{ site_name }} · {{ today_formatted }}</p>
+
+<p>This agreement is between <strong>{{ employer_name }}</strong> and <strong>{{ employee_name }}</strong> (“you”).</p>
+
+<h2>1. Confidential information</h2>
+<p>“Confidential information” means any non-public information relating to the company, its customers, suppliers or staff, including but not limited to:</p>
+<ul>
+    <li>Customer names, addresses, contact details and access codes/keys.</li>
+    <li>Pricing, commercial terms and business plans.</li>
+    <li>Staff personal data, payroll and HR records.</li>
+    <li>Internal systems, passwords, processes and marketing data.</li>
+    <li>Photos or information obtained inside customer properties.</li>
+</ul>
+
+<h2>2. Your obligations</h2>
+<p>During and after employment you must:</p>
+<ol>
+    <li>Keep confidential information secure and use it only for authorised work purposes.</li>
+    <li>Not disclose confidential information to any third party without written approval.</li>
+    <li>Not copy, photograph or remove company or customer information except as required for your role.</li>
+    <li>Return or delete all confidential information on termination of employment.</li>
+</ol>
+
+<h2>3. Exceptions</h2>
+<p>This obligation does not apply to information that is public through no fault of yours, or which you must disclose by law or court order (you should notify the company first where permitted).</p>
+
+<h2>4. Duration</h2>
+<p>Your confidentiality obligations continue after employment ends for as long as the information remains confidential.</p>
+
+<h2>5. Consequences</h2>
+<p>Breach of this agreement may result in disciplinary action, dismissal and/or legal proceedings.</p>
+
+<p>By signing below you agree to comply with this Confidentiality Agreement.</p>
+{% endblock %}

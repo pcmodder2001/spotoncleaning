@@ -1,0 +1,69 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}HR{% endblock %}
+
+{% block panel_content %}
+{% include 'panel/hr/includes/hr_nav.html' %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat"><h3>{{ staff_count }}</h3><p>Staff accounts</p></div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat"><h3>{{ profile_count }}</h3><p>HR profiles</p></div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat"><h3>{{ vehicle_count }}</h3><p>Vehicles</p></div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat"><h3>{{ incomplete_onboarding }}</h3><p>Onboarding in progress</p></div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat"><h3>{{ mot_due }}</h3><p>MOT due (30d)</p></div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat"><h3>{{ insurance_due }}</h3><p>Insurance due (30d)</p></div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="panel-card card border-0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Quick links</span>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'panel:hr_employee_list' %}" class="btn btn-outline-primary btn-sm">Manage employees</a>
+                    <a href="{% url 'panel:hr_rota' %}" class="btn btn-outline-primary btn-sm">Edit rota</a>
+                    <a href="{% url 'panel:hr_vehicle_list' %}" class="btn btn-outline-primary btn-sm">Fleet</a>
+                    <a href="{% url 'panel:hr_payslip_create' %}" class="btn btn-outline-primary btn-sm">Upload payslip</a>
+                    <a href="{% url 'panel:hr_onboarding' %}" class="btn btn-outline-primary btn-sm">Onboarding</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel-card card border-0">
+            <div class="card-header">Recent payslips</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Employee</th><th>Period</th><th>Net</th><th></th></tr></thead>
+                    <tbody>
+                        {% for slip in recent_payslips %}
+                        <tr>
+                            <td>{{ slip.employee.full_name }}</td>
+                            <td>{{ slip.period_start|date:"M Y" }}</td>
+                            <td>£{{ slip.net_pay }}</td>
+                            <td>{% if slip.is_published %}<span class="badge bg-success">Published</span>{% else %}<span class="badge bg-secondary">Draft</span>{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-muted text-center py-3">No payslips yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

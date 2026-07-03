@@ -1,0 +1,110 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}My HR{% endblock %}
+
+{% block panel_content %}
+{% include 'panel/hr/includes/hr_nav.html' %}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="panel-card card border-0 h-100">
+            <div class="card-header">My details</div>
+            <div class="card-body">
+                {% if profile %}
+                <p class="mb-1"><strong>{{ profile.job_title }}</strong></p>
+                <p class="text-muted small mb-2">{{ user.email }}</p>
+                {% if profile.start_date %}<p class="small mb-1">Started: {{ profile.start_date|date:"d M Y" }}</p>{% endif %}
+                {% if profile.emergency_contact_name %}
+                <p class="small mb-0">Emergency: {{ profile.emergency_contact_name }} · {{ profile.emergency_contact_phone }}</p>
+                {% endif %}
+                {% else %}
+                <p class="text-muted mb-0">Your HR profile is being set up.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="panel-card card border-0 h-100">
+            <div class="card-header">Onboarding</div>
+            <div class="card-body">
+                <p class="mb-2"><strong>{{ onboarding_progress }}%</strong> complete</p>
+                <div class="progress mb-2" style="height:8px;">
+                    <div class="progress-bar bg-success" style="width: {{ onboarding_progress }}%;"></div>
+                </div>
+                <p class="text-muted small mb-3">{{ open_tasks }} task{{ open_tasks|pluralize }} remaining</p>
+                <a href="{% url 'panel:hr_onboarding' %}" class="btn btn-sm btn-outline-primary">View checklist</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="panel-card card border-0 h-100">
+            <div class="card-header">My vehicle</div>
+            <div class="card-body">
+                {% if assigned_vehicle %}
+                <p class="mb-1"><strong>{{ assigned_vehicle.registration }}</strong></p>
+                <p class="text-muted small mb-1">{{ assigned_vehicle.make }} {{ assigned_vehicle.model }}</p>
+                {% if assigned_vehicle.mot_expiry %}<p class="small mb-0">MOT: {{ assigned_vehicle.mot_expiry|date:"d M Y" }}</p>{% endif %}
+                {% else %}
+                <p class="text-muted mb-0">No company vehicle assigned.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-6">
+        <div class="panel-card card border-0">
+            <div class="card-header">This week's rota ({{ week_start|date:"d M" }} – {{ week_end|date:"d M" }})</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Date</th><th>Shift</th><th>Times</th></tr></thead>
+                    <tbody>
+                        {% for shift in my_shifts %}
+                        <tr>
+                            <td>{{ shift.date|date:"D d M" }}</td>
+                            <td><span class="badge hr-shift-{{ shift.shift_type }}">{{ shift.get_shift_type_display }}</span></td>
+                            <td>{% if shift.start_time %}{{ shift.start_time|time:"H:i" }}–{{ shift.end_time|time:"H:i" }}{% else %}—{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted text-center py-3">No shifts scheduled this week</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <a href="{% url 'panel:hr_rota' %}" class="btn btn-sm btn-link">Full rota</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel-card card border-0">
+            <div class="card-header">My payslips</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Period</th><th>Pay date</th><th>Net</th><th></th></tr></thead>
+                    <tbody>
+                        {% for slip in my_payslips %}
+                        <tr>
+                            <td>{{ slip.period_start|date:"d M" }} – {{ slip.period_end|date:"d M Y" }}</td>
+                            <td>{{ slip.pay_date|date:"d M Y" }}</td>
+                            <td>£{{ slip.net_pay }}</td>
+                            <td>
+                                {% if slip.document %}
+                                <a href="{% url 'panel:hr_payslip_download' slip.pk %}" class="btn btn-sm btn-outline-secondary">PDF</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-muted text-center py-3">No payslips published yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <a href="{% url 'panel:hr_payslip_list' %}" class="btn btn-sm btn-link">All payslips</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

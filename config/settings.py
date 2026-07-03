@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'website',
     'panel',
     'audit',
+    'hr',
 ]
 
 MIDDLEWARE = [
@@ -187,6 +188,10 @@ SITE_PHONE = '07884 818633'
 SITE_EMAIL = 'info@spotonappliancecleaning.co.uk'
 SITE_ADDRESS = 'Serving customers across the local area'
 SITE_URL = os.environ.get('SITE_URL', 'https://www.spotonappliancecleaning.co.uk').rstrip('/')
+EMPLOYER_LEGAL_NAME = os.environ.get('EMPLOYER_LEGAL_NAME', SITE_NAME)
+EMPLOYER_ADDRESS = os.environ.get('EMPLOYER_ADDRESS', 'West Yorkshire, United Kingdom')
+EMPLOYER_REP_NAME = os.environ.get('EMPLOYER_REP_NAME', 'Director')
+HR_INVITE_VALID_DAYS = int(os.environ.get('HR_INVITE_VALID_DAYS', '14'))
 # Bare domain (spotonappliancecleaning.co.uk) may not reach the app via Cloudflare — use www in SITE_URL.
 CANONICAL_HOST = os.environ.get('CANONICAL_HOST', 'www.spotonappliancecleaning.co.uk').strip()
 

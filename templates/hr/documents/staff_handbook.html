@@ -1,0 +1,44 @@
+{% extends 'hr/documents/base_document.html' %}
+
+{% block document_body %}
+<h1>Employee Handbook — Acknowledgment</h1>
+<p class="doc-meta">{{ site_name }} · {{ today_formatted }}</p>
+
+<p>This handbook summarises key policies and expectations for staff at {{ site_name }}. It should be read alongside your contract of employment and any role-specific instructions from your manager.</p>
+
+<h2>1. Standards of conduct</h2>
+<ul>
+    <li>Be polite, punctual and professional with customers and colleagues.</li>
+    <li>Wear company uniform and ID where provided.</li>
+    <li>Do not use mobile phones inappropriately while working in customer homes.</li>
+    <li>Never attend work under the influence of alcohol or drugs.</li>
+</ul>
+
+<h2>2. Customer properties</h2>
+<ul>
+    <li>Follow access instructions and leave properties secure when leaving.</li>
+    <li>Report damage, defects or safety concerns immediately.</li>
+    <li>Do not move, borrow or remove customer belongings without permission.</li>
+    <li>Take before/after photos where required by job procedures.</li>
+</ul>
+
+<h2>3. Absence and lateness</h2>
+<p>Contact your manager as early as possible if you cannot attend work or will be late. Persistent lateness or unauthorised absence may result in disciplinary action.</p>
+
+<h2>4. Uniform and equipment</h2>
+<p>Uniform and company equipment must be kept clean and in good condition. Loss or damage through negligence may result in recovery of costs.</p>
+
+<h2>5. Driving and vehicles</h2>
+<p>If you drive for work you must hold a valid licence, appropriate insurance where using your own vehicle, and comply with road traffic laws. Company vehicles must be used only for authorised business purposes.</p>
+
+<h2>6. Social media</h2>
+<p>Do not post customer addresses, photos, keys or confidential business information on social media. Negative comments about customers or the company may be treated as misconduct.</p>
+
+<h2>7. Equal opportunities</h2>
+<p>{{ site_name }} is committed to equal opportunities and expects all staff to treat others with dignity and respect. Harassment, bullying or discrimination will not be tolerated.</p>
+
+<h2>8. Whistleblowing</h2>
+<p>If you have concerns about wrongdoing, health &amp; safety or legal compliance, raise them with your manager or {{ employer_email }} without fear of retaliation where reports are made in good faith.</p>
+
+<p>By signing below you confirm you have received, read and understood this handbook and agree to comply with its contents.</p>
+{% endblock %}

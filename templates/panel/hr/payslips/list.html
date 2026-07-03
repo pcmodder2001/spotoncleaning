@@ -1,0 +1,60 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Payslips{% endblock %}
+
+{% block panel_content %}
+{% include 'panel/hr/includes/hr_nav.html' %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    {% if can_manage %}
+    <form method="get" class="d-flex gap-2">
+        <select name="employee" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">All employees</option>
+            {% for member in staff %}
+            <option value="{{ member.pk }}" {% if employee_filter == member.pk|stringformat:'s' %}selected{% endif %}>{{ member.full_name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    <a href="{% url 'panel:hr_payslip_create' %}" class="btn btn-primary btn-sm">Add payslip</a>
+    {% endif %}
+</div>
+
+<div class="panel-card card border-0">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    {% if can_manage %}<th>Employee</th>{% endif %}
+                    <th>Period</th>
+                    <th>Pay date</th>
+                    <th>Gross</th>
+                    <th>Net</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slip in payslips %}
+                <tr>
+                    {% if can_manage %}<td>{{ slip.employee.full_name }}</td>{% endif %}
+                    <td>{{ slip.period_start|date:"d M" }} – {{ slip.period_end|date:"d M Y" }}</td>
+                    <td>{{ slip.pay_date|date:"d M Y" }}</td>
+                    <td>£{{ slip.gross_pay }}</td>
+                    <td class="fw-semibold">£{{ slip.net_pay }}</td>
+                    <td>{% if slip.is_published %}<span class="badge bg-success">Published</span>{% else %}<span class="badge bg-secondary">Draft</span>{% endif %}</td>
+                    <td>
+                        {% if slip.document %}
+                        <a href="{% url 'panel:hr_payslip_download' slip.pk %}" class="btn btn-sm btn-outline-primary">Download</a>
+                        {% else %}
+                        <span class="text-muted small">No PDF</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="{% if can_manage %}7{% else %}6{% endif %}" class="text-center text-muted py-4">No payslips yet</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}HR — Employees{% endblock %}
+
+{% block panel_content %}
+{% include 'panel/hr/includes/hr_nav.html' %}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-5">
+        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search name, email or employee #">
+    </div>
+    <div class="col-auto"><button type="submit" class="btn btn-primary">Search</button></div>
+</form>
+
+<div class="panel-card card border-0">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Job title</th>
+                    <th>Onboarding</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in staff %}
+                <tr>
+                    <td>{{ member.full_name }}</td>
+                    <td>{{ member.email }}</td>
+                    <td><span class="badge role-badge role-{{ member.role }}">{{ member.get_role_display }}</span></td>
+                    <td>{% if member.employee_profile %}{{ member.employee_profile.job_title }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td>
+                        {% if member.employee_profile %}
+                        {{ member.employee_profile.onboarding_progress }}%
+                        {% else %}
+                        <span class="text-muted">Not set up</span>
+                        {% endif %}
+                    </td>
+                    <td><a href="{% url 'panel:hr_employee_edit' member.pk %}" class="btn btn-sm btn-outline-primary">HR profile</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">No engineer or admin accounts found. Set a user's role to Engineer in Users.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

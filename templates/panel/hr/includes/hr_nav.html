@@ -1,0 +1,10 @@
+<nav class="hr-subnav mb-4">
+    <a href="{% url 'panel:hr_dashboard' %}" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_dashboard' %}active{% endif %}">Overview</a>
+    {% if user.can_manage_site %}
+    <a href="{% url 'panel:hr_employee_list' %}" class="hr-subnav-link {% if 'hr_employee' in request.resolver_match.url_name %}active{% endif %}">Employees</a>
+    <a href="{% url 'panel:hr_vehicle_list' %}" class="hr-subnav-link {% if 'hr_vehicle' in request.resolver_match.url_name %}active{% endif %}">Vehicles</a>
+    {% endif %}
+    <a href="{% url 'panel:hr_rota' %}" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_rota' %}active{% endif %}">Rota</a>
+    <a href="{% url 'panel:hr_onboarding' %}" class="hr-subnav-link {% if 'hr_onboarding' in request.resolver_match.url_name %}active{% endif %}">Onboarding</a>
+    <a href="{% url 'panel:hr_payslip_list' %}" class="hr-subnav-link {% if 'hr_payslip' in request.resolver_match.url_name %}active{% endif %}">Payslips</a>
+</nav>

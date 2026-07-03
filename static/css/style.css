@@ -4671,3 +4671,49 @@ body:not(.site-home) .site-navbar {
 .error-page-help a:hover {
     text-decoration: underline;
 }
+
+/* HR module */
+.hr-subnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.hr-subnav-link {
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text-secondary);
+    background: var(--bg);
+    border: 1px solid transparent;
+}
+
+.hr-subnav-link:hover {
+    color: var(--primary);
+    border-color: var(--primary-subtle);
+}
+
+.hr-subnav-link.active {
+    color: #fff;
+    background: var(--primary);
+}
+
+.hr-rota-table th,
+.hr-rota-table td {
+    font-size: 0.8125rem;
+    vertical-align: middle;
+}
+
+.hr-rota-cell {
+    min-width: 6.5rem;
+}
+
+.hr-shift-work { background: #d1fae5; color: #065f46; }
+.hr-shift-holiday { background: #dbeafe; color: #1e40af; }
+.hr-shift-sick { background: #fee2e2; color: #991b1b; }
+.hr-shift-off { background: #f1f5f9; color: #475569; }
+.hr-shift-training { background: #ede9fe; color: #5b21b6; }

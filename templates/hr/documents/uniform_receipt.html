@@ -1,0 +1,36 @@
+{% extends 'hr/documents/base_document.html' %}
+
+{% block document_body %}
+<h1>Uniform &amp; Equipment Receipt</h1>
+<p class="doc-meta">{{ site_name }} · {{ today_formatted }}</p>
+
+<p>I, <strong>{{ employee_name }}</strong>, acknowledge receipt of the following company property from {{ employer_name }}:</p>
+
+<table class="table table-bordered mt-3 mb-3">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Condition</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>Branded polo shirt / work top</td><td>2</td><td>New</td></tr>
+        <tr><td>Branded jacket (if issued)</td><td>1</td><td>New</td></tr>
+        <tr><td>ID badge / lanyard (if applicable)</td><td>1</td><td>New</td></tr>
+        <tr><td>Cleaning kit bag &amp; basic tools</td><td>1</td><td>New</td></tr>
+    </tbody>
+</table>
+
+<p><em>Your manager may amend quantities above. Additional items (keys, devices, vehicle equipment) will be recorded separately.</em></p>
+
+<h2>Terms</h2>
+<ol>
+    <li>All items remain the property of {{ employer_name }} and must be returned on demand or when employment ends.</li>
+    <li>Items must be kept clean and used only for company work.</li>
+    <li>Loss or damage through negligence may require reimbursement of reasonable replacement costs.</li>
+    <li>I will report loss, theft or damage immediately to my manager.</li>
+</ol>
+
+<p>By signing below I confirm receipt of the items listed (as amended by my manager if applicable) and agree to the terms above.</p>
+{% endblock %}

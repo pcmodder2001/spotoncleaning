@@ -1,0 +1,97 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Rota{% endblock %}
+
+{% block panel_content %}
+{% include 'panel/hr/includes/hr_nav.html' %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="btn-group">
+        <a href="?week={{ prev_week.isoformat }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i> Previous</a>
+        <span class="btn btn-outline-secondary btn-sm disabled">{{ week_start|date:"d M" }} – {{ week_end|date:"d M Y" }}</span>
+        <a href="?week={{ next_week.isoformat }}" class="btn btn-outline-secondary btn-sm">Next <i class="bi bi-chevron-right"></i></a>
+    </div>
+    <a href="?week=" class="btn btn-link btn-sm">This week</a>
+</div>
+
+{% if can_manage %}
+<div class="panel-card card border-0 mb-4">
+    <div class="card-header">Add / update shift</div>
+    <div class="card-body">
+        <form method="post" class="row g-3 align-items-end">
+            {% csrf_token %}
+            <div class="col-md-3">
+                <label class="form-label">Employee</label>
+                <select name="employee" class="form-select" required>
+                    {% for member in staff %}
+                    <option value="{{ member.pk }}">{{ member.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date</label>
+                <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Type</label>
+                <select name="shift_type" class="form-select">
+                    {% for value, label in shift_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Start</label>
+                <input type="time" name="start_time" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">End</label>
+                <input type="time" name="end_time" class="form-control">
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100">Save</button>
+            </div>
+            <div class="col-12">
+                <input type="text" name="notes" class="form-control" placeholder="Optional notes">
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="panel-card card border-0">
+    <div class="table-responsive">
+        <table class="table table-bordered hr-rota-table mb-0">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    {% for day in week_days %}
+                    <th class="text-center">{{ day|date:"D" }}<br><span class="fw-normal small">{{ day|date:"d M" }}</span></th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in grid %}
+                <tr>
+                    <th scope="row" class="text-nowrap">{{ row.employee.full_name }}</th>
+                    {% for shift in row.days %}
+                    <td class="hr-rota-cell text-center">
+                        {% if shift %}
+                        <span class="badge hr-shift-{{ shift.shift_type }}">{{ shift.get_shift_type_display }}</span>
+                        {% if shift.start_time %}
+                        <div class="small text-muted">{{ shift.start_time|time:"H:i" }}–{{ shift.end_time|time:"H:i" }}</div>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No staff on rota</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

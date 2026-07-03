@@ -1,0 +1,76 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Edit vehicle — {{ vehicle.registration }}{% endblock %}
+
+{% block panel_content %}
+{% include 'panel/hr/includes/hr_nav.html' %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="panel-card card border-0">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Registration</label>
+                            <input type="text" name="registration" value="{{ vehicle.registration }}" class="form-control text-uppercase" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Make</label>
+                            <input type="text" name="make" value="{{ vehicle.make }}" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Model</label>
+                            <input type="text" name="model" value="{{ vehicle.model }}" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Colour</label>
+                            <input type="text" name="colour" value="{{ vehicle.colour }}" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Assigned to</label>
+                            <select name="assigned_to" class="form-select">
+                                <option value="">Unassigned</option>
+                                {% for member in staff %}
+                                <option value="{{ member.pk }}" {% if vehicle.assigned_to_id == member.pk %}selected{% endif %}>{{ member.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">MOT expiry</label>
+                            <input type="date" name="mot_expiry" value="{{ vehicle.mot_expiry|date:'Y-m-d' }}" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Insurance expiry</label>
+                            <input type="date" name="insurance_expiry" value="{{ vehicle.insurance_expiry|date:'Y-m-d' }}" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tax expiry</label>
+                            <input type="date" name="tax_expiry" value="{{ vehicle.tax_expiry|date:'Y-m-d' }}" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Mileage</label>
+                            <input type="number" name="mileage" value="{{ vehicle.mileage }}" class="form-control" min="0">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notes</label>
+                            <textarea name="notes" rows="3" class="form-control">{{ vehicle.notes }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" {% if vehicle.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">Active in fleet</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="{% url 'panel:hr_vehicle_list' %}" class="btn btn-outline-secondary">Back</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

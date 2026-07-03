@@ -1,0 +1,37 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Emergency contact{% endblock %}
+
+{% block panel_content %}
+<div class="mb-3">
+    <a href="{% url 'panel:hr_onboarding' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to onboarding
+    </a>
+</div>
+
+<div class="panel-card card border-0" style="max-width:560px;">
+    <div class="card-header">{{ task.title }}</div>
+    <div class="card-body">
+        <p class="text-muted small">Provide someone we can contact in an emergency while you are at work.</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="emergency_contact_name">Contact name</label>
+                <input type="text" class="form-control" id="emergency_contact_name" name="emergency_contact_name"
+                       value="{{ profile.emergency_contact_name }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="emergency_contact_relationship">Relationship</label>
+                <input type="text" class="form-control" id="emergency_contact_relationship" name="emergency_contact_relationship"
+                       value="{{ profile.emergency_contact_relationship }}" placeholder="e.g. Partner, Parent">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="emergency_contact_phone">Phone number</label>
+                <input type="tel" class="form-control" id="emergency_contact_phone" name="emergency_contact_phone"
+                       value="{{ profile.emergency_contact_phone }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Save and complete</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

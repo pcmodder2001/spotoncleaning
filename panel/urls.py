@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import audit_views, booking_api, coverage_views, promo_views, schedule_views, views
+from . import audit_views, booking_api, coverage_views, hr_views, promo_views, schedule_views, views
 
 app_name = 'panel'
 
@@ -50,4 +50,18 @@ urlpatterns = [
     path('debug/', views.debug_view, name='debug'),
     path('debug/send-all/', views.debug_send_all_emails_view, name='debug_send_all_emails'),
     path('debug/send/<slug:email_type>/', views.debug_send_email_view, name='debug_send_email'),
+    path('hr/', hr_views.hr_dashboard_view, name='hr_dashboard'),
+    path('hr/employees/', hr_views.hr_employee_list_view, name='hr_employee_list'),
+    path('hr/employees/<int:pk>/', hr_views.hr_employee_edit_view, name='hr_employee_edit'),
+    path('hr/onboarding/', hr_views.hr_onboarding_view, name='hr_onboarding'),
+    path('hr/onboarding/<int:task_pk>/toggle/', hr_views.hr_onboarding_toggle_view, name='hr_onboarding_toggle'),
+    path('hr/onboarding/<int:task_pk>/document/', hr_views.hr_onboarding_document_view, name='hr_onboarding_document'),
+    path('hr/onboarding/<int:task_pk>/acknowledge/', hr_views.hr_onboarding_acknowledge_view, name='hr_onboarding_acknowledge'),
+    path('hr/onboarding/<int:task_pk>/emergency/', hr_views.hr_onboarding_emergency_view, name='hr_onboarding_emergency'),
+    path('hr/vehicles/', hr_views.hr_vehicle_list_view, name='hr_vehicle_list'),
+    path('hr/vehicles/<int:pk>/', hr_views.hr_vehicle_edit_view, name='hr_vehicle_edit'),
+    path('hr/rota/', hr_views.hr_rota_view, name='hr_rota'),
+    path('hr/payslips/', hr_views.hr_payslip_list_view, name='hr_payslip_list'),
+    path('hr/payslips/create/', hr_views.hr_payslip_create_view, name='hr_payslip_create'),
+    path('hr/payslips/<int:pk>/download/', hr_views.hr_payslip_download_view, name='hr_payslip_download'),
 ]

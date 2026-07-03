@@ -1,0 +1,62 @@
+.hr-document {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.hr-document h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.hr-document h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.hr-document .doc-meta {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+}
+
+.hr-document ol,
+.hr-document ul {
+    padding-left: 1.25rem;
+}
+
+.hr-document .signature-block {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+@media print {
+    .no-print,
+    .panel-sidebar,
+    .panel-topbar,
+    .panel-nav {
+        display: none !important;
+    }
+
+    .panel-main {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .hr-document {
+        max-width: none;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .panel-card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}

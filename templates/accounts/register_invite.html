@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Join {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-6">
+                <div class="auth-card card">
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <span class="section-eyebrow">Team onboarding</span>
+                            <h2 class="fw-bold mb-2">Create your staff account</h2>
+                            <p class="text-muted mb-0">You've been invited to join as <strong>{{ invite.job_title }}</strong>.</p>
+                        </div>
+
+                        {% if invite.personal_message %}
+                        <div class="bg-light rounded p-3 mb-4 small">{{ invite.personal_message|linebreaksbr }}</div>
+                        {% endif %}
+
+                        <form method="post">
+                            {% csrf_token %}
+                            {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+                            {% endif %}
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">First name</label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}<div class="text-danger small">{{ form.first_name.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Last name</label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}<div class="text-danger small">{{ form.last_name.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}<div class="text-danger small">{{ form.phone_number.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                {{ form.password1 }}
+                                {% if form.password1.errors %}<div class="text-danger small">{{ form.password1.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Confirm password</label>
+                                {{ form.password2 }}
+                                {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors.0 }}</div>{% endif %}
+                            </div>
+                            {% include 'includes/legal_acceptance.html' with field=form.accept_terms extra_class='mb-4' %}
+                            <button type="submit" class="btn btn-primary w-100">Create account &amp; start onboarding</button>
+                        </form>
+
+                        <p class="text-center text-muted small mt-4 mb-0">
+                            Already have an account? <a href="{% url 'accounts:login' %}">Log in</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

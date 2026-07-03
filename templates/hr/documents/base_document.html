@@ -1,0 +1,49 @@
+{% extends 'panel/base_panel.html' %}
+{% load static %}
+
+{% block panel_title %}{{ document_title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/hr-documents.css' %}">
+{% endblock %}
+
+{% block panel_content %}
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <a href="{% url 'panel:hr_onboarding' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to onboarding
+    </a>
+    <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.print()">
+        <i class="bi bi-printer"></i> Print / save PDF
+    </button>
+</div>
+
+<div class="hr-document panel-card card border-0">
+    <div class="card-body">
+        {% block document_body %}{% endblock %}
+
+        {% if task.is_completed and task.acknowledged_name %}
+        <div class="hr-document-signature mt-4 pt-3 border-top">
+            <p class="mb-0"><strong>Electronically signed:</strong> {{ task.acknowledged_name }}</p>
+            <p class="text-muted small mb-0">{{ task.acknowledged_at|date:"d F Y, H:i" }}</p>
+        </div>
+        {% elif can_acknowledge %}
+        <div class="hr-document-sign no-print mt-4 pt-3 border-top">
+            <h3 class="h6 fw-bold">Sign to confirm</h3>
+            <p class="text-muted small">By signing below you confirm you have read, understood and agree to this document.</p>
+            <form method="post" action="{% url 'panel:hr_onboarding_acknowledge' task.pk %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label" for="signed_name">Your full name</label>
+                    <input type="text" class="form-control" id="signed_name" name="signed_name" value="{{ employee_name }}" required>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="accept" name="accept" required>
+                    <label class="form-check-label" for="accept">I have read and agree to this document</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Sign and complete</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

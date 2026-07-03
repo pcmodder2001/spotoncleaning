@@ -4,64 +4,125 @@
 {% block panel_title %}Bookings{% endblock %}
 
 {% block panel_content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <form method="get" class="row g-2 flex-grow-1">
-        <div class="col-md-3">
-            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search customer, company, or property">
+<div class="panel-bookings-page">
+    <form method="get" class="panel-bookings-toolbar" id="panelBookingsFilterForm">
+        <div class="panel-bookings-toolbar__primary">
+            <div class="panel-bookings-search">
+                <input type="search" name="q" value="{{ query }}" class="form-control"
+                       placeholder="Search customer, company, or property" enterkeyhint="search">
+            </div>
+            <button type="button" class="btn btn-outline-secondary panel-bookings-filter-toggle d-lg-none{% if query or status_filter or date_filter or partner_filter %} has-active-filters{% endif %}"
+                    id="panelBookingsFilterToggle" aria-expanded="false" aria-controls="panelBookingsFilters">
+                <i class="bi bi-funnel" aria-hidden="true"></i>
+                <span class="visually-hidden">Filters</span>
+            </button>
+            <button type="submit" class="btn btn-primary d-none d-lg-inline-flex">Filter</button>
+            {% if can_manage_site %}
+            <a href="{% url 'panel:booking_create' %}" class="btn btn-success panel-bookings-create-btn">
+                <i class="bi bi-plus-lg d-lg-none" aria-hidden="true"></i>
+                <span class="d-none d-lg-inline">Create booking</span>
+                <span class="d-lg-none">New</span>
+            </a>
+            {% endif %}
         </div>
-        <div class="col-md-2">
-            <select name="status" class="form-select">
-                <option value="">All statuses</option>
-                {% for value, label in status_choices %}
-                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <input type="date" name="date" value="{{ date_filter }}" class="form-control">
-        </div>
-        <div class="col-md-2">
-            <select name="partner" class="form-select">
-                <option value="">All accounts</option>
-                <option value="1" {% if partner_filter == '1' %}selected{% endif %}>Business accounts only</option>
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary">Filter</button>
-        </div>
-        <div class="col-auto">
-            <a href="{% url 'panel:schedule' %}{% if date_filter %}?date={{ date_filter }}{% endif %}" class="btn btn-outline-primary">Schedule view</a>
+
+        <div class="panel-bookings-filters" id="panelBookingsFilters" hidden>
+            <div class="panel-bookings-filters__grid">
+                <div>
+                    <label class="form-label small mb-1" for="panelFilterStatus">Status</label>
+                    <select name="status" id="panelFilterStatus" class="form-select">
+                        <option value="">All statuses</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label small mb-1" for="panelFilterDate">Date</label>
+                    <input type="date" name="date" id="panelFilterDate" value="{{ date_filter }}" class="form-control">
+                </div>
+                <div>
+                    <label class="form-label small mb-1" for="panelFilterPartner">Account type</label>
+                    <select name="partner" id="panelFilterPartner" class="form-select">
+                        <option value="">All accounts</option>
+                        <option value="1" {% if partner_filter == '1' %}selected{% endif %}>Business accounts only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="panel-bookings-filters__actions">
+                <button type="submit" class="btn btn-primary d-lg-none">Apply filters</button>
+                <a href="{% url 'panel:schedule' %}{% if date_filter %}?date={{ date_filter }}{% endif %}" class="btn btn-outline-primary">Schedule view</a>
+                {% if query or status_filter or date_filter or partner_filter %}
+                <a href="{% url 'panel:booking_list' %}" class="btn btn-link">Clear</a>
+                {% endif %}
+            </div>
         </div>
     </form>
+
     {% if can_manage_site %}
-    <a href="{% url 'panel:booking_create' %}" class="btn btn-success">Create booking</a>
+    <form method="post" action="{% url 'panel:booking_bulk' %}" id="bookingBulkForm">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+        <div class="panel-bookings-bulk">
+            <div class="panel-bookings-bulk__controls">
+                <input type="checkbox" class="form-check-input select-all-bookings d-lg-none" id="selectAllBookingsMobile" aria-label="Select all on page">
+                <select name="bulk_action" class="form-select form-select-sm" required>
+                    <option value="">Bulk action…</option>
+                    <option value="confirm">Confirm selected</option>
+                    <option value="cancel">Cancel selected</option>
+                    <option value="export">Export CSV</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+            </div>
+            <span class="text-muted small panel-bookings-bulk__hint d-none d-lg-inline">Select bookings below, then choose an action.</span>
+        </div>
+    </form>
     {% endif %}
-</div>
 
-{% if can_manage_site %}
-<form method="post" action="{% url 'panel:booking_bulk' %}" id="bookingBulkForm">
-    {% csrf_token %}
-    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-
-    <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
-        <select name="bulk_action" class="form-select form-select-sm" style="width:auto;" required>
-            <option value="">Bulk action…</option>
-            <option value="confirm">Confirm selected</option>
-            <option value="cancel">Cancel selected</option>
-            <option value="export">Export CSV</option>
-        </select>
-        <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
-        <span class="text-muted small">Select bookings below, then choose an action.</span>
+    <div class="panel-booking-cards d-lg-none">
+        {% for booking in page_obj %}
+        <article class="panel-booking-card" data-booking-view="{{ booking.pk }}" tabindex="0" role="button"
+                 aria-label="View booking #{{ booking.pk }} for {{ booking.contact_full_name }}">
+            <div class="panel-booking-card__header">
+                {% if can_manage_site %}
+                <input type="checkbox" name="booking_ids" value="{{ booking.pk }}" class="form-check-input booking-select panel-booking-card__check"
+                       form="bookingBulkForm" aria-label="Select booking #{{ booking.pk }}"
+                       onclick="event.stopPropagation()">
+                {% endif %}
+                <span class="panel-booking-card__id">#{{ booking.pk }}</span>
+                <span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+            </div>
+            <div class="panel-booking-card__body">
+                <div class="panel-booking-card__customer">{% include 'panel/bookings/includes/booking_list_customer.html' %}</div>
+                <p class="panel-booking-card__service">{{ booking.service_summary }}</p>
+                <p class="panel-booking-card__meta">
+                    <i class="bi bi-calendar3" aria-hidden="true"></i>
+                    {{ booking.date|date:"d M Y" }} · {{ booking.time_slot.time|time:"H:i" }}
+                </p>
+                <p class="panel-booking-card__meta">
+                    <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                    {{ booking.city }}, {{ booking.postcode }}
+                </p>
+                <div class="panel-booking-card__price">{% include 'panel/bookings/includes/booking_list_price.html' %}</div>
+            </div>
+            {% if can_manage_site or is_sysadmin %}
+            <div class="panel-booking-card__actions">
+                {% include 'panel/bookings/includes/booking_list_actions.html' %}
+            </div>
+            {% endif %}
+        </article>
+        {% empty %}
+        <div class="panel-booking-cards-empty text-center text-muted py-4">No bookings found</div>
+        {% endfor %}
     </div>
-</form>
-{% endif %}
 
-    <div class="panel-card card border-0">
+    <div class="panel-card card border-0 d-none d-lg-block">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover mb-0 panel-bookings-table">
                 <thead>
                     <tr>
-                        {% if can_manage_site %}<th style="width:2rem;"><input type="checkbox" id="selectAllBookings" aria-label="Select all"></th>{% endif %}
+                        {% if can_manage_site %}<th style="width:2rem;"><input type="checkbox" class="select-all-bookings" id="selectAllBookings" aria-label="Select all"></th>{% endif %}
                         <th>ID</th>
                         <th>Customer</th>
                         <th>Service</th>
@@ -78,73 +139,14 @@
                     <tr class="booking-list-row">
                         {% if can_manage_site %}<td class="booking-row-actions"><input type="checkbox" name="booking_ids" value="{{ booking.pk }}" class="booking-select" form="bookingBulkForm"></td>{% endif %}
                         <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">#{{ booking.pk }}</td>
-                        <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">
-                            {{ booking.contact_full_name }}
-                            {% if booking.user.is_business_account %}
-                            <br><span class="badge role-badge role-partner">Business</span>
-                            {% if booking.user.business_profile %}
-                            <small class="text-muted d-block">{{ booking.user.business_profile.company_name }}</small>
-                            {% endif %}
-                            {% endif %}
-                            <small class="text-muted d-block">{{ booking.contact_email }}</small>
-                            {% if booking.rental_property %}
-                            <small class="text-muted d-block"><i class="bi bi-building"></i> {{ booking.rental_property.display_label }}</small>
-                            {% endif %}
-                        </td>
+                        <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{% include 'panel/bookings/includes/booking_list_customer.html' %}</td>
                         <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{{ booking.service_summary }}</td>
                         <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{{ booking.date|date:"d M Y" }}</td>
                         <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{{ booking.time_slot.time|time:"H:i" }}</td>
                         <td class="booking-list-cell" data-booking-view="{{ booking.pk }}">{{ booking.city }}, {{ booking.postcode }}</td>
-                        <td class="booking-list-cell booking-price-cell" data-booking-view="{{ booking.pk }}">
-                            {% if booking.discount_amount %}
-                            <div class="booking-price-line text-muted small">Subtotal £{{ booking.total_price }}</div>
-                            <div class="booking-price-line text-success small">−£{{ booking.discount_amount }}{% if booking.promo_code %} ({{ booking.promo_code.code }}){% else %} discount{% endif %}</div>
-                            <div class="booking-price-line fw-semibold">£{{ booking.discounted_total }}</div>
-                            {% else %}
-                            <span class="fw-semibold">£{{ booking.total_price }}</span>
-                            {% endif %}
-                        </td>
+                        <td class="booking-list-cell booking-price-cell" data-booking-view="{{ booking.pk }}">{% include 'panel/bookings/includes/booking_list_price.html' %}</td>
                         <td class="booking-list-cell" data-booking-view="{{ booking.pk }}"><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
-                        <td class="text-nowrap booking-row-actions">
-                            {% if can_manage_site and booking.status != 'cancelled' %}
-                            <form method="post"
-                                  action="{% url 'panel:booking_cancel' booking.pk %}"
-                                  class="d-inline"
-                                  data-confirm="The customer will be notified by email."
-                                  data-confirm-title="Cancel booking #{{ booking.pk }}?"
-                                  data-confirm-yes="Yes, cancel booking"
-                                  data-confirm-danger="true">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
-                            </form>
-                            {% endif %}
-                            {% if can_manage_site and booking.status == 'pending' %}
-                            <form method="post"
-                                  action="{% url 'panel:booking_confirm' booking.pk %}"
-                                  class="d-inline"
-                                  data-confirm="A confirmation email will be sent to {{ booking.contact_email }}."
-                                  data-confirm-title="Confirm booking #{{ booking.pk }}?"
-                                  data-confirm-yes="Yes, confirm">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                <button type="submit" class="btn btn-sm btn-success">Confirm</button>
-                            </form>
-                            {% endif %}
-                            {% if is_sysadmin %}
-                            <form method="post"
-                                  action="{% url 'panel:booking_delete' booking.pk %}"
-                                  class="d-inline"
-                                  data-confirm="Booking #{{ booking.pk }} for {{ booking.contact_full_name }} will be permanently removed."
-                                  data-confirm-title="Delete booking #{{ booking.pk }}?"
-                                  data-confirm-yes="Yes, delete"
-                                  data-confirm-danger="true">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                            </form>
-                            {% endif %}
-                        </td>
+                        <td class="text-nowrap booking-row-actions">{% include 'panel/bookings/includes/booking_list_actions.html' %}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="{% if can_manage_site %}10{% else %}9{% endif %}" class="text-center text-muted py-4">No bookings found</td></tr>
@@ -154,22 +156,24 @@
         </div>
     </div>
 
-{% if page_obj.has_other_pages %}
-<nav class="mt-3">
-    <ul class="pagination pagination-sm justify-content-center">
-        {% if page_obj.has_previous %}
-        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status_filter }}&date={{ date_filter }}&partner={{ partner_filter }}">Previous</a></li>
-        {% endif %}
-        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-        {% if page_obj.has_next %}
-        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status_filter }}&date={{ date_filter }}&partner={{ partner_filter }}">Next</a></li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-3 panel-bookings-pagination">
+        <ul class="pagination pagination-sm justify-content-center mb-0">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status_filter }}&date={{ date_filter }}&partner={{ partner_filter }}">Previous</a></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status_filter }}&date={{ date_filter }}&partner={{ partner_filter }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block extra_js %}
+{{ block.super }}
 <script>
 window.panelBookingConfig = {
     apiBase: '/panel/api/bookings',
@@ -179,11 +183,48 @@ window.panelBookingConfig = {
 <script src="{% static_v 'js/panel-bookings.js' %}"></script>
 <script>
 {% if can_manage_site %}
-document.getElementById('selectAllBookings')?.addEventListener('change', function () {
-    document.querySelectorAll('.booking-select').forEach(function (cb) {
-        cb.checked = document.getElementById('selectAllBookings').checked;
+document.querySelectorAll('.select-all-bookings').forEach(function (master) {
+    master.addEventListener('change', function () {
+        const checked = master.checked;
+        document.querySelectorAll('.booking-select').forEach(function (cb) {
+            cb.checked = checked;
+        });
+        document.querySelectorAll('.select-all-bookings').forEach(function (other) {
+            other.checked = checked;
+        });
     });
 });
 {% endif %}
+
+(function () {
+    var toggle = document.getElementById('panelBookingsFilterToggle');
+    var filters = document.getElementById('panelBookingsFilters');
+    if (!toggle || !filters) return;
+
+    function setOpen(open) {
+        filters.hidden = !open;
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.classList.toggle('is-active', open);
+    }
+
+    toggle.addEventListener('click', function () {
+        setOpen(filters.hidden);
+    });
+
+    var hasActiveFilters = {% if query or status_filter or date_filter or partner_filter %}true{% else %}false{% endif %};
+    if (hasActiveFilters && window.matchMedia('(max-width: 991px)').matches) {
+        setOpen(true);
+    }
+
+    if (window.matchMedia('(min-width: 992px)').matches) {
+        filters.hidden = false;
+    }
+
+    window.matchMedia('(min-width: 992px)').addEventListener('change', function (event) {
+        if (event.matches) {
+            filters.hidden = false;
+        }
+    });
+})();
 </script>
 {% endblock %}

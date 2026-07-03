@@ -1,7 +1,5 @@
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
-import json
-
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db.models import Q
@@ -794,7 +792,6 @@ def hr_vehicle_audit_submit_view(request):
     return render(request, 'panel/hr/vehicles/audit_form.html', {
         'vehicle': vehicle,
         'photo_steps': photo_steps,
-        'photo_steps_json': json.dumps(photo_steps),
         'week_start': week_start,
         'required_count': len(required),
     })

@@ -10,10 +10,10 @@
 {% block body_class %}booking-page{% endblock %}
 
 {% block content %}
-<div class="dashboard-header">
+<div class="dashboard-header booking-page-header">
     <div class="container">
         <h1 class="fw-bold">Book an Appointment</h1>
-        <p class="text-muted mb-0">Enter your location, choose your services, pick a date and time, then confirm</p>
+        <p class="text-muted mb-0 booking-page-desc">Enter your location, choose your services, pick a date and time, then confirm</p>
         {% if is_guest_booking %}
         <p class="mb-0 mt-2 small">
             Already have an account?
@@ -32,7 +32,16 @@
     <div class="row g-4 g-lg-5">
         <div class="col-lg-8">
             <div class="booking-wizard app-card card border-0">
-                <div class="booking-steps" id="bookingSteps">
+                <div class="booking-mobile-progress d-lg-none" aria-hidden="true">
+                    <div class="booking-mobile-progress__meta">
+                        <span class="booking-mobile-progress__label" id="bookingMobileStepLabel">Location</span>
+                        <span class="booking-mobile-progress__count" id="bookingMobileStepCount">1 / 4</span>
+                    </div>
+                    <div class="booking-mobile-progress__track">
+                        <div class="booking-mobile-progress__fill" id="bookingMobileProgressFill" style="width:25%;"></div>
+                    </div>
+                </div>
+                <div class="booking-steps d-none d-lg-flex" id="bookingSteps">
                     <button type="button" class="booking-step active" data-step="1" aria-current="step">
                         <span class="step-num">1</span>
                         <span class="step-label">Location</span>

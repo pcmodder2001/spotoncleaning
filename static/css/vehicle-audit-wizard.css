@@ -2,8 +2,8 @@
     overflow: hidden;
 }
 
-.vehicle-audit-wizard__step {
-    display: none;
+.vehicle-audit-wizard__step[hidden] {
+    display: none !important;
 }
 
 .vehicle-audit-wizard__step.is-active {

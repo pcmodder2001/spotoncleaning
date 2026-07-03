@@ -1,0 +1,11 @@
+{{ booking.contact_full_name }}
+{% if booking.user.is_business_account %}
+<br><span class="badge role-badge role-partner">Business</span>
+{% if booking.user.business_profile %}
+<small class="text-muted d-block">{{ booking.user.business_profile.company_name }}</small>
+{% endif %}
+{% endif %}
+<small class="text-muted d-block">{{ booking.contact_email }}</small>
+{% if booking.rental_property %}
+<small class="text-muted d-block"><i class="bi bi-building"></i> {{ booking.rental_property.display_label }}</small>
+{% endif %}

@@ -880,6 +880,21 @@
   };
 
   document.addEventListener('click', function (event) {
+    if (event.target.closest('a[href^="tel:"]')) {
+      return;
+    }
+
+    if (event.target.closest('.panel-booking-card__actions, .panel-booking-card__check, .booking-row-actions')) {
+      return;
+    }
+
+    const card = event.target.closest('.panel-booking-card[data-booking-view]');
+    if (card) {
+      event.preventDefault();
+      openBookingView(card.dataset.bookingView);
+      return;
+    }
+
     const standalone = event.target.closest('[data-booking-view]:not(td)');
     if (standalone) {
       event.preventDefault();
@@ -890,5 +905,21 @@
     if (!cell) return;
     event.preventDefault();
     openBookingView(cell.dataset.bookingView);
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+
+    const scheduleJob = event.target.closest('.schedule-job[data-booking-view]');
+    if (scheduleJob && !event.target.closest('a[href^="tel:"]')) {
+      event.preventDefault();
+      openBookingView(scheduleJob.dataset.bookingView);
+      return;
+    }
+
+    const card = event.target.closest('.panel-booking-card[data-booking-view]');
+    if (!card || event.target.closest('.panel-booking-card__actions, .panel-booking-card__check')) return;
+    event.preventDefault();
+    openBookingView(card.dataset.bookingView);
   });
 })();

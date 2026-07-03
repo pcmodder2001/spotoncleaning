@@ -41,10 +41,11 @@
                                 <h2 class="h5 fw-bold mb-2">Current mileage</h2>
                                 <p class="text-muted small mb-3">Enter the reading before you start taking photos.</p>
                                 <div class="input-group vehicle-audit-mileage-input">
-                                    <input type="number" class="form-control form-control-lg" id="mileage" name="mileage" min="0" required
+                                    <input type="number" class="form-control form-control-lg" id="mileage" name="mileage" min="0"
                                            value="{{ vehicle.mileage|default:'' }}" placeholder="e.g. 45230" inputmode="numeric">
                                     <span class="input-group-text">miles</span>
                                 </div>
+                                <div class="text-danger small mt-2" id="mileageError" hidden>Enter the current mileage before continuing.</div>
                                 {% if vehicle.mileage %}
                                 <p class="text-muted small mt-2 mb-0">Last recorded: {{ vehicle.mileage }} miles</p>
                                 {% endif %}
@@ -121,9 +122,9 @@
         </p>
     </div>
 </div>
+
+{{ photo_steps|json_script:"vehicle-audit-steps" }}
+<script src="{% static_v 'js/vehicle-audit-wizard.js' %}" defer></script>
 {% endblock %}
 
-{% block extra_js %}
-{{ photo_steps_json|json_script:"vehicle-audit-steps" }}
-<script src="{% static_v 'js/vehicle-audit-wizard.js' %}"></script>
-{% endblock %}
+{% block extra_js %}{% endblock %}

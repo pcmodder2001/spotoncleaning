@@ -1,17 +1,24 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static static_version %}
 
 {% block body_class %}page-panel{% endblock %}
 {% block title %}Admin Panel | {{ SITE_NAME }}{% endblock %}
 {% block meta_robots %}noindex, nofollow{% endblock %}
+{% block extra_css %}{% endblock %}
 
 {% block content %}
-<div class="panel-layout">
-    <aside class="panel-sidebar">
-        <div class="panel-brand">
-            {% url 'panel:dashboard' as panel_dashboard_url %}
-            {% include 'includes/site_brand.html' with brand_url=panel_dashboard_url brand_class='site-brand-panel' %}
-            <span class="site-brand-panel-label">Admin Panel</span>
+<div class="panel-layout" id="panelLayout">
+    <div class="panel-sidebar-backdrop" id="panelSidebarBackdrop" hidden></div>
+    <aside class="panel-sidebar" id="panelSidebar" aria-label="Admin navigation">
+        <div class="panel-sidebar__header">
+            <div class="panel-brand">
+                {% url 'panel:dashboard' as panel_dashboard_url %}
+                {% include 'includes/site_brand.html' with brand_url=panel_dashboard_url brand_class='site-brand-panel' %}
+                <span class="site-brand-panel-label">Admin Panel</span>
+            </div>
+            <button type="button" class="panel-sidebar__close" id="panelSidebarClose" aria-label="Close menu">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
         </div>
         <nav class="panel-nav">
             <a href="{% url 'panel:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
@@ -66,6 +73,10 @@
     </aside>
     <div class="panel-main">
         <div class="panel-topbar">
+            <button type="button" class="panel-menu-toggle" id="panelMenuToggle"
+                    aria-label="Open menu" aria-expanded="false" aria-controls="panelSidebar">
+                <i class="bi bi-list" aria-hidden="true"></i>
+            </button>
             <h1 class="h4 mb-0 fw-bold">{% block panel_title %}Admin{% endblock %}</h1>
         </div>
         <div class="panel-content">
@@ -73,4 +84,7 @@
         </div>
     </div>
 </div>
+<script src="{% static_v 'js/panel-nav.js' %}" defer></script>
 {% endblock %}
+
+{% block extra_js %}{% endblock %}

@@ -50,6 +50,10 @@
         const showScheduleDebug = cfg.showScheduleDebug === true;
         const mobileBarToggle = document.getElementById('mobileBarToggle');
         const mobileBarDetails = document.getElementById('mobileBarDetails');
+        const bookingMobileStepLabel = document.getElementById('bookingMobileStepLabel');
+        const bookingMobileStepCount = document.getElementById('bookingMobileStepCount');
+        const bookingMobileProgressFill = document.getElementById('bookingMobileProgressFill');
+        const STEP_LABELS = ['Location', 'Services', 'Date & Time', 'Confirm'];
         const savedAddressSelect = document.getElementById('savedAddressSelect');
         const savedAddressSection = document.getElementById('savedAddressSection');
         const acceptTermsInput = document.getElementById('id_accept_terms');
@@ -710,6 +714,8 @@
                 if (n === step) s.setAttribute('aria-current', 'step');
                 else s.removeAttribute('aria-current');
             });
+            updateMobileProgress(step);
+            collapseMobileBarDetails();
             if (step === 2) {
                 updateServiceStepUI();
             }
@@ -721,7 +727,44 @@
                 updateReviewBlock();
             }
             updateContinueButtons();
-            window.scrollTo({ top: form.offsetTop - 100, behavior: 'smooth' });
+            scrollToWizardTop();
+        }
+
+        function updateMobileProgress(step) {
+            if (bookingMobileStepLabel) {
+                bookingMobileStepLabel.textContent = STEP_LABELS[step - 1] || '';
+            }
+            if (bookingMobileStepCount) {
+                bookingMobileStepCount.textContent = step + ' / 4';
+            }
+            if (bookingMobileProgressFill) {
+                bookingMobileProgressFill.style.width = ((step / 4) * 100) + '%';
+            }
+        }
+
+        function collapseMobileBarDetails() {
+            if (!mobileBarDetails || !mobileBarToggle) return;
+            mobileBarDetails.hidden = true;
+            mobileBarToggle.setAttribute('aria-expanded', 'false');
+        }
+
+        function getBookingScrollOffset() {
+            if (window.innerWidth >= 992) return 80;
+            const mobileBar = document.getElementById('bookingMobileBar');
+            const footer = document.querySelector('.booking-panel.active .booking-panel-footer');
+            let offset = 72;
+            if (mobileBar) offset += mobileBar.offsetHeight;
+            if (footer && window.getComputedStyle(footer).position === 'fixed') {
+                offset += footer.offsetHeight;
+            }
+            return offset;
+        }
+
+        function scrollToWizardTop() {
+            const wizard = document.querySelector('.booking-wizard');
+            const target = wizard || form;
+            const top = target.getBoundingClientRect().top + window.pageYOffset - (window.innerWidth < 992 ? 12 : 100);
+            window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
         }
 
         function updateContinueButtons() {
@@ -875,9 +918,8 @@
 
         function scrollToElement(el) {
             if (!el) return;
-            const offset = window.innerWidth < 992 ? 120 : 80;
-            const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
-            window.scrollTo({ top: top, behavior: 'smooth' });
+            const top = el.getBoundingClientRect().top + window.pageYOffset - getBookingScrollOffset();
+            window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
         }
 
         async function loadTimeSlots(iso) {

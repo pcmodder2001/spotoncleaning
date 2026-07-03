@@ -4411,3 +4411,190 @@ body:not(.site-home) .site-navbar {
         flex: 1 1 auto;
     }
 }
+
+/* How we clean, FAQ, areas, Google reviews */
+.how-we-clean-steps {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.how-we-clean-step {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1.125rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+}
+
+.how-we-clean-step-icon {
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+.how-we-clean-step-title {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.how-we-clean-step-text {
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+}
+
+.faq-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.faq-item {
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    background: var(--bg);
+    overflow: hidden;
+}
+
+.faq-question {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 1rem 1.125rem;
+    list-style: none;
+    color: var(--text);
+}
+
+.faq-question::-webkit-details-marker {
+    display: none;
+}
+
+.faq-question::after {
+    content: '+';
+    float: right;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.faq-item[open] .faq-question::after {
+    content: '−';
+}
+
+.faq-answer {
+    padding: 0 1.125rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+}
+
+.area-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    height: 100%;
+    padding: 1.125rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.area-card:hover {
+    border-color: var(--primary-subtle);
+    box-shadow: var(--shadow-sm);
+    color: inherit;
+}
+
+.area-card-name {
+    font-weight: 700;
+    font-size: 1.0625rem;
+}
+
+.area-card-link {
+    font-size: 0.875rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.area-breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.partner-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.partner-checklist li {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    margin-bottom: 0.625rem;
+    color: var(--text-secondary);
+}
+
+.partner-checklist li i {
+    color: var(--primary);
+    margin-top: 0.15rem;
+}
+
+.partner-steps-list {
+    padding-left: 1.125rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.partner-steps-list li + li {
+    margin-top: 0.75rem;
+}
+
+.google-review-cta {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.google-review-cta-inner {
+    text-align: center;
+    padding: 1.5rem 1.25rem;
+    background: linear-gradient(160deg, var(--primary-light) 0%, var(--surface) 100%);
+    border: 1px solid var(--primary-subtle);
+    border-radius: var(--radius-lg);
+}
+
+.google-review-cta-stars {
+    color: #eab308;
+    font-size: 1.125rem;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.35rem;
+}
+
+.google-review-cta-rating {
+    font-size: 0.9375rem;
+    color: var(--text);
+}
+
+.google-review-cta-text {
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+}
+
+.page-hero.section-padding-sm {
+    padding: calc(var(--nav-offset) + 2rem) 0 3rem;
+}
+
+.page-hero .section-title {
+    margin-bottom: 0.75rem;
+}

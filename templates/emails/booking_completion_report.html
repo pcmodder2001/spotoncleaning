@@ -58,4 +58,12 @@
 
 {% include 'emails/includes/email_button.html' with url=report_url label='View full report online' margin='0 0 8px' %}
 <p style="margin: 0; font-size: 13px; color: #6b7368;">You can print or save the online report as a PDF from your browser.</p>
+
+{% if google_reviews_url %}
+<div style="margin: 28px 0 0; padding: 20px; background: #e8efe9; border-radius: 8px; border: 1px solid #d4e0d6; text-align: center;">
+    <p style="margin: 0 0 8px; font-size: 15px; font-weight: 700; color: #243528;">Happy with your clean?</p>
+    <p style="margin: 0 0 16px; font-size: 14px; color: #4a5249;">A quick Google review helps other customers in {{ site_local_area|default:"West Yorkshire" }} find us — it only takes a minute.</p>
+    <a href="{{ google_reviews_url }}" style="display: inline-block; padding: 12px 24px; background: #354f3f; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">Leave a Google review</a>
+</div>
+{% endif %}
 {% endblock %}

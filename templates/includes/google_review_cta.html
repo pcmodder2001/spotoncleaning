@@ -1,0 +1,27 @@
+{% if GOOGLE_REVIEWS_URL %}
+<div class="google-review-cta">
+    <div class="google-review-cta-inner">
+        <div class="google-review-cta-stars" aria-hidden="true">
+            {% for i in "12345" %}
+            <i class="bi bi-star-fill"></i>
+            {% endfor %}
+        </div>
+        {% if GOOGLE_REVIEW_RATING or GOOGLE_REVIEW_COUNT %}
+        <p class="google-review-cta-rating mb-1">
+            {% if GOOGLE_REVIEW_RATING %}<strong>{{ GOOGLE_REVIEW_RATING }}</strong> on Google{% endif %}
+            {% if GOOGLE_REVIEW_COUNT %}<span class="text-muted"> · {{ GOOGLE_REVIEW_COUNT }} reviews</span>{% endif %}
+        </p>
+        {% endif %}
+        <p class="google-review-cta-text mb-3">
+            {% if compact %}
+            Happy with your clean? A quick Google review helps other customers find us.
+            {% else %}
+            We are proud of our work across {{ SITE_LOCAL_AREA }}. See what customers say on Google — or leave your own review after a visit.
+            {% endif %}
+        </p>
+        <a href="{{ GOOGLE_REVIEWS_URL }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-google me-1"></i> {% if compact %}Leave a Google review{% else %}View &amp; leave a review{% endif %}
+        </a>
+    </div>
+</div>
+{% endif %}

@@ -7,8 +7,16 @@ from django.urls import reverse
 
 from services.catalog import split_addon_services
 from services.models import Service, ServiceType
+from website.content import FAQ_ITEMS, HOW_WE_CLEAN_STEPS, PARTNER_BENEFITS
 from website.forms import ContactForm
 from website.models import Testimonial
+from website.areas import (
+    area_meta_description,
+    area_page_title,
+    get_public_coverage_area,
+    get_public_coverage_areas,
+    group_areas_by_region,
+)
 from website.tracking import apply_marketing_attribution, queue_meta_pixel_event
 from bookings.notifications import send_enquiry_received_email
 from audit.actions import ENQUIRY_CREATED
@@ -28,6 +36,38 @@ def home_view(request):
         'additional_addon_services': additional_addon_services,
         'testimonials': testimonials,
         'contact_form': contact_form,
+        'how_we_clean_steps': HOW_WE_CLEAN_STEPS,
+    })
+
+
+def faq_view(request):
+    return render(request, 'website/faq.html', {
+        'faq_items': FAQ_ITEMS,
+    })
+
+
+def property_partners_view(request):
+    return render(request, 'website/property_partners.html', {
+        'partner_benefits': PARTNER_BENEFITS,
+        'how_we_clean_steps': HOW_WE_CLEAN_STEPS[:3],
+    })
+
+
+def areas_view(request):
+    areas = get_public_coverage_areas()
+    return render(request, 'website/areas.html', {
+        'area_groups': sorted(group_areas_by_region(areas).items(), key=lambda item: item[0]),
+        'area_count': len(areas),
+    })
+
+
+def area_detail_view(request, slug):
+    area = get_public_coverage_area(slug)
+    return render(request, 'website/area_detail.html', {
+        'area': area,
+        'page_title': area_page_title(area),
+        'meta_description': area_meta_description(area, settings.SITE_NAME, settings.SITE_LOCAL_AREA),
+        'other_areas': [a for a in get_public_coverage_areas() if a.pk != area.pk][:8],
     })
 
 
@@ -80,5 +120,9 @@ def robots_txt_view(request):
 
 
 def sitemap_xml_view(request):
-    content = render_to_string('website/sitemap.xml', {'SITE_URL': settings.SITE_URL}, request=request)
+    areas = get_public_coverage_areas()
+    content = render_to_string('website/sitemap.xml', {
+        'SITE_URL': settings.SITE_URL,
+        'coverage_areas': areas,
+    }, request=request)
     return HttpResponse(content, content_type='application/xml')

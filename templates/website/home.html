@@ -210,7 +210,20 @@
     </div>
 </section>
 
-
+<section id="how-we-clean" class="section-padding bg-soft">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-eyebrow">Our process</span>
+            <h2 class="section-title">How we clean</h2>
+            <p class="section-subtitle">The Spot On clean — thorough, tidy, and done properly every time.</p>
+        </div>
+        {% include 'includes/how_we_clean_steps.html' with how_we_clean_steps=how_we_clean_steps %}
+        <div class="text-center mt-5">
+            <a href="{% url 'bookings:create' %}" class="btn btn-primary btn-lg">Book your clean</a>
+            <a href="{% url 'website:faq' %}" class="btn btn-link">Read our FAQ</a>
+        </div>
+    </div>
+</section>
 
 <section id="services" class="section-padding">
     <div class="container">
@@ -328,6 +341,9 @@
                 <button class="btn btn-outline-primary btn-sm" id="nextTestimonial" aria-label="Next review"><i class="bi bi-chevron-right"></i></button>
             </div>
             {% endif %}
+        </div>
+        <div class="mt-5">
+            {% include 'includes/google_review_cta.html' %}
         </div>
     </div>
 </section>

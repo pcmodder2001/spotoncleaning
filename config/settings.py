@@ -226,6 +226,10 @@ SITE_LOCAL_AREA = os.environ.get('SITE_LOCAL_AREA', 'West Yorkshire')
 LEGAL_LAST_UPDATED = os.environ.get('LEGAL_LAST_UPDATED', '22 June 2025')
 # Meta (Facebook) Pixel — Events Manager → Data sources → your pixel ID (digits only)
 META_PIXEL_ID = os.environ.get('META_PIXEL_ID', '').strip()
+# Google Business Profile — link for reviews (find in Google Maps → Share → Write a review)
+GOOGLE_REVIEWS_URL = os.environ.get('GOOGLE_REVIEWS_URL', '').strip()
+GOOGLE_REVIEW_RATING = os.environ.get('GOOGLE_REVIEW_RATING', '5.0').strip()
+GOOGLE_REVIEW_COUNT = os.environ.get('GOOGLE_REVIEW_COUNT', '').strip()
 SERVICE_AREA_NAME = os.environ.get('SERVICE_AREA_NAME', SITE_LOCAL_AREA)
 SERVICE_AREA_ENFORCED = os.environ.get('SERVICE_AREA_ENFORCED', 'True').lower() in (
     'true', '1', 'yes',

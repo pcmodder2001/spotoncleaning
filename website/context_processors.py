@@ -31,4 +31,7 @@ def site_settings(request):
         'cookie_consent_value': get_cookie_consent(request),
         'cookie_consent_marketing': has_marketing_consent(request),
         'public_site': is_public_site_path(request),
+        'GOOGLE_REVIEWS_URL': getattr(settings, 'GOOGLE_REVIEWS_URL', ''),
+        'GOOGLE_REVIEW_RATING': getattr(settings, 'GOOGLE_REVIEW_RATING', ''),
+        'GOOGLE_REVIEW_COUNT': getattr(settings, 'GOOGLE_REVIEW_COUNT', ''),
     }

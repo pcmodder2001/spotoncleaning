@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Areas We Cover — Oven Cleaning {{ SITE_LOCAL_AREA }} | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}See where {{ SITE_NAME }} offers professional oven and appliance cleaning across {{ SITE_LOCAL_AREA }}. Book online if we cover your postcode.{% endblock %}
+
+{% block content %}
+<section class="page-hero section-padding-sm bg-soft">
+    <div class="container text-center">
+        <span class="section-eyebrow">Coverage</span>
+        <h1 class="section-title">Areas we cover</h1>
+        <p class="section-subtitle mx-auto">
+            Professional oven, hob and extractor cleaning across {{ area_count }} towns and districts in {{ SITE_LOCAL_AREA }} and nearby.
+            Enter your postcode when booking to confirm we serve your address.
+        </p>
+        <form class="hero-coverage-check mx-auto mt-4" style="max-width: 28rem;" action="{% url 'bookings:create' %}" method="get">
+            <label class="hero-coverage-label" for="areasPostcode">Check your postcode</label>
+            <div class="hero-coverage-row">
+                <input type="text" name="postcode" id="areasPostcode" class="form-control" placeholder="e.g. WF6 1TN" required autocomplete="postal-code">
+                <button type="submit" class="btn btn-primary">Check &amp; book</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="section-padding">
+    <div class="container">
+        {% for region, areas in area_groups.items %}
+        <div class="area-region-group mb-5">
+            <h2 class="services-group-title">{{ region }}</h2>
+            <div class="row g-3">
+                {% for area in areas %}
+                <div class="col-md-6 col-lg-4">
+                    <a href="{% url 'website:area_detail' area.slug %}" class="area-card">
+                        <span class="area-card-name">{{ area.name }}</span>
+                        <span class="area-card-link">Oven cleaning <i class="bi bi-arrow-right"></i></span>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center text-muted">Coverage areas are being updated. Please contact us to check your postcode.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section-padding bg-soft">
+    <div class="container text-center">
+        <h2 class="h4 fw-bold">Not sure if we cover you?</h2>
+        <p class="text-muted mb-3">Try booking online — we validate your postcode before you confirm.</p>
+        <a href="{% url 'bookings:create' %}" class="btn btn-primary">Book a clean</a>
+    </div>
+</section>
+{% endblock %}

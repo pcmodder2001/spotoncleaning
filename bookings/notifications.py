@@ -38,6 +38,10 @@ def get_email_context(*, embed_logo=False, **extra):
         'site_email': settings.SITE_EMAIL,
         'site_phone': settings.SITE_PHONE,
         'logo_url': logo_url,
+        'google_reviews_url': getattr(settings, 'GOOGLE_REVIEWS_URL', ''),
+        'google_review_rating': getattr(settings, 'GOOGLE_REVIEW_RATING', ''),
+        'google_review_count': getattr(settings, 'GOOGLE_REVIEW_COUNT', ''),
+        'site_local_area': settings.SITE_LOCAL_AREA,
     }
 
 

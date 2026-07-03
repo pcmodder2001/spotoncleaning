@@ -1,0 +1,13 @@
+<div class="how-we-clean-steps">
+    {% for step in how_we_clean_steps %}
+    <div class="how-we-clean-step">
+        <div class="how-we-clean-step-icon" aria-hidden="true">
+            <i class="bi {{ step.icon }}"></i>
+        </div>
+        <div>
+            <h3 class="how-we-clean-step-title">{{ step.title }}</h3>
+            <p class="how-we-clean-step-text mb-0">{{ step.text }}</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>

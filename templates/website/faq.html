@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}FAQ — Oven Cleaning {{ SITE_LOCAL_AREA }} | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}Frequently asked questions about oven and appliance cleaning with {{ SITE_NAME }} — booking, coverage, products, landlords and payment.{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for item in faq_items %}
+    {
+      "@type": "Question",
+      "name": "{{ item.question|escapejs }}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ item.answer|escapejs }}"
+      }
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="legal-content">
+                    <span class="section-eyebrow">Help</span>
+                    <h1>Frequently asked questions</h1>
+                    <p class="text-muted mb-4">
+                        Answers to common questions about booking, coverage, and our cleaning service across {{ SITE_LOCAL_AREA }}.
+                    </p>
+
+                    <div class="faq-list">
+                        {% for item in faq_items %}
+                        <details class="faq-item" {% if forloop.first %}open{% endif %}>
+                            <summary class="faq-question">{{ item.question }}</summary>
+                            <div class="faq-answer">
+                                <p class="mb-0">{{ item.answer }}</p>
+                                {% if 'landlords' in item.question|lower or 'letting agents' in item.question|lower %}
+                                <p class="mb-0 mt-2"><a href="{% url 'website:property_partners' %}">Learn about property partner accounts →</a></p>
+                                {% elif 'areas' in item.question|lower %}
+                                <p class="mb-0 mt-2"><a href="{% url 'website:areas' %}">View all areas we cover →</a></p>
+                                {% endif %}
+                            </div>
+                        </details>
+                        {% endfor %}
+                    </div>
+
+                    <div class="faq-cta mt-5 pt-4 border-top">
+                        <h2 class="h5 fw-bold">Still have a question?</h2>
+                        <p class="text-muted mb-3">Book online or get in touch — we are happy to help.</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{% url 'bookings:create' %}" class="btn btn-primary">Book a clean</a>
+                            <a href="{% url 'website:home' %}#contact" class="btn btn-outline-primary">Contact us</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

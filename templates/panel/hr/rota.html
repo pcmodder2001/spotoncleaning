@@ -7,11 +7,11 @@
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div class="btn-group">
-        <a href="?week={{ prev_week.isoformat }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i> Previous</a>
+        <a href="?week={{ prev_week.isoformat }}{% if hr_self_view %}&amp;view=mine{% endif %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i> Previous</a>
         <span class="btn btn-outline-secondary btn-sm disabled">{{ week_start|date:"d M" }} – {{ week_end|date:"d M Y" }}</span>
-        <a href="?week={{ next_week.isoformat }}" class="btn btn-outline-secondary btn-sm">Next <i class="bi bi-chevron-right"></i></a>
+        <a href="?week={{ next_week.isoformat }}{% if hr_self_view %}&amp;view=mine{% endif %}" class="btn btn-outline-secondary btn-sm">Next <i class="bi bi-chevron-right"></i></a>
     </div>
-    <a href="?week=" class="btn btn-link btn-sm">This week</a>
+    <a href="{% if hr_self_view %}?view=mine{% else %}?week={% endif %}" class="btn btn-link btn-sm">This week</a>
 </div>
 
 {% if can_manage %}

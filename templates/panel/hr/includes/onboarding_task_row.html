@@ -1,0 +1,55 @@
+<div id="onboarding-task-{{ task.pk }}" class="list-group-item d-flex align-items-start gap-3 py-3 onboarding-task-row{% if task.is_completed %} onboarding-task-row--complete{% endif %}">
+    <div class="flex-shrink-0 pt-1 onboarding-task-row__status">
+        {% if task.is_completed %}
+        <span class="btn btn-sm btn-success disabled" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+        {% elif task.document_key %}
+        <span class="btn btn-sm btn-outline-primary disabled" aria-hidden="true"><i class="bi bi-file-text"></i></span>
+        {% elif task.form_key %}
+        <span class="btn btn-sm btn-outline-primary disabled" aria-hidden="true"><i class="bi bi-pencil"></i></span>
+        {% elif task.completion_mode == 'admin' and not can_manage %}
+        <span class="btn btn-sm btn-outline-secondary disabled" aria-hidden="true"><i class="bi bi-hourglass"></i></span>
+        {% else %}
+        <form method="post" action="{% url 'panel:hr_onboarding_toggle' task.pk %}" data-onboarding-toggle>
+            {% csrf_token %}
+            <input type="hidden" name="completed" value="1">
+            <button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Mark complete">
+                <i class="bi bi-circle"></i>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    <div class="flex-grow-1 onboarding-task-row__body">
+        <div class="fw-semibold onboarding-task-row__title{% if task.is_completed %} text-muted text-decoration-line-through{% endif %}">{{ task.title }}</div>
+        {% if task.description %}<p class="text-muted small mb-1">{{ task.description }}</p>{% endif %}
+        <span class="badge bg-light text-dark">{{ task.get_category_display }}</span>
+        {% if task.completion_mode == 'admin' and not task.is_completed %}
+        <span class="badge bg-secondary">Manager confirmation</span>
+        {% endif %}
+        {% if task.completed_at %}
+        <span class="text-muted small ms-2 onboarding-task-row__done">Done {{ task.completed_at|date:"d M Y" }}</span>
+        {% endif %}
+        {% if task.acknowledged_name %}
+        <span class="text-muted small ms-2">Signed: {{ task.acknowledged_name }}</span>
+        {% endif %}
+
+        <div class="mt-2 d-flex flex-wrap gap-2 onboarding-task-row__actions">
+            {% if task.document_key and not task.is_completed %}
+            <a href="{% url 'panel:hr_onboarding_document' task.pk %}" class="btn btn-sm btn-primary">
+                {% if task.requires_acknowledgment %}Read &amp; sign{% else %}View document{% endif %}
+            </a>
+            {% elif task.document_key and task.is_completed %}
+            <a href="{% url 'panel:hr_onboarding_document' task.pk %}" class="btn btn-sm btn-outline-secondary">View document</a>
+            {% endif %}
+            {% if task.form_key == 'emergency_contact' and not task.is_completed %}
+            <a href="{% url 'panel:hr_onboarding_emergency' task.pk %}" class="btn btn-sm btn-primary">Complete form</a>
+            {% endif %}
+            {% if can_manage and not task.is_completed %}
+            <form method="post" action="{% url 'panel:hr_onboarding_toggle' task.pk %}" class="d-inline" data-onboarding-toggle>
+                {% csrf_token %}
+                <input type="hidden" name="completed" value="1">
+                <button type="submit" class="btn btn-sm btn-outline-success">Mark complete</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>

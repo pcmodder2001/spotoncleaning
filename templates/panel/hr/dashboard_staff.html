@@ -43,7 +43,18 @@
                 {% if assigned_vehicle %}
                 <p class="mb-1"><strong>{{ assigned_vehicle.registration }}</strong></p>
                 <p class="text-muted small mb-1">{{ assigned_vehicle.make }} {{ assigned_vehicle.model }}</p>
-                {% if assigned_vehicle.mot_expiry %}<p class="small mb-0">MOT: {{ assigned_vehicle.mot_expiry|date:"d M Y" }}</p>{% endif %}
+                {% if assigned_vehicle.mot_expiry %}<p class="small mb-2">MOT: {{ assigned_vehicle.mot_expiry|date:"d M Y" }}</p>{% endif %}
+                {% if vehicle_audit_due %}
+                <div class="alert alert-warning py-2 small mb-2">
+                    <strong>Weekly audit due</strong> (w/c {{ vehicle_audit_week|date:"j M" }})
+                </div>
+                <a href="{% url 'panel:hr_vehicle_audit_submit' %}" class="btn btn-sm btn-warning">Submit vehicle audit</a>
+                {% elif current_vehicle_audit %}
+                <p class="small text-success mb-2"><i class="bi bi-check-circle me-1"></i>Audit submitted this week</p>
+                <a href="{% url 'panel:hr_vehicle_audit_detail' current_vehicle_audit.pk %}" class="btn btn-sm btn-outline-secondary">View audit</a>
+                {% else %}
+                <a href="{% url 'panel:hr_vehicle_audit_list' %}" class="btn btn-sm btn-outline-secondary">Audit history</a>
+                {% endif %}
                 {% else %}
                 <p class="text-muted mb-0">No company vehicle assigned.</p>
                 {% endif %}

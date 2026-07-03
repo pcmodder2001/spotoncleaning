@@ -22,7 +22,7 @@
         <div class="panel-stat"><h3>{{ mot_due }}</h3><p>MOT due (30d)</p></div>
     </div>
     <div class="col-md-4 col-lg-2">
-        <div class="panel-stat"><h3>{{ insurance_due }}</h3><p>Insurance due (30d)</p></div>
+        <div class="panel-stat"><h3>{{ missing_vehicle_audits }}</h3><p>Audits missing (this week)</p></div>
     </div>
 </div>
 
@@ -37,6 +37,7 @@
                     <a href="{% url 'panel:hr_employee_list' %}" class="btn btn-outline-primary btn-sm">Manage employees</a>
                     <a href="{% url 'panel:hr_rota' %}" class="btn btn-outline-primary btn-sm">Edit rota</a>
                     <a href="{% url 'panel:hr_vehicle_list' %}" class="btn btn-outline-primary btn-sm">Fleet</a>
+                    <a href="{% url 'panel:hr_vehicle_audit_list' %}" class="btn btn-outline-primary btn-sm">Vehicle audits</a>
                     <a href="{% url 'panel:hr_payslip_create' %}" class="btn btn-outline-primary btn-sm">Upload payslip</a>
                     <a href="{% url 'panel:hr_onboarding' %}" class="btn btn-outline-primary btn-sm">Onboarding</a>
                 </div>

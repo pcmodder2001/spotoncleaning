@@ -54,6 +54,12 @@
                             <input type="number" name="mileage" value="{{ vehicle.mileage }}" class="form-control" min="0">
                         </div>
                         <div class="col-12">
+                            <div class="form-check">
+                                <input type="checkbox" name="uses_adblue" class="form-check-input" id="uses_adblue" {% if vehicle.uses_adblue %}checked{% endif %}>
+                                <label class="form-check-label" for="uses_adblue">Uses AdBlue (required in weekly audits)</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
                             <label class="form-label">Notes</label>
                             <textarea name="notes" rows="3" class="form-control">{{ vehicle.notes }}</textarea>
                         </div>

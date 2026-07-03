@@ -1,10 +1,60 @@
-<nav class="hr-subnav mb-4">
-    <a href="{% url 'panel:hr_dashboard' %}" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_dashboard' %}active{% endif %}">Overview</a>
+{% load static static_version %}
+<div class="hr-nav mb-4" data-hr-nav>
     {% if user.can_manage_site %}
-    <a href="{% url 'panel:hr_employee_list' %}" class="hr-subnav-link {% if 'hr_employee' in request.resolver_match.url_name %}active{% endif %}">Employees</a>
-    <a href="{% url 'panel:hr_vehicle_list' %}" class="hr-subnav-link {% if 'hr_vehicle' in request.resolver_match.url_name %}active{% endif %}">Vehicles</a>
+    <div class="hr-mode-tabs" role="tablist" aria-label="HR section">
+        <a href="{{ hr_team_tab_url }}"
+           role="tab"
+           class="hr-mode-tab{% if not hr_self_view %} active{% endif %}"
+           data-hr-mode-tab="team"
+           aria-selected="{% if not hr_self_view %}true{% else %}false{% endif %}"
+           aria-controls="hr-subnav-team">
+            <i class="bi bi-people-fill me-1"></i> Team
+        </a>
+        <a href="{{ hr_my_tab_url }}"
+           role="tab"
+           class="hr-mode-tab{% if hr_self_view %} active{% endif %}"
+           data-hr-mode-tab="mine"
+           aria-selected="{% if hr_self_view %}true{% else %}false{% endif %}"
+           aria-controls="hr-subnav-mine">
+            <i class="bi bi-person-badge me-1"></i> My HR
+        </a>
+    </div>
+
+    <nav id="hr-subnav-team"
+         class="hr-subnav hr-subnav-panel{% if hr_self_view %} is-hidden{% else %} is-visible{% endif %}"
+         data-hr-subnav="team"
+         role="tabpanel"
+         aria-label="Team HR"
+         {% if hr_self_view %}hidden{% endif %}>
+        <a href="{% url 'panel:hr_dashboard' %}" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_dashboard' and not hr_self_view %}active{% endif %}">Overview</a>
+        <a href="{% url 'panel:hr_employee_list' %}" class="hr-subnav-link {% if 'hr_employee' in request.resolver_match.url_name %}active{% endif %}">Employees</a>
+        <a href="{% url 'panel:hr_vehicle_list' %}" class="hr-subnav-link {% if 'hr_vehicle' in request.resolver_match.url_name and 'audit' not in request.resolver_match.url_name %}active{% endif %}">Vehicles</a>
+        <a href="{% url 'panel:hr_vehicle_audit_list' %}" class="hr-subnav-link {% if 'hr_vehicle_audit' in request.resolver_match.url_name %}active{% endif %}">Vehicle audits</a>
+        <a href="{% url 'panel:hr_rota' %}" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_rota' and not hr_self_view %}active{% endif %}">Rota</a>
+        <a href="{% url 'panel:hr_onboarding' %}" class="hr-subnav-link {% if 'hr_onboarding' in request.resolver_match.url_name and not hr_self_view %}active{% endif %}">Onboarding</a>
+        <a href="{% url 'panel:hr_payslip_list' %}" class="hr-subnav-link {% if 'hr_payslip' in request.resolver_match.url_name and not hr_self_view %}active{% endif %}">Payslips</a>
+    </nav>
+
+    <nav id="hr-subnav-mine"
+         class="hr-subnav hr-subnav-panel{% if hr_self_view %} is-visible{% else %} is-hidden{% endif %}"
+         data-hr-subnav="mine"
+         role="tabpanel"
+         aria-label="My HR"
+         {% if not hr_self_view %}hidden{% endif %}>
+        <a href="{% url 'panel:hr_dashboard' %}?view=mine" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_dashboard' and hr_self_view %}active{% endif %}">Overview</a>
+        <a href="{% url 'panel:hr_rota' %}?view=mine" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_rota' and hr_self_view %}active{% endif %}">Rota</a>
+        <a href="{% url 'panel:hr_onboarding' %}?view=mine" class="hr-subnav-link {% if 'hr_onboarding' in request.resolver_match.url_name and hr_self_view %}active{% endif %}">Onboarding</a>
+        <a href="{% url 'panel:hr_payslip_list' %}?view=mine" class="hr-subnav-link {% if 'hr_payslip' in request.resolver_match.url_name and hr_self_view %}active{% endif %}">Payslips</a>
+        <a href="{% url 'panel:hr_vehicle_audit_list' %}?view=mine" class="hr-subnav-link {% if 'hr_vehicle_audit' in request.resolver_match.url_name and hr_self_view %}active{% endif %}">Vehicle check</a>
+    </nav>
+    {% else %}
+    <nav class="hr-subnav hr-subnav-panel is-visible" aria-label="My HR">
+        <a href="{% url 'panel:hr_dashboard' %}" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_dashboard' %}active{% endif %}">Overview</a>
+        <a href="{% url 'panel:hr_rota' %}" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_rota' %}active{% endif %}">Rota</a>
+        <a href="{% url 'panel:hr_onboarding' %}" class="hr-subnav-link {% if 'hr_onboarding' in request.resolver_match.url_name %}active{% endif %}">Onboarding</a>
+        <a href="{% url 'panel:hr_payslip_list' %}" class="hr-subnav-link {% if 'hr_payslip' in request.resolver_match.url_name %}active{% endif %}">Payslips</a>
+        <a href="{% url 'panel:hr_vehicle_audit_list' %}" class="hr-subnav-link {% if 'hr_vehicle_audit' in request.resolver_match.url_name %}active{% endif %}">Vehicle check</a>
+    </nav>
     {% endif %}
-    <a href="{% url 'panel:hr_rota' %}" class="hr-subnav-link {% if request.resolver_match.url_name == 'hr_rota' %}active{% endif %}">Rota</a>
-    <a href="{% url 'panel:hr_onboarding' %}" class="hr-subnav-link {% if 'hr_onboarding' in request.resolver_match.url_name %}active{% endif %}">Onboarding</a>
-    <a href="{% url 'panel:hr_payslip_list' %}" class="hr-subnav-link {% if 'hr_payslip' in request.resolver_match.url_name %}active{% endif %}">Payslips</a>
-</nav>
+</div>
+<script src="{% static_v 'js/panel-hr-nav.js' %}"></script>

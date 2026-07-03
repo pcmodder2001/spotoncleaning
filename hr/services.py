@@ -120,6 +120,20 @@ def is_hr_staff(user):
     return user.is_authenticated and user.role in (UserRole.ENGINEER, UserRole.ADMIN)
 
 
+def hr_is_self_view(request):
+    """Personal HR view — default for engineers, opt-in for admins via ?view=mine."""
+    if not is_hr_staff(request.user):
+        return False
+    if not request.user.can_manage_site:
+        return True
+    return request.GET.get('view') == 'mine'
+
+
+def hr_manage_mode(request):
+    """Admin managing team HR (not viewing their own record)."""
+    return request.user.is_authenticated and request.user.can_manage_site and not hr_is_self_view(request)
+
+
 def create_default_onboarding(profile):
     if profile.onboarding_tasks.exists():
         return

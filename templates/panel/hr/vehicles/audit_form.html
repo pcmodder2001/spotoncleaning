@@ -1,0 +1,84 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Weekly vehicle audit{% endblock %}
+
+{% block panel_content %}
+{% include 'panel/hr/includes/hr_nav.html' %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="alert alert-info">
+            <strong>Week commencing {{ week_start|date:"l j F Y" }}</strong> — complete every Monday (or as soon as possible that week).
+            Photograph dashboard readings, all four tyres, and each corner of the vehicle so every side is visible for damage checks.
+        </div>
+
+        <div class="panel-card card border-0 mb-4">
+            <div class="card-header">{{ vehicle.registration }} · {{ vehicle.make }} {{ vehicle.model }}</div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" class="vehicle-audit-form">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold" for="mileage">Current mileage</label>
+                        <div class="input-group" style="max-width: 280px;">
+                            <input type="number" class="form-control" id="mileage" name="mileage" min="0" required
+                                   value="{{ vehicle.mileage|default:'' }}" placeholder="e.g. 45230">
+                            <span class="input-group-text">miles</span>
+                        </div>
+                        {% if vehicle.mileage %}
+                        <p class="text-muted small mt-1 mb-0">Last recorded: {{ vehicle.mileage }} miles</p>
+                        {% endif %}
+                    </div>
+
+                    {% for section in sections %}
+                    <div class="vehicle-audit-section mb-4">
+                        <h3 class="h6 fw-bold mb-3">{{ section.title }}</h3>
+                        <div class="row g-3">
+                            {% for item in section.items %}
+                            <div class="col-md-6">
+                                <label class="form-label" for="photo_{{ item.type }}">{{ item.label }}</label>
+                                <input type="file" class="form-control vehicle-audit-photo-input" id="photo_{{ item.type }}"
+                                       name="{{ item.type }}" accept="image/*" capture="environment" required>
+                                <div class="vehicle-audit-preview mt-2" data-preview-for="photo_{{ item.type }}" hidden>
+                                    <img alt="" class="vehicle-audit-preview-img">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="mb-4">
+                        <label class="form-label" for="notes">Notes (optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"
+                                  placeholder="Report any damage, warning lights, or issues…"></textarea>
+                    </div>
+
+                    <p class="text-muted small">{{ required_count }} photos required{% if vehicle.uses_adblue %} (including AdBlue){% endif %}.</p>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Submit audit
+                        </button>
+                        <a href="{% url 'panel:hr_vehicle_audit_list' %}{% if hr_self_view %}?view=mine{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.vehicle-audit-photo-input').forEach(function (input) {
+    input.addEventListener('change', function () {
+        var preview = document.querySelector('[data-preview-for="' + input.id + '"]');
+        if (!preview || !input.files || !input.files[0]) return;
+        var img = preview.querySelector('img');
+        img.src = URL.createObjectURL(input.files[0]);
+        preview.hidden = false;
+    });
+});
+</script>
+{% endblock %}

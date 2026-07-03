@@ -231,6 +231,10 @@ class Vehicle(models.Model):
     insurance_expiry = models.DateField(null=True, blank=True)
     tax_expiry = models.DateField(null=True, blank=True)
     mileage = models.PositiveIntegerField(null=True, blank=True)
+    uses_adblue = models.BooleanField(
+        default=False,
+        help_text='Driver must photograph AdBlue level in weekly vehicle audits.',
+    )
     notes = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -241,6 +245,87 @@ class Vehicle(models.Model):
 
     def __str__(self):
         return f'{self.registration} ({self.make} {self.model})'
+
+
+def vehicle_audit_photo_path(instance, filename):
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'jpg'
+    return (
+        f'hr/vehicle-audits/{instance.audit.vehicle_id}/'
+        f'{instance.audit.week_start:%Y-%m-%d}/{instance.photo_type}.{ext}'
+    )
+
+
+class VehicleAuditPhotoType(models.TextChoices):
+    MILEAGE = 'mileage_display', 'Odometer / mileage'
+    FUEL = 'fuel_gauge', 'Fuel gauge'
+    ADBLUE = 'adblue_gauge', 'AdBlue gauge'
+    TYRE_FL = 'tyre_front_left', 'Front left tyre'
+    TYRE_FR = 'tyre_front_right', 'Front right tyre'
+    TYRE_RL = 'tyre_rear_left', 'Rear left tyre'
+    TYRE_RR = 'tyre_rear_right', 'Rear right tyre'
+    CORNER_FL = 'corner_front_left', 'Front left corner'
+    CORNER_FR = 'corner_front_right', 'Front right corner'
+    CORNER_RL = 'corner_rear_left', 'Rear left corner'
+    CORNER_RR = 'corner_rear_right', 'Rear right corner'
+
+
+class VehicleAudit(models.Model):
+    vehicle = models.ForeignKey(
+        Vehicle,
+        on_delete=models.CASCADE,
+        related_name='audits',
+    )
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='vehicle_audits',
+    )
+    week_start = models.DateField(
+        help_text='Monday of the audit week.',
+    )
+    mileage = models.PositiveIntegerField()
+    notes = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-week_start', '-submitted_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['vehicle', 'week_start'],
+                name='unique_vehicle_audit_per_week',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.vehicle.registration} — w/c {self.week_start:%d %b %Y}'
+
+    @property
+    def week_end(self):
+        from datetime import timedelta
+        return self.week_start + timedelta(days=6)
+
+
+class VehicleAuditPhoto(models.Model):
+    audit = models.ForeignKey(
+        VehicleAudit,
+        on_delete=models.CASCADE,
+        related_name='photos',
+    )
+    photo_type = models.CharField(max_length=30, choices=VehicleAuditPhotoType.choices)
+    image = models.ImageField(upload_to=vehicle_audit_photo_path)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['photo_type']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['audit', 'photo_type'],
+                name='unique_audit_photo_type',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.audit} — {self.get_photo_type_display()}'
 
 
 class ShiftType(models.TextChoices):

@@ -4,18 +4,41 @@ from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.roles import UserRole
-from hr.models import EmployeeInvite, EmployeeProfile, OnboardingTask, Payslip, RotaShift, ShiftType, TaskCompletionMode, Vehicle
+from hr.models import (
+    EmployeeInvite,
+    EmployeeProfile,
+    OnboardingTask,
+    Payslip,
+    RotaShift,
+    ShiftType,
+    TaskCompletionMode,
+    Vehicle,
+    VehicleAudit,
+    VehicleAuditPhoto,
+)
+from hr.vehicle_audits import (
+    AUDIT_PHOTO_LABELS,
+    audit_due_for_user,
+    audit_photo_sections,
+    audit_week_start,
+    current_week_audit,
+    get_assigned_vehicle,
+    required_photo_types,
+)
 from hr.documents import document_context, get_document_meta
 from hr.invites import create_employee_invite, invite_registration_url, send_employee_invite_email
 from hr.services import (
     create_default_onboarding,
     ensure_employee_profile,
+    hr_is_self_view,
+    hr_manage_mode,
     is_hr_staff,
     redirect_if_onboarding_required,
     staff_users_queryset,
@@ -43,6 +66,51 @@ def _parse_decimal(value, default='0'):
         return Decimal(default)
 
 
+def _onboarding_task_redirect(request, task, next_url=None):
+    url = (next_url or request.POST.get('next') or '').strip()
+    if not url:
+        from django.urls import reverse
+        url = reverse('panel:hr_onboarding')
+        if request.user.can_manage_site:
+            url = f'{url}?employee={task.employee.user_id}'
+    base = url.split('#')[0]
+    return redirect(f'{base}#onboarding-task-{task.pk}')
+
+
+def _onboarding_wants_json(request):
+    return (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('Accept', '')
+    )
+
+
+def _onboarding_json_error(message, status=400):
+    return JsonResponse({'ok': False, 'error': message}, status=status)
+
+
+def _onboarding_task_row_html(request, task):
+    return render_to_string(
+        'panel/hr/includes/onboarding_task_row.html',
+        {
+            'task': task,
+            'can_manage': hr_manage_mode(request),
+        },
+        request=request,
+    )
+
+
+def _onboarding_json_success(request, task, message='Task updated.'):
+    profile = task.employee
+    return JsonResponse({
+        'ok': True,
+        'message': message,
+        'task_id': task.pk,
+        'html': _onboarding_task_row_html(request, task),
+        'progress': profile.onboarding_progress,
+        'open_tasks': profile.onboarding_tasks.filter(is_completed=False).count(),
+    })
+
+
 @panel_required
 def hr_dashboard_view(request):
     denied = _require_hr_staff(request)
@@ -56,7 +124,7 @@ def hr_dashboard_view(request):
     today = timezone.localdate()
     profile = EmployeeProfile.objects.filter(user=request.user).first()
 
-    if request.user.can_manage_site:
+    if hr_manage_mode(request):
         staff = staff_users_queryset()
         profiles = EmployeeProfile.objects.select_related('user').filter(is_active=True)
         incomplete_onboarding = profiles.filter(
@@ -70,6 +138,12 @@ def hr_dashboard_view(request):
             is_active=True,
             insurance_expiry__lte=today + timedelta(days=30),
         ).count()
+        audit_week = audit_week_start(today)
+        audited_ids = VehicleAudit.objects.filter(week_start=audit_week).values_list('vehicle_id', flat=True)
+        missing_vehicle_audits = Vehicle.objects.filter(
+            is_active=True,
+            assigned_to__isnull=False,
+        ).exclude(pk__in=audited_ids).count()
         return render(request, 'panel/hr/dashboard_admin.html', {
             'staff_count': staff.count(),
             'profile_count': profiles.count(),
@@ -77,6 +151,8 @@ def hr_dashboard_view(request):
             'incomplete_onboarding': incomplete_onboarding,
             'mot_due': mot_due,
             'insurance_due': insurance_due,
+            'missing_vehicle_audits': missing_vehicle_audits,
+            'audit_week': audit_week,
             'recent_payslips': Payslip.objects.select_related('employee').order_by('-pay_date')[:5],
         })
 
@@ -95,6 +171,10 @@ def hr_dashboard_view(request):
         is_published=True,
     ).order_by('-pay_date')[:5]
 
+    assigned_vehicle = get_assigned_vehicle(request.user)
+    audit_week = audit_week_start(today)
+    current_audit = current_week_audit(assigned_vehicle)
+
     return render(request, 'panel/hr/dashboard_staff.html', {
         'profile': profile,
         'onboarding_progress': profile.onboarding_progress if profile else 0,
@@ -103,7 +183,10 @@ def hr_dashboard_view(request):
         'week_start': week_start,
         'week_end': week_end,
         'my_payslips': my_payslips,
-        'assigned_vehicle': Vehicle.objects.filter(assigned_to=request.user, is_active=True).first(),
+        'assigned_vehicle': assigned_vehicle,
+        'vehicle_audit_due': audit_due_for_user(request.user),
+        'current_vehicle_audit': current_audit,
+        'vehicle_audit_week': audit_week,
     })
 
 
@@ -164,8 +247,11 @@ def hr_employee_edit_view(request, pk):
 @panel_required
 @require_POST
 def hr_onboarding_toggle_view(request, task_pk):
+    wants_json = _onboarding_wants_json(request)
     denied = _require_hr_staff(request)
     if denied:
+        if wants_json:
+            return _onboarding_json_error('HR features are only available to staff accounts.', 403)
         return denied
 
     task = get_object_or_404(
@@ -173,15 +259,25 @@ def hr_onboarding_toggle_view(request, task_pk):
         pk=task_pk,
     )
     if not request.user.can_manage_site and task.employee.user_id != request.user.pk:
+        if wants_json:
+            return _onboarding_json_error('You can only update your own onboarding tasks.')
         messages.error(request, 'You can only update your own onboarding tasks.')
         return redirect('panel:hr_onboarding')
 
     completed = request.POST.get('completed') == '1'
     if not task.can_toggle_by(request.user):
+        if wants_json:
+            return _onboarding_json_error(
+                'This task must be completed through the document or form provided.',
+            )
         messages.error(request, 'This task must be completed through the document or form provided.')
-        return redirect(request.POST.get('next') or 'panel:hr_onboarding')
+        return _onboarding_task_redirect(request, task)
     task.mark_complete(completed)
-    return redirect(request.POST.get('next') or 'panel:hr_onboarding')
+    message = f'"{task.title}" marked complete.' if completed else f'"{task.title}" reopened.'
+    if wants_json:
+        return _onboarding_json_success(request, task, message)
+    messages.success(request, message)
+    return _onboarding_task_redirect(request, task)
 
 
 @panel_required
@@ -190,7 +286,7 @@ def hr_onboarding_view(request):
     if denied:
         return denied
 
-    if request.user.can_manage_site:
+    if hr_manage_mode(request):
         employee_id = request.GET.get('employee')
         if employee_id:
             user = get_object_or_404(User, pk=employee_id, role__in=(UserRole.ENGINEER, UserRole.ADMIN))
@@ -204,7 +300,7 @@ def hr_onboarding_view(request):
         profile = ensure_employee_profile(user)
         staff = None
 
-    if request.user.can_manage_site and request.method == 'POST':
+    if hr_manage_mode(request) and request.method == 'POST':
         action = request.POST.get('action')
         if action == 'send_invite':
             email = request.POST.get('invite_email', '').strip()
@@ -246,7 +342,7 @@ def hr_onboarding_view(request):
             return redirect(f'{request.path}?employee={profile.user_id}')
 
     pending_invites = []
-    if request.user.can_manage_site:
+    if hr_manage_mode(request):
         pending_invites = [
             {
                 'invite': inv,
@@ -260,7 +356,7 @@ def hr_onboarding_view(request):
         'staff_user': user,
         'staff': staff,
         'tasks': tasks,
-        'can_manage': request.user.can_manage_site,
+        'can_manage': hr_manage_mode(request),
         'pending_invites': pending_invites,
         'employment_types': EmployeeProfile._meta.get_field('employment_type').choices,
     })
@@ -302,6 +398,7 @@ def hr_vehicle_edit_view(request, pk):
         vehicle.tax_expiry = request.POST.get('tax_expiry') or None
         mileage_raw = request.POST.get('mileage', '').strip()
         vehicle.mileage = int(mileage_raw) if mileage_raw.isdigit() else None
+        vehicle.uses_adblue = request.POST.get('uses_adblue') == 'on'
         vehicle.notes = request.POST.get('notes', '')
         vehicle.is_active = request.POST.get('is_active') == 'on'
         vehicle.save()
@@ -333,10 +430,10 @@ def hr_rota_view(request):
     week_days = [week_start + timedelta(days=i) for i in range(7)]
 
     staff = staff_users_queryset()
-    if not request.user.can_manage_site:
+    if hr_is_self_view(request):
         staff = staff.filter(pk=request.user.pk)
 
-    if request.user.can_manage_site and request.method == 'POST':
+    if hr_manage_mode(request) and request.method == 'POST':
         employee_id = request.POST.get('employee')
         shift_date = request.POST.get('date')
         if employee_id and shift_date:
@@ -379,8 +476,8 @@ def hr_rota_view(request):
         'prev_week': prev_week,
         'next_week': next_week,
         'shift_types': ShiftType.choices,
-        'can_manage': request.user.can_manage_site,
-        'staff': staff if request.user.can_manage_site else None,
+        'can_manage': hr_manage_mode(request),
+        'staff': staff if hr_manage_mode(request) else None,
     })
 
 
@@ -390,7 +487,7 @@ def hr_payslip_list_view(request):
     if denied:
         return denied
 
-    if request.user.can_manage_site:
+    if hr_manage_mode(request):
         payslips = Payslip.objects.select_related('employee').order_by('-pay_date')
         employee_filter = request.GET.get('employee')
         if employee_filter:
@@ -403,8 +500,8 @@ def hr_payslip_list_view(request):
 
     return render(request, 'panel/hr/payslips/list.html', {
         'payslips': payslips,
-        'can_manage': request.user.can_manage_site,
-        'staff': staff_users_queryset() if request.user.can_manage_site else None,
+        'can_manage': hr_manage_mode(request),
+        'staff': staff_users_queryset() if hr_manage_mode(request) else None,
         'employee_filter': request.GET.get('employee', ''),
     })
 
@@ -532,7 +629,7 @@ def hr_onboarding_acknowledge_view(request, task_pk):
 
     task.mark_acknowledged(signed_name)
     messages.success(request, f'"{task.title}" marked complete.')
-    return redirect('panel:hr_onboarding')
+    return _onboarding_task_redirect(request, task)
 
 
 @panel_required
@@ -564,10 +661,169 @@ def hr_onboarding_emergency_view(request, task_pk):
         if profile.emergency_contact_name and profile.emergency_contact_phone:
             task.mark_complete(True)
             messages.success(request, 'Emergency contact saved.')
-            return redirect('panel:hr_onboarding')
+            return _onboarding_task_redirect(request, task)
         messages.error(request, 'Please provide a contact name and phone number.')
 
     return render(request, 'panel/hr/onboarding_emergency.html', {
         'task': task,
         'profile': profile,
+    })
+
+
+def _can_view_vehicle_audit(request, audit):
+    if hr_manage_mode(request):
+        return True
+    if audit.submitted_by_id == request.user.pk:
+        return True
+    return audit.vehicle.assigned_to_id == request.user.pk
+
+
+def _vehicle_audit_list_url(request):
+    from django.urls import reverse
+    url = reverse('panel:hr_vehicle_audit_list')
+    if hr_is_self_view(request):
+        return f'{url}?view=mine'
+    return url
+
+
+def _vehicle_audit_detail_url(request, pk):
+    from django.urls import reverse
+    url = reverse('panel:hr_vehicle_audit_detail', kwargs={'pk': pk})
+    if hr_is_self_view(request):
+        return f'{url}?view=mine'
+    return url
+
+
+@panel_required
+def hr_vehicle_audit_list_view(request):
+    denied = _require_hr_staff(request)
+    if denied:
+        return denied
+
+    week_start = audit_week_start()
+    if hr_manage_mode(request):
+        audits = VehicleAudit.objects.select_related('vehicle', 'submitted_by').order_by('-week_start', '-submitted_at')
+        vehicle_filter = request.GET.get('vehicle')
+        week_filter = request.GET.get('week')
+        if vehicle_filter:
+            audits = audits.filter(vehicle_id=vehicle_filter)
+        if week_filter:
+            try:
+                audits = audits.filter(week_start=date.fromisoformat(week_filter))
+            except ValueError:
+                pass
+        missing_vehicles = Vehicle.objects.filter(
+            is_active=True,
+            assigned_to__isnull=False,
+        ).exclude(
+            pk__in=VehicleAudit.objects.filter(week_start=week_start).values_list('vehicle_id', flat=True),
+        ).select_related('assigned_to')
+    else:
+        vehicle = get_assigned_vehicle(request.user)
+        audits = VehicleAudit.objects.filter(
+            vehicle=vehicle,
+        ).select_related('vehicle', 'submitted_by').order_by('-week_start') if vehicle else VehicleAudit.objects.none()
+        missing_vehicles = []
+        vehicle_filter = ''
+        week_filter = ''
+
+    assigned_vehicle = get_assigned_vehicle(request.user)
+    return render(request, 'panel/hr/vehicles/audit_list.html', {
+        'audits': audits[:100],
+        'can_manage': hr_manage_mode(request),
+        'vehicles': Vehicle.objects.filter(is_active=True).order_by('registration') if hr_manage_mode(request) else None,
+        'vehicle_filter': request.GET.get('vehicle', ''),
+        'week_filter': request.GET.get('week', ''),
+        'missing_vehicles': missing_vehicles,
+        'audit_week': week_start,
+        'assigned_vehicle': assigned_vehicle,
+        'vehicle_audit_due': audit_due_for_user(request.user),
+        'current_vehicle_audit': current_week_audit(assigned_vehicle),
+    })
+
+
+@panel_required
+def hr_vehicle_audit_submit_view(request):
+    denied = _require_hr_staff(request)
+    if denied:
+        return denied
+
+    vehicle = get_assigned_vehicle(request.user)
+    if not vehicle:
+        messages.error(request, 'No company vehicle is assigned to you.')
+        return redirect(_vehicle_audit_list_url(request))
+
+    week_start = audit_week_start()
+    existing = current_week_audit(vehicle)
+    if existing:
+        messages.info(request, 'You have already submitted this week\'s vehicle audit.')
+        return redirect(_vehicle_audit_detail_url(request, existing.pk))
+
+    required = required_photo_types(vehicle)
+    sections = audit_photo_sections(vehicle)
+
+    if request.method == 'POST':
+        mileage_raw = request.POST.get('mileage', '').strip()
+        if not mileage_raw.isdigit():
+            messages.error(request, 'Enter the current mileage as a whole number.')
+        else:
+            missing = [photo_type for photo_type in required if photo_type not in request.FILES]
+            if missing:
+                labels = ', '.join(AUDIT_PHOTO_LABELS[t] for t in missing[:4])
+                suffix = '…' if len(missing) > 4 else ''
+                messages.error(request, f'Please add all required photos. Still needed: {labels}{suffix}')
+            else:
+                mileage = int(mileage_raw)
+                audit = VehicleAudit.objects.create(
+                    vehicle=vehicle,
+                    submitted_by=request.user,
+                    week_start=week_start,
+                    mileage=mileage,
+                    notes=request.POST.get('notes', '').strip(),
+                )
+                for photo_type in required:
+                    VehicleAuditPhoto.objects.create(
+                        audit=audit,
+                        photo_type=photo_type,
+                        image=request.FILES[photo_type],
+                    )
+                vehicle.mileage = mileage
+                vehicle.save(update_fields=['mileage', 'updated_at'])
+                messages.success(request, f'Weekly vehicle audit submitted for {vehicle.registration}.')
+                return redirect(_vehicle_audit_detail_url(request, audit.pk))
+
+    return render(request, 'panel/hr/vehicles/audit_form.html', {
+        'vehicle': vehicle,
+        'sections': sections,
+        'week_start': week_start,
+        'required_count': len(required),
+    })
+
+
+@panel_required
+def hr_vehicle_audit_detail_view(request, pk):
+    denied = _require_hr_staff(request)
+    if denied:
+        return denied
+
+    audit = get_object_or_404(
+        VehicleAudit.objects.select_related('vehicle', 'submitted_by').prefetch_related('photos'),
+        pk=pk,
+    )
+    if not _can_view_vehicle_audit(request, audit):
+        raise Http404
+
+    photo_map = {photo.photo_type: photo for photo in audit.photos.all()}
+    photo_rows = []
+    for photo_type in required_photo_types(audit.vehicle):
+        photo_rows.append({
+            'type': photo_type,
+            'label': AUDIT_PHOTO_LABELS[photo_type],
+            'photo': photo_map.get(photo_type),
+        })
+
+    return render(request, 'panel/hr/vehicles/audit_detail.html', {
+        'audit': audit,
+        'photo_rows': photo_rows,
+        'can_manage': hr_manage_mode(request),
     })

@@ -1,6 +1,20 @@
 from django.contrib import admin
 
-from hr.models import EmployeeProfile, OnboardingTask, Payslip, RotaShift, Vehicle
+from hr.models import EmployeeProfile, OnboardingTask, Payslip, RotaShift, Vehicle, VehicleAudit, VehicleAuditPhoto
+
+
+class VehicleAuditPhotoInline(admin.TabularInline):
+    model = VehicleAuditPhoto
+    extra = 0
+    readonly_fields = ('uploaded_at',)
+
+
+@admin.register(VehicleAudit)
+class VehicleAuditAdmin(admin.ModelAdmin):
+    list_display = ('vehicle', 'week_start', 'submitted_by', 'mileage', 'submitted_at')
+    list_filter = ('week_start',)
+    search_fields = ('vehicle__registration', 'submitted_by__email')
+    inlines = [VehicleAuditPhotoInline]
 
 
 class OnboardingTaskInline(admin.TabularInline):
@@ -17,7 +31,7 @@ class EmployeeProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    list_display = ('registration', 'make', 'model', 'assigned_to', 'mot_expiry', 'is_active')
+    list_display = ('registration', 'make', 'model', 'assigned_to', 'uses_adblue', 'mot_expiry', 'is_active')
     search_fields = ('registration', 'make', 'model')
 
 

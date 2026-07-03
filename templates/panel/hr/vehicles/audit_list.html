@@ -1,0 +1,97 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}Vehicle audits{% endblock %}
+
+{% block panel_content %}
+{% include 'panel/hr/includes/hr_nav.html' %}
+
+{% if not can_manage and assigned_vehicle %}
+    {% if vehicle_audit_due %}
+    <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span><strong>Weekly audit due</strong> for {{ assigned_vehicle.registration }} (week commencing {{ audit_week|date:"j M Y" }}).</span>
+        <a href="{% url 'panel:hr_vehicle_audit_submit' %}{% if hr_self_view %}?view=mine{% endif %}" class="btn btn-sm btn-warning">Submit audit</a>
+    </div>
+    {% elif current_vehicle_audit %}
+    <div class="alert alert-success py-2">
+        This week's audit submitted on {{ current_vehicle_audit.submitted_at|date:"j M Y" }}.
+        <a href="{% url 'panel:hr_vehicle_audit_detail' current_vehicle_audit.pk %}{% if hr_self_view %}?view=mine{% endif %}" class="alert-link">View</a>
+    </div>
+    {% endif %}
+{% elif not can_manage and not assigned_vehicle %}
+<div class="alert alert-secondary py-2 mb-4">No company vehicle is assigned to you.</div>
+{% endif %}
+
+{% if can_manage and missing_vehicles %}
+<div class="panel-card card border-0 mb-4 border-warning">
+    <div class="card-header text-warning-emphasis">Missing this week (w/c {{ audit_week|date:"j M Y" }})</div>
+    <div class="card-body py-3">
+        <div class="d-flex flex-wrap gap-2">
+            {% for vehicle in missing_vehicles %}
+            <span class="badge bg-warning text-dark">{{ vehicle.registration }} — {{ vehicle.assigned_to.full_name }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if can_manage %}
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+        <select name="vehicle" class="form-select" onchange="this.form.submit()">
+            <option value="">All vehicles</option>
+            {% for vehicle in vehicles %}
+            <option value="{{ vehicle.pk }}" {% if vehicle_filter == vehicle.pk|stringformat:"s" %}selected{% endif %}>{{ vehicle.registration }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <input type="date" name="week" value="{{ week_filter }}" class="form-control" onchange="this.form.submit()" placeholder="Week (Monday)">
+    </div>
+</form>
+{% endif %}
+
+<div class="panel-card card border-0">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Week</th>
+                    <th>Vehicle</th>
+                    {% if can_manage %}<th>Driver</th>{% endif %}
+                    <th>Mileage</th>
+                    <th>Submitted</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for audit in audits %}
+                <tr>
+                    <td>w/c {{ audit.week_start|date:"j M Y" }}</td>
+                    <td><strong>{{ audit.vehicle.registration }}</strong></td>
+                    {% if can_manage %}<td>{{ audit.submitted_by.full_name }}</td>{% endif %}
+                    <td>{{ audit.mileage|floatformat:0 }} mi</td>
+                    <td>{{ audit.submitted_at|date:"j M Y, H:i" }}</td>
+                    <td>
+                        <a href="{% url 'panel:hr_vehicle_audit_detail' audit.pk %}{% if hr_self_view %}?view=mine{% endif %}" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if can_manage %}6{% else %}5{% endif %}" class="text-center text-muted py-4">
+                        {% if can_manage %}No vehicle audits recorded yet.{% else %}No audits submitted yet.{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if not can_manage and assigned_vehicle and vehicle_audit_due %}
+<div class="text-center mt-4">
+    <a href="{% url 'panel:hr_vehicle_audit_submit' %}{% if hr_self_view %}?view=mine{% endif %}" class="btn btn-primary btn-lg">
+        <i class="bi bi-camera me-1"></i> Start weekly audit
+    </a>
+</div>
+{% endif %}
+{% endblock %}

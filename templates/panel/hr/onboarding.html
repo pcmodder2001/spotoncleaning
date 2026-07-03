@@ -1,11 +1,11 @@
 {% extends 'panel/base_panel.html' %}
+{% load static static_version %}
 
 {% block panel_title %}Onboarding{% endblock %}
-
 {% block panel_content %}
 {% include 'panel/hr/includes/hr_nav.html' %}
 
-{% if can_manage %}
+{% if hr_manage_mode %}
 <div class="panel-card card border-0 mb-4">
     <div class="card-header">Invite new employee</div>
     <div class="card-body">
@@ -84,7 +84,7 @@
 {% endif %}
 {% endif %}
 
-{% if can_manage and staff %}
+{% if hr_manage_mode and staff %}
 <form method="get" class="row g-2 mb-4">
     <div class="col-md-5">
         <select name="employee" class="form-select" onchange="this.form.submit()">
@@ -101,85 +101,33 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h2 class="h5 fw-bold mb-1">{{ staff_user.full_name }}</h2>
-        <p class="text-muted small mb-0">{{ profile.onboarding_progress }}% complete</p>
+        <p class="text-muted small mb-0" id="onboarding-progress-text">{{ profile.onboarding_progress }}% complete</p>
     </div>
-    <div class="progress flex-grow-1 mx-3" style="height:8px; max-width:200px;">
-        <div class="progress-bar bg-success" style="width: {{ profile.onboarding_progress }}%;"></div>
+    <div class="progress flex-grow-1 mx-3 onboarding-progress" style="height:8px; max-width:200px;" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ profile.onboarding_progress }}">
+        <div id="onboarding-progress-bar" class="progress-bar bg-success" style="width: {{ profile.onboarding_progress }}%;"></div>
     </div>
-    {% if can_manage %}
+    {% if hr_manage_mode %}
     <a href="{% url 'panel:hr_employee_edit' staff_user.pk %}" class="btn btn-sm btn-outline-secondary">Edit HR profile</a>
     {% endif %}
 </div>
 
-{% if not can_manage and profile.onboarding_progress < 100 %}
+{% if not hr_manage_mode and profile.onboarding_progress < 100 %}
 <div class="alert alert-info">
     <strong>Welcome!</strong> Please complete each item below before starting work. Documents can be read, signed electronically, and printed for your records.
 </div>
 {% endif %}
 
 <div class="panel-card card border-0 mb-4">
-    <div class="list-group list-group-flush">
+    <div class="list-group list-group-flush" data-onboarding-list>
         {% for task in tasks %}
-        <div class="list-group-item d-flex align-items-start gap-3 py-3">
-            <div class="flex-shrink-0 pt-1">
-                {% if task.is_completed %}
-                <span class="btn btn-sm btn-success disabled"><i class="bi bi-check-lg"></i></span>
-                {% elif task.document_key %}
-                <span class="btn btn-sm btn-outline-primary disabled"><i class="bi bi-file-text"></i></span>
-                {% elif task.form_key %}
-                <span class="btn btn-sm btn-outline-primary disabled"><i class="bi bi-pencil"></i></span>
-                {% elif task.completion_mode == 'admin' and not can_manage %}
-                <span class="btn btn-sm btn-outline-secondary disabled"><i class="bi bi-hourglass"></i></span>
-                {% else %}
-                <form method="post" action="{% url 'panel:hr_onboarding_toggle' task.pk %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                    <input type="hidden" name="completed" value="1">
-                    <button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Mark complete">
-                        <i class="bi bi-circle"></i>
-                    </button>
-                </form>
-                {% endif %}
-            </div>
-            <div class="flex-grow-1">
-                <div class="fw-semibold {% if task.is_completed %}text-muted text-decoration-line-through{% endif %}">{{ task.title }}</div>
-                {% if task.description %}<p class="text-muted small mb-1">{{ task.description }}</p>{% endif %}
-                <span class="badge bg-light text-dark">{{ task.get_category_display }}</span>
-                {% if task.completion_mode == 'admin' and not task.is_completed %}
-                <span class="badge bg-secondary">Manager confirmation</span>
-                {% endif %}
-                {% if task.completed_at %}<span class="text-muted small ms-2">Done {{ task.completed_at|date:"d M Y" }}</span>{% endif %}
-                {% if task.acknowledged_name %}<span class="text-muted small ms-2">Signed: {{ task.acknowledged_name }}</span>{% endif %}
-
-                <div class="mt-2 d-flex flex-wrap gap-2">
-                    {% if task.document_key and not task.is_completed %}
-                    <a href="{% url 'panel:hr_onboarding_document' task.pk %}" class="btn btn-sm btn-primary">
-                        {% if task.requires_acknowledgment %}Read &amp; sign{% else %}View document{% endif %}
-                    </a>
-                    {% elif task.document_key and task.is_completed %}
-                    <a href="{% url 'panel:hr_onboarding_document' task.pk %}" class="btn btn-sm btn-outline-secondary">View document</a>
-                    {% endif %}
-                    {% if task.form_key == 'emergency_contact' and not task.is_completed %}
-                    <a href="{% url 'panel:hr_onboarding_emergency' task.pk %}" class="btn btn-sm btn-primary">Complete form</a>
-                    {% endif %}
-                    {% if can_manage and not task.is_completed %}
-                    <form method="post" action="{% url 'panel:hr_onboarding_toggle' task.pk %}" class="d-inline">
-                        {% csrf_token %}
-                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                        <input type="hidden" name="completed" value="1">
-                        <button type="submit" class="btn btn-sm btn-outline-success">Mark complete</button>
-                    </form>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+        {% include 'panel/hr/includes/onboarding_task_row.html' %}
         {% empty %}
         <div class="list-group-item text-muted py-4 text-center">No onboarding tasks.</div>
         {% endfor %}
     </div>
 </div>
 
-{% if can_manage %}
+{% if hr_manage_mode %}
 <div class="panel-card card border-0">
     <div class="card-header">Add task</div>
     <div class="card-body">
@@ -208,9 +156,15 @@
 </div>
 {% endif %}
 
-{% elif can_manage %}
+{% elif hr_manage_mode %}
 <p class="text-muted">Select an employee above to view or manage their onboarding checklist, or send an invitation to a new starter.</p>
 {% else %}
 <p class="text-muted">Your onboarding profile is not set up yet. Contact your manager.</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if profile %}
+<script src="{% static_v 'js/panel-onboarding.js' %}"></script>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,31 @@
+<div id="cookieConsentBanner"
+     class="cookie-consent"
+     role="dialog"
+     aria-labelledby="cookieConsentTitle"
+     aria-live="polite"
+     {% if not show_cookie_banner %}hidden{% endif %}
+     data-show="{{ show_cookie_banner|yesno:'true,false' }}"
+     data-current-consent="{{ cookie_consent_value|default:'' }}">
+    <div class="cookie-consent-inner">
+        <div class="cookie-consent-copy">
+            <p id="cookieConsentTitle" class="cookie-consent-title mb-1">Cookies on this website</p>
+            <p class="cookie-consent-text mb-0">
+                We use essential cookies so you can log in, book online, and use the site securely.
+                {% if meta_pixel_configured %}
+                With your permission, we also use marketing cookies (Meta Pixel) to measure advertising and improve our service.
+                {% endif %}
+                See our <a href="{% url 'website:privacy' %}#cookies">Privacy policy</a> for details.
+            </p>
+        </div>
+        <div class="cookie-consent-actions">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-consent="essential">
+                Essential only
+            </button>
+            {% if meta_pixel_configured %}
+            <button type="button" class="btn btn-primary btn-sm" data-consent="marketing">
+                Accept all
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>

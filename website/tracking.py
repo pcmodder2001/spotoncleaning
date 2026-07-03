@@ -3,6 +3,8 @@ import json
 from django.conf import settings
 from django.utils import timezone
 
+from website.cookies import has_marketing_consent, is_public_site_path
+
 ATTRIBUTION_KEYS = ('utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'fbclid')
 FACEBOOK_SOURCE_TOKENS = ('facebook', 'fb', 'meta', 'instagram', 'ig')
 
@@ -11,8 +13,9 @@ def meta_pixel_enabled(request):
     pixel_id = getattr(settings, 'META_PIXEL_ID', '')
     if not pixel_id:
         return False
-    path = getattr(request, 'path', '') or ''
-    return not path.startswith('/panel/')
+    if not is_public_site_path(request):
+        return False
+    return has_marketing_consent(request)
 
 
 def capture_marketing_attribution(request):

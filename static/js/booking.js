@@ -180,10 +180,25 @@
                 postcodeInput.value = addr.postcode;
                 updatePostcodeChip();
             }
+            let propertyInput = document.getElementById('bookingPropertyId');
+            if (addr.is_property) {
+                if (!propertyInput) {
+                    propertyInput = document.createElement('input');
+                    propertyInput.type = 'hidden';
+                    propertyInput.name = 'property_id';
+                    propertyInput.id = 'bookingPropertyId';
+                    form.appendChild(propertyInput);
+                }
+                propertyInput.value = addr.id;
+            } else if (propertyInput) {
+                propertyInput.value = '';
+            }
             updateReviewBlock();
             updateContinueButtons();
-            if (refreshSchedule && addr.postcode && addr.postcode !== previousPostcode) {
+            if (refreshSchedule && addr.postcode && (addr.postcode !== previousPostcode || addr.is_property)) {
                 await onPostcodeChanged();
+            } else if (refreshSchedule && addr.is_property && postcodeValid) {
+                await renderCalendar();
             }
         }
 

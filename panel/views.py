@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -21,6 +21,7 @@ from bookings.checklist import checklist_from_post, merge_checklist
 from bookings.promo import release_promo_use
 from bookings.utils import cancel_booking
 from bookings.notifications import send_booking_created_email, send_booking_status_email
+from accounts.account_types import AccountType
 from accounts.roles import UserRole
 from audit.actions import (
     AVAILABILITY_UPDATED,
@@ -38,6 +39,7 @@ from audit.actions import (
     USER_UPDATED,
 )
 from audit.services import log_action
+from panel.business_insights import booking_business_payload, user_business_summary
 from panel.decorators import admin_required, panel_required, sysadmin_required
 from panel.marketing_stats import get_marketing_dashboard_context
 from panel.email_debug import (
@@ -59,14 +61,20 @@ def dashboard_view(request):
     today = timezone.localdate()
     stats = {
         'total_users': User.objects.count(),
+        'business_accounts': User.objects.filter(account_type=AccountType.BUSINESS).count(),
         'total_bookings': Booking.objects.count(),
         'today_bookings': Booking.objects.filter(date=today).exclude(status=BookingStatus.CANCELLED).count(),
         'pending_bookings': Booking.objects.filter(status=BookingStatus.PENDING).count(),
         'confirmed_bookings': Booking.objects.filter(status=BookingStatus.CONFIRMED).count(),
         'completed_jobs': Booking.objects.filter(status=BookingStatus.COMPLETED).count(),
     }
-    recent_bookings = Booking.objects.select_related('user', 'service').order_by('-created_at')[:10]
-    recent_users = User.objects.order_by('-date_joined')[:10]
+    recent_bookings = Booking.objects.select_related(
+        'user',
+        'user__business_profile',
+        'rental_property',
+        'service',
+    ).order_by('-created_at')[:10]
+    recent_users = User.objects.select_related('business_profile').order_by('-date_joined')[:10]
     unread_messages = ContactMessage.objects.filter(is_read=False).count()
     return render(request, 'panel/dashboard.html', {
         'stats': stats,
@@ -79,20 +87,37 @@ def dashboard_view(request):
 @admin_required
 def user_list_view(request):
     query = request.GET.get('q', '')
-    users = User.objects.all()
+    account_type = request.GET.get('account_type', '')
+    users = User.objects.select_related('business_profile').annotate(
+        property_count=Count('properties', distinct=True),
+    )
     if query:
         users = users.filter(
             Q(first_name__icontains=query)
             | Q(last_name__icontains=query)
             | Q(email__icontains=query)
             | Q(phone_number__icontains=query)
+            | Q(business_profile__company_name__icontains=query)
         )
-    return render(request, 'panel/users/list.html', {'users': users, 'query': query})
+    if account_type:
+        users = users.filter(account_type=account_type)
+    return render(request, 'panel/users/list.html', {
+        'users': users,
+        'query': query,
+        'account_type_filter': account_type,
+        'account_type_choices': AccountType.choices,
+    })
 
 
 @admin_required
 def user_edit_view(request, pk):
-    user = get_object_or_404(User, pk=pk)
+    user = get_object_or_404(
+        User.objects.select_related('business_profile').annotate(
+            property_count=Count('properties', distinct=True),
+            booking_count=Count('bookings', distinct=True),
+        ),
+        pk=pk,
+    )
     if request.method == 'POST':
         user.first_name = request.POST.get('first_name', user.first_name)
         user.last_name = request.POST.get('last_name', user.last_name)
@@ -120,6 +145,8 @@ def user_edit_view(request, pk):
     return render(request, 'panel/users/edit.html', {
         'edit_user': user,
         'role_choices': UserRole.choices,
+        'business_summary': user_business_summary(user),
+        'partner_properties': user.properties.all() if user.is_business_account else [],
     })
 
 
@@ -157,7 +184,14 @@ def booking_list_view(request):
     query = request.GET.get('q', '')
     status = request.GET.get('status', '')
     date_filter = request.GET.get('date', '')
-    bookings = Booking.objects.select_related('user', 'service', 'time_slot')
+    partner_filter = request.GET.get('partner', '')
+    bookings = Booking.objects.select_related(
+        'user',
+        'user__business_profile',
+        'rental_property',
+        'service',
+        'time_slot',
+    )
     if query:
         bookings = bookings.filter(
             Q(user__email__icontains=query)
@@ -165,11 +199,16 @@ def booking_list_view(request):
             | Q(user__last_name__icontains=query)
             | Q(postcode__icontains=query)
             | Q(city__icontains=query)
+            | Q(user__business_profile__company_name__icontains=query)
+            | Q(rental_property__reference__icontains=query)
+            | Q(guest_email__icontains=query)
         )
     if status:
         bookings = bookings.filter(status=status)
     if date_filter:
         bookings = bookings.filter(date=date_filter)
+    if partner_filter == '1':
+        bookings = bookings.filter(user__account_type=AccountType.BUSINESS)
     bookings = bookings.order_by('-date', '-time_slot__time', '-pk')
     paginator = Paginator(bookings, 50)
     page_obj = paginator.get_page(request.GET.get('page'))
@@ -178,6 +217,7 @@ def booking_list_view(request):
         'query': query,
         'status_filter': status,
         'date_filter': date_filter,
+        'partner_filter': partner_filter,
         'status_choices': BookingStatus.choices,
         'can_manage_site': request.user.can_manage_site,
         'is_sysadmin': request.user.is_sysadmin,
@@ -229,7 +269,10 @@ def booking_create_view(request):
 
 @admin_required
 def booking_edit_view(request, pk):
-    booking = get_object_or_404(Booking, pk=pk)
+    booking = get_object_or_404(
+        Booking.objects.select_related('user', 'user__business_profile', 'rental_property'),
+        pk=pk,
+    )
     old_status = booking.status
     if request.method == 'POST':
         form = AdminBookingForm(request.POST, instance=booking)
@@ -277,6 +320,7 @@ def booking_edit_view(request, pk):
     return render(request, 'panel/bookings/edit.html', {
         'form': form,
         'booking': booking,
+        'business_insights': booking_business_payload(booking),
         'oven_services': services.filter(service_type=ServiceType.OVEN),
         'addon_services': services.filter(service_type=ServiceType.ADDON),
         'selected_service_ids': selected_service_ids,

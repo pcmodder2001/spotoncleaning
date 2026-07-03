@@ -32,13 +32,62 @@
             </div>
         </div>
         <div class="col-lg-6">
+            {% if user.is_business_account and business_form %}
             <div class="app-card card border-0 mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Saved Addresses</span>
-                    <a href="{% url 'accounts:addresses' %}" class="btn btn-sm btn-outline-primary">Manage</a>
+                    <span>Business details</span>
+                    <a href="{% url 'accounts:properties' %}" class="btn btn-sm btn-outline-primary">Properties</a>
                 </div>
                 <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="business_profile">
+                        {% for field in business_form %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">Save business details</button>
+                    </form>
+                </div>
+            </div>
+            {% elif not user.is_business_account %}
+            <div class="app-card card border-0 mb-4">
+                <div class="card-header">Property partner accounts</div>
+                <div class="card-body">
+                    <p class="text-muted small">Estate agents and landlords can save properties, book void cleans, and receive invoices to a dedicated email.</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="upgrade_business">
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ upgrade_form.company_name.id_for_label }}">Company name</label>
+                            {{ upgrade_form.company_name }}
+                            {% if upgrade_form.company_name.errors %}<div class="text-danger small">{{ upgrade_form.company_name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ upgrade_form.invoice_email.id_for_label }}">Invoice email</label>
+                            {{ upgrade_form.invoice_email }}
+                            {% if upgrade_form.invoice_email.errors %}<div class="text-danger small">{{ upgrade_form.invoice_email.errors.0 }}</div>{% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary">Switch to property partner</button>
+                    </form>
+                    <p class="text-muted small mt-3 mb-0">Or <a href="{% url 'accounts:register' %}?type=business">register a new partner account</a>.</p>
+                </div>
+            </div>
+            {% endif %}
+            <div class="app-card card border-0 mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>{% if user.is_business_account %}Properties{% else %}Saved addresses{% endif %}</span>
+                    <a href="{% if user.is_business_account %}{% url 'accounts:properties' %}{% else %}{% url 'accounts:addresses' %}{% endif %}" class="btn btn-sm btn-outline-primary">Manage</a>
+                </div>
+                <div class="card-body">
+                    {% if user.is_business_account %}
+                    <p class="text-muted small mb-0">Save rental and void addresses with access notes for faster booking.</p>
+                    {% else %}
                     <p class="text-muted small mb-0">Save home and work addresses for faster checkout when booking.</p>
+                    {% endif %}
                 </div>
             </div>
             <div class="app-card card border-0">

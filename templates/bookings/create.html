@@ -9,17 +9,6 @@
 {% block twitter_description %}Book oven, hob and extractor cleaning online with {{ SITE_NAME }}.{% endblock %}
 {% block body_class %}booking-page{% endblock %}
 
-{% block meta_pixel_events %}
-{% if META_PIXEL_ID %}
-<script>
-fbq('track', 'ViewContent', {
-    content_name: 'Book a clean',
-    content_category: 'Booking',
-});
-</script>
-{% endif %}
-{% endblock %}
-
 {% block content %}
 <div class="dashboard-header">
     <div class="container">
@@ -97,12 +86,18 @@ fbq('track', 'ViewContent', {
 
                             {% if not is_guest_booking %}
                             <div class="mb-4" id="savedAddressSection">
-                                <label class="form-label" for="savedAddressSelect">Saved address</label>
+                                <label class="form-label" for="savedAddressSelect">
+                                    {% if is_business_account %}Saved property{% else %}Saved address{% endif %}
+                                </label>
                                 <select id="savedAddressSelect" class="form-select">
                                     <option value="">Enter address manually</option>
                                 </select>
                                 <div class="form-text">
+                                    {% if is_business_account %}
+                                    <a href="{% url 'accounts:properties' %}">Manage properties</a>
+                                    {% else %}
                                     <a href="{% url 'accounts:addresses' %}">Manage saved addresses</a>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endif %}
@@ -123,7 +118,7 @@ fbq('track', 'ViewContent', {
                                     {{ form.city }}
                                     {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
                                 </div>
-                                {% if not is_guest_booking %}
+                                {% if not is_guest_booking and not is_business_account %}
                                 <div class="col-12">
                                     <div class="form-check">
                                         <input type="checkbox" class="form-check-input" name="save_address" id="id_save_address" value="1">

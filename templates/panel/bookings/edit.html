@@ -7,6 +7,9 @@
     <div class="col-lg-9">
         <div class="panel-card card border-0">
             <div class="card-body p-4">
+                {% if business_insights %}
+                {% include 'panel/includes/business_account_card.html' with business=business_insights %}
+                {% endif %}
                 {% if form.non_field_errors %}
                 <script>
                     document.addEventListener('DOMContentLoaded', function () {

@@ -12,6 +12,12 @@
             <p>Total Users</p>
         </div>
     </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="panel-stat">
+            <h3>{{ stats.business_accounts }}</h3>
+            <p>Business accounts</p>
+        </div>
+    </div>
     {% endif %}
     <div class="col-md-4 col-lg-2">
         <div class="panel-stat">
@@ -56,7 +62,18 @@
                         {% for booking in recent_bookings %}
                         <tr>
                             <td><button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-booking-view="{{ booking.pk }}">#{{ booking.pk }}</button></td>
-                            <td>{{ booking.contact_full_name }}</td>
+                            <td>
+                                {{ booking.contact_full_name }}
+                                {% if booking.user.is_business_account %}
+                                <br><span class="badge role-badge role-partner">Business</span>
+                                {% if booking.user.business_profile %}
+                                <small class="text-muted d-block">{{ booking.user.business_profile.company_name }}</small>
+                                {% endif %}
+                                {% endif %}
+                                {% if booking.rental_property %}
+                                <small class="text-muted d-block"><i class="bi bi-building"></i> {{ booking.rental_property.display_label }}</small>
+                                {% endif %}
+                            </td>
                             <td>{{ booking.service_summary }}</td>
                             <td>{{ booking.date|date:"d M Y" }}</td>
                             <td><span class="badge status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
@@ -79,7 +96,15 @@
                     <tbody>
                         {% for u in recent_users %}
                         <tr>
-                            <td>{{ u.full_name }}</td>
+                            <td>
+                                {{ u.full_name }}
+                                {% if u.is_business_account %}
+                                <br><span class="badge role-badge role-partner">Business</span>
+                                {% if u.business_profile %}
+                                <small class="text-muted d-block">{{ u.business_profile.company_name }}</small>
+                                {% endif %}
+                                {% endif %}
+                            </td>
                             <td>{{ u.email }}</td>
                             <td>{{ u.date_joined|date:"d M Y" }}</td>
                         </tr>

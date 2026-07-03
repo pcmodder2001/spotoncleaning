@@ -16,7 +16,18 @@ from audit.actions import (
 )
 from audit.services import log_action
 from panel.decorators import admin_required, panel_required
+from panel.business_insights import booking_business_payload
 from services.models import Service, ServiceType
+
+
+def _booking_queryset_with_business():
+    return Booking.objects.select_related(
+        'time_slot',
+        'promo_code',
+        'user',
+        'user__business_profile',
+        'rental_property',
+    ).prefetch_related('services', 'photos')
 
 
 def _photo_url(request, photo):
@@ -57,9 +68,7 @@ def _service_payload(request, booking, service):
 
 
 def booking_detail_payload(request, booking):
-    booking = Booking.objects.select_related('time_slot', 'promo_code', 'user').prefetch_related(
-        'services', 'photos'
-    ).get(pk=booking.pk)
+    booking = _booking_queryset_with_business().get(pk=booking.pk)
 
     return {
         'id': booking.pk,
@@ -72,6 +81,7 @@ def booking_detail_payload(request, booking):
             'email': booking.contact_email,
             'phone': booking.contact_phone or '',
         },
+        'business_account': booking_business_payload(booking),
         'address': {
             'line1': booking.address_line_1,
             'line2': booking.address_line_2,

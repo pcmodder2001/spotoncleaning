@@ -6,7 +6,13 @@
 <div class="dashboard-header">
     <div class="container">
         <h1 class="fw-bold">Welcome, {{ user.first_name }}!</h1>
-        <p class="text-muted mb-0">Manage your bookings and profile</p>
+        <p class="text-muted mb-0">
+            {% if user.is_business_account and business_profile %}
+            {{ business_profile.company_name }} — manage void cleans and properties
+            {% else %}
+            Manage your bookings and profile
+            {% endif %}
+        </p>
     </div>
 </div>
 
@@ -93,9 +99,13 @@
                 <div class="card-header">Quick Actions</div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'bookings:create' %}" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>New Booking</a>
+                        <a href="{% url 'bookings:create' %}" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>{% if user.is_business_account %}Book void clean{% else %}New Booking{% endif %}</a>
                         <a href="{% url 'accounts:my_bookings' %}" class="btn btn-outline-primary"><i class="bi bi-list me-2"></i>My Bookings</a>
+                        {% if user.is_business_account %}
+                        <a href="{% url 'accounts:properties' %}" class="btn btn-outline-primary"><i class="bi bi-building me-2"></i>Properties{% if property_count %} ({{ property_count }}){% endif %}</a>
+                        {% else %}
                         <a href="{% url 'accounts:addresses' %}" class="btn btn-outline-primary"><i class="bi bi-geo-alt me-2"></i>Saved Addresses</a>
+                        {% endif %}
                         <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary"><i class="bi bi-person me-2"></i>Edit Profile</a>
                     </div>
                 </div>

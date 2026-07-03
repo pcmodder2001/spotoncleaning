@@ -1,0 +1,76 @@
+{% if business %}
+<div class="panel-business-card mb-4">
+    <div class="panel-business-card-header">
+        <span class="badge role-badge role-partner">{{ business.account_type_label }}</span>
+        {% if business.company_name %}
+        <strong class="panel-business-company">{{ business.company_name }}</strong>
+        {% endif %}
+    </div>
+    <dl class="panel-business-details mb-0">
+        {% if business.invoice_email %}
+        <div class="panel-business-detail">
+            <dt>Invoice email</dt>
+            <dd><a href="mailto:{{ business.invoice_email }}">{{ business.invoice_email }}</a></dd>
+        </div>
+        {% endif %}
+        {% if business.booked_by_name %}
+        <div class="panel-business-detail">
+            <dt>Booked by</dt>
+            <dd>
+                {{ business.booked_by_name }}
+                {% if business.booked_by_email %}<br><a href="mailto:{{ business.booked_by_email }}">{{ business.booked_by_email }}</a>{% endif %}
+                {% if business.booked_by_phone %}<br><a href="tel:{{ business.booked_by_phone }}">{{ business.booked_by_phone }}</a>{% endif %}
+            </dd>
+        </div>
+        {% endif %}
+        {% if business.user_edit_url %}
+        <div class="panel-business-detail">
+            <dt>Account</dt>
+            <dd><a href="{{ business.user_edit_url }}">View partner account</a></dd>
+        </div>
+        {% endif %}
+        {% if business.property %}
+        <div class="panel-business-detail">
+            <dt>Property</dt>
+            <dd>
+                <strong>{{ business.property.display_label }}</strong>
+                {% if business.property.reference and business.property.reference != business.property.display_label %}
+                <span class="text-muted">({{ business.property.reference }})</span>
+                {% endif %}
+                <br><span class="text-muted small">{{ business.property.summary }}</span>
+            </dd>
+        </div>
+        {% if business.property.contact_name or business.property.contact_phone %}
+        <div class="panel-business-detail">
+            <dt>Property contact</dt>
+            <dd>
+                {% if business.property.contact_name %}{{ business.property.contact_name }}{% endif %}
+                {% if business.property.contact_phone %}
+                {% if business.property.contact_name %}<br>{% endif %}
+                <a href="tel:{{ business.property.contact_phone }}">{{ business.property.contact_phone }}</a>
+                {% endif %}
+            </dd>
+        </div>
+        {% endif %}
+        {% if business.property.access_instructions %}
+        <div class="panel-business-detail">
+            <dt>Property access</dt>
+            <dd>{{ business.property.access_instructions|linebreaksbr }}</dd>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% if business.property_count is not None %}
+        <div class="panel-business-detail">
+            <dt>Saved properties</dt>
+            <dd>{{ business.property_count }}</dd>
+        </div>
+        {% endif %}
+        {% if business.booking_count is not None %}
+        <div class="panel-business-detail">
+            <dt>Bookings</dt>
+            <dd>{{ business.booking_count }}</dd>
+        </div>
+        {% endif %}
+    </dl>
+</div>
+{% endif %}

@@ -1,59 +1,93 @@
 {% extends 'base.html' %}
 
-{% block title %}Register - {{ SITE_NAME }}{% endblock %}
+{% block title %}{% if is_business_registration %}Property partner registration{% else %}Register{% endif %} - {{ SITE_NAME }}{% endblock %}
 
 {% block content %}
 <div class="auth-page">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-6">
+            <div class="col-md-7 col-lg-6">
                 <div class="auth-card card">
                     <div class="card-body">
                         <div class="text-center mb-4">
                             <span class="section-eyebrow">Get started</span>
-                            <h2 class="fw-bold mb-0">Create Account</h2>
+                            <h2 class="fw-bold mb-1">
+                                {% if is_business_registration %}Property partner account{% else %}Create account{% endif %}
+                            </h2>
+                            {% if is_business_registration %}
+                            <p class="text-muted small mb-0">For estate agents, letting agents &amp; landlords booking void appliance cleans.</p>
+                            {% endif %}
                         </div>
-                        <form method="post">
+                        <form method="post" id="registerForm">
                             {% csrf_token %}
                             {% if next_url %}
                             <input type="hidden" name="next" value="{{ next_url }}">
                             {% endif %}
+
+                            <div class="mb-4">
+                                <label class="form-label d-block">Account type</label>
+                                {% for radio in form.account_type %}
+                                <div class="form-check">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <div id="businessFields" class="mb-4"{% if not is_business_registration %} hidden{% endif %}>
+                                <h6 class="fw-semibold mb-3">Business details</h6>
+                                <div class="mb-3">
+                                    <label class="form-label" for="{{ form.company_name.id_for_label }}">Company name</label>
+                                    {{ form.company_name }}
+                                    {% if form.company_name.errors %}<div class="text-danger small">{{ form.company_name.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="{{ form.invoice_email.id_for_label }}">Invoice email</label>
+                                    {{ form.invoice_email }}
+                                    <div class="form-text">Booking confirmations and invoices go here (defaults to your login email if blank).</div>
+                                    {% if form.invoice_email.errors %}<div class="text-danger small">{{ form.invoice_email.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <h6 class="fw-semibold mb-3">Your details</h6>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">First Name</label>
+                                    <label class="form-label">First name</label>
                                     {{ form.first_name }}
-                                    {% if form.first_name.errors %}<div class="text-danger small">{{ form.first_name.errors.0 }}</div>{% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Last Name</label>
+                                    <label class="form-label">Last name</label>
                                     {{ form.last_name }}
-                                    {% if form.last_name.errors %}<div class="text-danger small">{{ form.last_name.errors.0 }}</div>{% endif %}
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Email Address</label>
+                                <label class="form-label">Email address</label>
                                 {{ form.email }}
                                 {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Phone Number</label>
+                                <label class="form-label">Phone number</label>
                                 {{ form.phone_number }}
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Password</label>
                                 {{ form.password1 }}
-                                {% if form.password1.errors %}<div class="text-danger small">{{ form.password1.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Confirm Password</label>
+                                <label class="form-label">Confirm password</label>
                                 {{ form.password2 }}
-                                {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors.0 }}</div>{% endif %}
                             </div>
                             {% include 'includes/legal_acceptance.html' with field=form.accept_terms %}
-                            <button type="submit" class="btn btn-primary w-100 mb-3">Register</button>
+                            <button type="submit" class="btn btn-primary w-100 mb-3">Create account</button>
                             <p class="text-center mb-0">Already have an account?
                                 <a href="{% url 'accounts:login' %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">Login</a>
                             </p>
+                            {% if not is_business_registration %}
+                            <p class="text-center text-muted small mt-3 mb-0">
+                                Estate agent or landlord?
+                                <a href="{% url 'accounts:register' %}?type=business">Register as a property partner</a>
+                            </p>
+                            {% endif %}
                         </form>
                     </div>
                 </div>
@@ -61,4 +95,35 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const businessFields = document.getElementById('businessFields');
+    const accountTypeInputs = document.querySelectorAll('input[name="account_type"]');
+    const emailInput = document.getElementById('id_email');
+
+    function syncBusinessFields() {
+        const selected = document.querySelector('input[name="account_type"]:checked');
+        const isBusiness = selected && selected.value === 'business';
+        if (businessFields) businessFields.hidden = !isBusiness;
+    }
+
+    accountTypeInputs.forEach(function (input) {
+        input.addEventListener('change', syncBusinessFields);
+    });
+
+    syncBusinessFields();
+
+    const form = document.getElementById('registerForm');
+    form?.addEventListener('submit', function () {
+        const selected = document.querySelector('input[name="account_type"]:checked');
+        const invoiceInput = document.getElementById('id_invoice_email');
+        if (selected && selected.value === 'business' && invoiceInput && !invoiceInput.value && emailInput) {
+            invoiceInput.value = emailInput.value;
+        }
+    });
+});
+</script>
 {% endblock %}

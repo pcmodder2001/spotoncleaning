@@ -106,6 +106,9 @@
                         <li><a href="{% url 'bookings:create' %}" class="text-decoration-none">Book online</a></li>
                         <li><a href="{% url 'website:home' %}#how-we-clean" class="text-decoration-none">How we clean</a></li>
                         <li><a href="{% url 'website:privacy' %}" class="text-decoration-none">Privacy policy</a></li>
+                        {% if public_site %}
+                        <li><a href="#" class="text-decoration-none" data-cookie-settings>Cookie settings</a></li>
+                        {% endif %}
                         <li><a href="{% url 'website:terms' %}" class="text-decoration-none">Terms &amp; conditions</a></li>
                     </ul>
                 </div>
@@ -126,10 +129,17 @@
         </div>
     </footer>
 
+    {% if public_site %}
+    {% include 'includes/cookie_banner.html' %}
+    {% endif %}
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{% static_v 'js/toast.js' %}"></script>
     <script src="{% static_v 'js/main.js' %}"></script>
+    {% if public_site %}
+    <script src="{% static_v 'js/cookie-consent.js' %}"></script>
+    {% endif %}
     {% block extra_js %}{% endblock %}
 </body>
 </html>

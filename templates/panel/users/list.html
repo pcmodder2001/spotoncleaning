@@ -4,8 +4,16 @@
 
 {% block panel_content %}
 <form method="get" class="row g-2 mb-4">
-    <div class="col-md-6">
-        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by name, email, or phone">
+    <div class="col-md-5">
+        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by name, email, phone, or company">
+    </div>
+    <div class="col-md-3">
+        <select name="account_type" class="form-select">
+            <option value="">All account types</option>
+            {% for value, label in account_type_choices %}
+            <option value="{{ value }}" {% if account_type_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
     </div>
     <div class="col-auto">
         <button type="submit" class="btn btn-primary">Search</button>
@@ -19,6 +27,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Account</th>
                     <th>Phone</th>
                     <th>Role</th>
                     <th>Registered</th>
@@ -30,8 +39,23 @@
             <tbody>
                 {% for u in users %}
                 <tr>
-                    <td>{{ u.full_name }}</td>
+                    <td>
+                        {{ u.full_name }}
+                        {% if u.is_business_account and u.business_profile %}
+                        <br><small class="text-muted">{{ u.business_profile.company_name }}</small>
+                        {% endif %}
+                    </td>
                     <td>{{ u.email }}</td>
+                    <td>
+                        {% if u.is_business_account %}
+                        <span class="badge role-badge role-partner">{{ u.get_account_type_display }}</span>
+                        {% if u.property_count %}
+                        <br><small class="text-muted">{{ u.property_count }} propert{{ u.property_count|pluralize:"y,ies" }}</small>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
                     <td>{{ u.phone_number|default:"—" }}</td>
                     <td>
                         {% if u.is_sysadmin %}
@@ -40,6 +64,8 @@
                         <span class="badge role-badge role-admin">Admin</span>
                         {% elif u.role == 'engineer' %}
                         <span class="badge role-badge role-engineer">Engineer</span>
+                        {% elif u.is_business_account %}
+                        <span class="badge role-badge role-partner">Business account</span>
                         {% else %}
                         <span class="badge role-badge role-standard">Standard</span>
                         {% endif %}
@@ -54,7 +80,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">No users found</td></tr>
+                <tr><td colspan="9" class="text-center text-muted py-4">No users found</td></tr>
                 {% endfor %}
             </tbody>
         </table>

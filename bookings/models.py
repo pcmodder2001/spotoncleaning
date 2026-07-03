@@ -109,6 +109,13 @@ class Booking(models.Model):
     address_line_2 = models.CharField(max_length=255, blank=True)
     city = models.CharField(max_length=100)
     postcode = models.CharField(max_length=20)
+    rental_property = models.ForeignKey(
+        'accounts.Property',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bookings',
+    )
     notes = models.TextField(blank=True)
     access_instructions = models.TextField(
         blank=True,

@@ -2,7 +2,7 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.core.exceptions import PermissionDenied
 
-from .models import CustomUser, SavedAddress
+from .models import BusinessProfile, CustomUser, Property, SavedAddress
 
 
 class SavedAddressInline(admin.TabularInline):
@@ -11,22 +11,35 @@ class SavedAddressInline(admin.TabularInline):
     fields = ('label', 'address_line_1', 'city', 'postcode', 'is_default')
 
 
+class BusinessProfileInline(admin.StackedInline):
+    model = BusinessProfile
+    extra = 0
+    max_num = 1
+
+
+class PropertyInline(admin.TabularInline):
+    model = Property
+    extra = 0
+    fields = ('reference', 'address_line_1', 'city', 'postcode', 'is_default')
+
+
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     ordering = ('email',)
-    list_display = ('email', 'first_name', 'last_name', 'phone_number', 'role', 'is_staff', 'is_active')
-    search_fields = ('email', 'first_name', 'last_name')
-    inlines = [SavedAddressInline]
+    list_display = ('email', 'first_name', 'last_name', 'account_type', 'phone_number', 'role', 'is_staff', 'is_active')
+    list_filter = ('account_type', 'role', 'is_staff', 'is_active')
+    search_fields = ('email', 'first_name', 'last_name', 'business_profile__company_name')
+    inlines = [BusinessProfileInline, PropertyInline, SavedAddressInline]
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'phone_number')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'phone_number', 'account_type')}),
         ('Permissions', {'fields': ('is_active', 'role', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'phone_number', 'password1', 'password2'),
+            'fields': ('email', 'first_name', 'last_name', 'phone_number', 'account_type', 'password1', 'password2'),
         }),
     )
 

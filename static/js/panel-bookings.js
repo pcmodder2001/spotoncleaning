@@ -144,6 +144,75 @@
       </div>`;
   }
 
+  function businessAccountHtml(business) {
+    if (!business) return '';
+
+    const property = business.property;
+    let propertyHtml = '';
+    if (property) {
+      propertyHtml = `
+        <div class="panel-business-detail">
+          <dt>Property</dt>
+          <dd>
+            <strong>${escapeHtml(property.display_label)}</strong>
+            ${property.reference && property.reference !== property.display_label
+              ? `<span class="text-muted"> (${escapeHtml(property.reference)})</span>` : ''}
+            <br><span class="text-muted small">${escapeHtml(property.summary)}</span>
+          </dd>
+        </div>`;
+      if (property.contact_name || property.contact_phone) {
+        propertyHtml += `
+          <div class="panel-business-detail">
+            <dt>Property contact</dt>
+            <dd>
+              ${property.contact_name ? escapeHtml(property.contact_name) : ''}
+              ${property.contact_phone ? `
+                ${property.contact_name ? '<br>' : ''}
+                <a href="tel:${escapeHtml(property.contact_phone)}">${escapeHtml(property.contact_phone)}</a>` : ''}
+            </dd>
+          </div>`;
+      }
+      if (property.access_instructions) {
+        propertyHtml += `
+          <div class="panel-business-detail">
+            <dt>Property access</dt>
+            <dd>${escapeHtml(property.access_instructions)}</dd>
+          </div>`;
+      }
+    }
+
+    return `
+      <div class="booking-view-section panel-business-card">
+        <h6>Business account</h6>
+        <div class="panel-business-card-header mb-2">
+          <span class="badge role-badge role-partner">${escapeHtml(business.account_type_label || 'Business account')}</span>
+          ${business.company_name ? `<strong class="panel-business-company ms-2">${escapeHtml(business.company_name)}</strong>` : ''}
+        </div>
+        <dl class="panel-business-details mb-0">
+          ${business.invoice_email ? `
+            <div class="panel-business-detail">
+              <dt>Invoice email</dt>
+              <dd><a href="mailto:${escapeHtml(business.invoice_email)}">${escapeHtml(business.invoice_email)}</a></dd>
+            </div>` : ''}
+          ${business.booked_by_name ? `
+            <div class="panel-business-detail">
+              <dt>Booked by</dt>
+              <dd>
+                ${escapeHtml(business.booked_by_name)}
+                ${business.booked_by_email ? `<br><a href="mailto:${escapeHtml(business.booked_by_email)}">${escapeHtml(business.booked_by_email)}</a>` : ''}
+                ${business.booked_by_phone ? `<br><a href="tel:${escapeHtml(business.booked_by_phone)}">${escapeHtml(business.booked_by_phone)}</a>` : ''}
+              </dd>
+            </div>` : ''}
+          ${propertyHtml}
+          ${business.user_edit_url ? `
+            <div class="panel-business-detail">
+              <dt>Account</dt>
+              <dd><a href="${escapeHtml(business.user_edit_url)}">View partner account</a></dd>
+            </div>` : ''}
+        </dl>
+      </div>`;
+  }
+
   function buildViewHtml(data) {
     return `
       <div class="booking-view-modal text-start">
@@ -151,6 +220,8 @@
           <span class="badge status-${escapeHtml(data.status)}">${escapeHtml(data.status_label)}</span>
           <span class="text-muted">${escapeHtml(data.date)} · ${escapeHtml(data.time)}</span>
         </div>
+
+        ${businessAccountHtml(data.business_account)}
 
         <div class="booking-view-section">
           <h6>Customer</h6>

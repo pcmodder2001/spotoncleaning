@@ -7,6 +7,41 @@
     <div class="col-lg-8">
         <div class="panel-card card border-0">
             <div class="card-body p-4">
+                {% if business_summary %}
+                {% include 'panel/includes/business_account_card.html' with business=business_summary %}
+                {% if partner_properties %}
+                <div class="panel-card card border-0 mb-4">
+                    <div class="card-header py-2">Saved properties</div>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Address</th>
+                                    <th>Contact</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prop in partner_properties %}
+                                <tr>
+                                    <td>{{ prop.display_label }}</td>
+                                    <td class="small text-muted">{{ prop.summary }}</td>
+                                    <td class="small">
+                                        {% if prop.contact_name %}{{ prop.contact_name }}{% endif %}
+                                        {% if prop.contact_phone %}
+                                        {% if prop.contact_name %}<br>{% endif %}
+                                        {{ prop.contact_phone }}
+                                        {% endif %}
+                                        {% if not prop.contact_name and not prop.contact_phone %}—{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
                 <form method="post">
                     {% csrf_token %}
                     {% if edit_user.is_sysadmin %}

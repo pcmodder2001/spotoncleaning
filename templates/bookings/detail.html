@@ -24,6 +24,9 @@
                         <div class="col-sm-6"><strong>Date:</strong><br>{{ booking.date|date:"l, d F Y" }}</div>
                         <div class="col-sm-6"><strong>Time:</strong><br>{{ booking.time_slot.time|time:"H:i" }}</div>
                         <div class="col-sm-6"><strong>Booked on:</strong><br>{{ booking.created_at|date:"d M Y H:i" }}</div>
+                        {% if booking.rental_property %}
+                        <div class="col-12"><strong>Property:</strong><br>{{ booking.rental_property.display_label }}</div>
+                        {% endif %}
                         <div class="col-12"><strong>Address:</strong><br>{{ booking.full_address }}</div>
                         {% if booking.notes %}
                         <div class="col-12"><strong>Notes:</strong><br>{{ booking.notes }}</div>

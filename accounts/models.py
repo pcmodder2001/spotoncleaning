@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.utils import timezone
 
+from accounts.account_types import AccountType
 from accounts.roles import UserRole
 
 
@@ -36,6 +37,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     phone_number = models.CharField(max_length=20, blank=True)
+    account_type = models.CharField(
+        max_length=20,
+        choices=AccountType.choices,
+        default=AccountType.PERSONAL,
+    )
     role = models.CharField(
         max_length=20,
         choices=UserRole.choices,
@@ -59,6 +65,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     @property
     def full_name(self):
         return f'{self.first_name} {self.last_name}'.strip()
+
+    @property
+    def is_business_account(self):
+        return self.account_type == AccountType.BUSINESS
 
     @property
     def is_sysadmin(self):
@@ -155,6 +165,101 @@ class SavedAddress(models.Model):
         super().save(*args, **kwargs)
         if self.is_default:
             SavedAddress.objects.filter(
+                user=self.user,
+                is_default=True,
+            ).exclude(pk=self.pk).update(is_default=False)
+
+
+class BusinessProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='business_profile',
+    )
+    company_name = models.CharField(max_length=200)
+    invoice_email = models.EmailField(
+        help_text='Where invoices and booking confirmations are sent.',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Business profile'
+        verbose_name_plural = 'Business profiles'
+
+    def __str__(self):
+        return self.company_name
+
+
+class Property(models.Model):
+    """A rental or managed property for property-partner (business) accounts."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='properties',
+    )
+    reference = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='Optional label, e.g. Flat 4, Oak House or tenancy ref.',
+    )
+    address_line_1 = models.CharField(max_length=255)
+    address_line_2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100)
+    postcode = models.CharField(max_length=10)
+    access_instructions = models.TextField(
+        blank=True,
+        help_text='Keysafe codes, agent contact, parking — shown to your technician.',
+    )
+    contact_name = models.CharField(max_length=150, blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_default', '-updated_at']
+        verbose_name_plural = 'Properties'
+
+    def __str__(self):
+        return self.display_label
+
+    @property
+    def display_label(self):
+        if self.reference:
+            return self.reference
+        return self.address_line_1
+
+    @property
+    def summary(self):
+        parts = [self.address_line_1]
+        if self.address_line_2:
+            parts.append(self.address_line_2)
+        parts.append(f'{self.city} {self.postcode}')
+        return ', '.join(parts)
+
+    def as_booking_dict(self):
+        return {
+            'id': self.pk,
+            'label': self.display_label,
+            'reference': self.reference,
+            'address_line_1': self.address_line_1,
+            'address_line_2': self.address_line_2 or '',
+            'city': self.city,
+            'postcode': self.postcode,
+            'access_instructions': self.access_instructions,
+            'contact_name': self.contact_name,
+            'contact_phone': self.contact_phone,
+            'is_default': self.is_default,
+            'summary': self.summary,
+            'is_property': True,
+        }
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.is_default:
+            Property.objects.filter(
                 user=self.user,
                 is_default=True,
             ).exclude(pk=self.pk).update(is_default=False)

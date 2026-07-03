@@ -34,6 +34,11 @@ from website.tracking import queue_meta_pixel_event, apply_marketing_attribution
 def _booking_prefill_address(user):
     if not user.is_authenticated:
         return None
+    if user.is_business_account:
+        from accounts.business import get_default_property
+        prop = get_default_property(user)
+        if prop:
+            return prop.as_booking_dict()
     from accounts.addresses import get_default_saved_address, import_addresses_from_bookings
 
     import_addresses_from_bookings(user)
@@ -65,6 +70,13 @@ def _booking_prefill_address(user):
 def _saved_addresses_json(user):
     if not user.is_authenticated:
         return '[]'
+    if user.is_business_account:
+        from accounts.business import get_properties_for_user
+        properties = [
+            prop.as_booking_dict()
+            for prop in get_properties_for_user(user)
+        ]
+        return json.dumps(properties)
     from accounts.addresses import get_saved_addresses_for_user, import_addresses_from_bookings
 
     import_addresses_from_bookings(user)
@@ -97,10 +109,27 @@ def _booking_create_context(request, form):
         'additional_addon_services': additional_addon_services,
         'schedule_debug': settings.SCHEDULE_DEBUG,
         'is_guest_booking': not request.user.is_authenticated,
+        'is_business_account': request.user.is_authenticated and request.user.is_business_account,
         'prefill_address': prefill_address,
         'prefill_address_json': json.dumps(prefill_address) if prefill_address else 'null',
         'saved_addresses_json': _saved_addresses_json(request.user),
     }
+
+
+def _attach_booking_property(booking, request):
+    if not request.user.is_authenticated or not request.user.is_business_account:
+        return
+    property_id = request.POST.get('property_id', '').strip()
+    if not property_id or not property_id.isdigit():
+        return
+    from accounts.models import Property
+    prop = Property.objects.filter(pk=int(property_id), user=request.user).first()
+    if not prop:
+        return
+    booking.rental_property = prop
+    if prop.access_instructions:
+        booking.access_instructions = prop.access_instructions
+    booking.save(update_fields=['rental_property', 'access_instructions', 'updated_at'])
 
 
 def create_booking_view(request):
@@ -118,6 +147,7 @@ def create_booking_view(request):
                         service_ids = [s.pk for s in form.cleaned_data['services']]
                         booking.save()
                         booking.services.set(form.cleaned_data['services'])
+                        _attach_booking_property(booking, request)
                         booking.geocode_and_set_duration(service_ids)
                         if request.POST.get('save_address') == '1':
                             from accounts.addresses import save_address_for_user
@@ -195,6 +225,12 @@ def create_booking_view(request):
             initial.setdefault('address_line_2', prefill['address_line_2'])
             initial.setdefault('city', prefill['city'])
         form = form_class(initial=initial)
+        queue_meta_pixel_event(
+            request,
+            'ViewContent',
+            content_name='Book a clean',
+            content_category='Booking',
+        )
 
     return render(
         request,
@@ -236,7 +272,7 @@ def booking_calendar_ics_view(request):
 @login_required
 def booking_detail_view(request, pk):
     booking = get_object_or_404(
-        Booking.objects.select_related('time_slot', 'promo_code').prefetch_related('services'),
+        Booking.objects.select_related('time_slot', 'promo_code', 'rental_property').prefetch_related('services'),
         pk=pk,
         user=request.user,
     )

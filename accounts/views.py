@@ -34,14 +34,19 @@ from audit.actions import (
 from audit.services import log_action
 
 from .forms import (
+    BusinessProfileForm,
     CompleteAccountFromBookingForm,
     CustomPasswordChangeForm,
     LoginForm,
     ProfileForm,
+    PropertyForm,
     RegistrationForm,
     SavedAddressForm,
+    UpgradeToBusinessForm,
 )
-from .models import SavedAddress
+from .models import Property, SavedAddress
+from accounts.account_types import AccountType
+from accounts.business import ensure_business_profile, get_business_profile
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -51,6 +56,8 @@ def register_view(request):
     if request.user.is_authenticated:
         return redirect('accounts:dashboard')
     next_url = request.GET.get('next')
+    is_business = request.GET.get('type') == 'business'
+    initial = {'account_type': AccountType.BUSINESS} if is_business else {}
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
@@ -62,22 +69,35 @@ def register_view(request):
                     'You can still log in and use the site.',
                 )
             else:
-                messages.success(request, 'Your account has been created successfully. Welcome!')
+                if user.is_business_account:
+                    messages.success(
+                        request,
+                        'Your property partner account is ready. Add your first property to start booking.',
+                    )
+                else:
+                    messages.success(request, 'Your account has been created successfully. Welcome!')
             login(request, user)
             log_action(
                 AUTH_REGISTER,
-                f'Registered new account ({user.email}).',
+                f'Registered new {"property partner" if user.is_business_account else ""} account ({user.email}).',
                 request=request,
                 user=user,
                 target_type='user',
                 target_id=user.pk,
                 target_label=user.email,
+                metadata={'account_type': user.account_type},
             )
             post_next = request.POST.get('next') or next_url
+            if user.is_business_account and not post_next:
+                return redirect('accounts:properties')
             return redirect(post_next or 'accounts:dashboard')
     else:
-        form = RegistrationForm()
-    return render(request, 'accounts/register.html', {'form': form, 'next_url': next_url})
+        form = RegistrationForm(initial=initial)
+    return render(request, 'accounts/register.html', {
+        'form': form,
+        'next_url': next_url,
+        'is_business_registration': is_business,
+    })
 
 
 def login_view(request):
@@ -205,6 +225,8 @@ def dashboard_view(request):
         'completed_count': completed_count,
         'total_bookings': bookings.count(),
         'pending_count': bookings.filter(status=BookingStatus.PENDING).count(),
+        'business_profile': get_business_profile(request.user),
+        'property_count': request.user.properties.count() if request.user.is_business_account else 0,
     }
     return render(request, 'accounts/dashboard.html', context)
 
@@ -224,6 +246,84 @@ def my_bookings_view(request):
         'bookings': bookings,
         'status_filter': status_filter,
         'status_choices': BookingStatus.choices,
+    })
+
+
+@login_required
+def properties_view(request):
+    if not request.user.is_business_account:
+        messages.info(
+            request,
+            'Property management is for property partner accounts. '
+            'Upgrade your account from your profile, or register a partner account.',
+        )
+        return redirect('accounts:profile')
+
+    editing = None
+    show_property_modal = False
+    modal_action = 'add'
+    form = PropertyForm()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            modal_action = 'add'
+            form = PropertyForm(request.POST)
+            if form.is_valid():
+                prop = form.save(commit=False)
+                prop.user = request.user
+                prop.save()
+                messages.success(request, 'Property saved.')
+                return redirect('accounts:properties')
+            show_property_modal = True
+        elif action == 'edit':
+            modal_action = 'edit'
+            editing = get_object_or_404(
+                Property,
+                pk=request.POST.get('property_id'),
+                user=request.user,
+            )
+            form = PropertyForm(request.POST, instance=editing)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Property updated.')
+                return redirect('accounts:properties')
+            show_property_modal = True
+        elif action == 'delete':
+            prop = get_object_or_404(
+                Property,
+                pk=request.POST.get('property_id'),
+                user=request.user,
+            )
+            was_default = prop.is_default
+            prop.delete()
+            if was_default:
+                next_property = Property.objects.filter(user=request.user).first()
+                if next_property:
+                    next_property.is_default = True
+                    next_property.save(update_fields=['is_default', 'updated_at'])
+            messages.success(request, 'Property removed.')
+            return redirect('accounts:properties')
+        elif action == 'set_default':
+            prop = get_object_or_404(
+                Property,
+                pk=request.POST.get('property_id'),
+                user=request.user,
+            )
+            prop.is_default = True
+            prop.save(update_fields=['is_default', 'updated_at'])
+            messages.success(request, f'"{prop.display_label}" is now your default property.')
+            return redirect('accounts:properties')
+
+    properties = Property.objects.filter(user=request.user)
+    business_profile = get_business_profile(request.user)
+    return render(request, 'accounts/properties.html', {
+        'properties': properties,
+        'form': form,
+        'editing': editing,
+        'show_property_modal': show_property_modal,
+        'modal_action': modal_action,
+        'business_profile': business_profile,
     })
 
 
@@ -306,6 +406,10 @@ def saved_addresses_view(request):
 
 @login_required
 def profile_view(request):
+    business_profile = get_business_profile(request.user)
+    upgrade_form = UpgradeToBusinessForm()
+    business_form = BusinessProfileForm(instance=business_profile) if business_profile else None
+
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'profile':
@@ -340,15 +444,42 @@ def profile_view(request):
                 )
                 messages.success(request, 'Your password has been changed.')
                 return redirect('accounts:profile')
+        elif action == 'upgrade_business' and not request.user.is_business_account:
+            upgrade_form = UpgradeToBusinessForm(request.POST)
+            profile_form = ProfileForm(instance=request.user)
+            password_form = CustomPasswordChangeForm(request.user)
+            if upgrade_form.is_valid():
+                ensure_business_profile(
+                    request.user,
+                    company_name=upgrade_form.cleaned_data['company_name'],
+                    invoice_email=upgrade_form.cleaned_data['invoice_email'],
+                )
+                messages.success(
+                    request,
+                    'Your account is now a property partner account. Add your properties to book void cleans.',
+                )
+                return redirect('accounts:properties')
+        elif action == 'business_profile' and request.user.is_business_account and business_profile:
+            business_form = BusinessProfileForm(request.POST, instance=business_profile)
+            profile_form = ProfileForm(instance=request.user)
+            password_form = CustomPasswordChangeForm(request.user)
+            if business_form.is_valid():
+                business_form.save()
+                messages.success(request, 'Business details updated.')
+                return redirect('accounts:profile')
         else:
             profile_form = ProfileForm(instance=request.user)
             password_form = CustomPasswordChangeForm(request.user)
     else:
         profile_form = ProfileForm(instance=request.user)
         password_form = CustomPasswordChangeForm(request.user)
+
     return render(request, 'accounts/profile.html', {
         'profile_form': profile_form,
         'password_form': password_form,
+        'business_profile': business_profile,
+        'business_form': business_form,
+        'upgrade_form': upgrade_form,
     })
 
 

@@ -2,13 +2,36 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, UserCreationForm
 from django.contrib.auth import get_user_model
 
-from accounts.models import SavedAddress
+from accounts.account_types import AccountType
+from accounts.models import BusinessProfile, Property, SavedAddress
 from website.legal import accept_terms_field
 
 User = get_user_model()
 
 
 class RegistrationForm(UserCreationForm):
+    account_type = forms.ChoiceField(
+        choices=AccountType.choices,
+        initial=AccountType.PERSONAL,
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        label='Account type',
+    )
+    company_name = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g. Oak Lettings Ltd',
+        }),
+    )
+    invoice_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'accounts@yourcompany.com',
+        }),
+        label='Invoice email',
+    )
     first_name = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'class': 'form-control'}))
     last_name = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'class': 'form-control'}))
     email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control'}))
@@ -31,6 +54,29 @@ class RegistrationForm(UserCreationForm):
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError('An account with this email already exists.')
         return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('account_type') == AccountType.BUSINESS:
+            if not cleaned_data.get('company_name', '').strip():
+                self.add_error('company_name', 'Company name is required for property partner accounts.')
+            invoice_email = cleaned_data.get('invoice_email', '').strip()
+            if not invoice_email:
+                cleaned_data['invoice_email'] = cleaned_data.get('email', '').lower()
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.account_type = self.cleaned_data.get('account_type', AccountType.PERSONAL)
+        if commit:
+            user.save()
+            if user.account_type == AccountType.BUSINESS:
+                BusinessProfile.objects.create(
+                    user=user,
+                    company_name=self.cleaned_data['company_name'].strip(),
+                    invoice_email=self.cleaned_data['invoice_email'].lower().strip(),
+                )
+        return user
 
 
 class LoginForm(AuthenticationForm):
@@ -126,6 +172,70 @@ class SavedAddressForm(forms.ModelForm):
             'address_line_2': forms.TextInput(attrs={'class': 'form-control'}),
             'city': forms.TextInput(attrs={'class': 'form-control'}),
             'postcode': forms.TextInput(attrs={'class': 'form-control'}),
+            'is_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def clean_postcode(self):
+        postcode = self.cleaned_data['postcode']
+        from bookings.routing import is_valid_uk_postcode, normalize_postcode
+        from bookings.service_area import postcode_service_area_error
+
+        normalized = normalize_postcode(postcode)
+        if not is_valid_uk_postcode(normalized):
+            raise forms.ValidationError('Please enter a valid UK postcode.')
+        area_error = postcode_service_area_error(normalized)
+        if area_error:
+            raise forms.ValidationError(area_error)
+        return normalized
+
+
+class BusinessProfileForm(forms.ModelForm):
+    class Meta:
+        model = BusinessProfile
+        fields = ['company_name', 'invoice_email']
+        widgets = {
+            'company_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'invoice_email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+
+class UpgradeToBusinessForm(forms.Form):
+    company_name = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    invoice_email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'form-control'}),
+        label='Invoice email',
+    )
+
+
+class PropertyForm(forms.ModelForm):
+    class Meta:
+        model = Property
+        fields = [
+            'reference',
+            'address_line_1',
+            'address_line_2',
+            'city',
+            'postcode',
+            'access_instructions',
+            'contact_name',
+            'contact_phone',
+            'is_default',
+        ]
+        widgets = {
+            'reference': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Flat 4, Oak House',
+            }),
+            'address_line_1': forms.TextInput(attrs={'class': 'form-control'}),
+            'address_line_2': forms.TextInput(attrs={'class': 'form-control'}),
+            'city': forms.TextInput(attrs={'class': 'form-control'}),
+            'postcode': forms.TextInput(attrs={'class': 'form-control'}),
+            'access_instructions': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'contact_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'contact_phone': forms.TextInput(attrs={'class': 'form-control'}),
             'is_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 

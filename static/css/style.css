@@ -1528,6 +1528,7 @@ body.site-home .hero-section::before {
 
 /* Status badges */
 .badge {
+    --bs-badge-color: var(--text);
     font-weight: 600;
     font-size: 0.75rem;
     padding: 0.4em 0.75em;
@@ -1535,11 +1536,11 @@ body.site-home .hero-section::before {
     letter-spacing: 0.02em;
 }
 
-.badge.status-pending { background: #fef3c7; color: #92400e; }
-.badge.status-confirmed { background: var(--primary-subtle); color: var(--primary-dark); }
-.badge.status-in_progress { background: #ede9fe; color: #5b21b6; }
-.badge.status-completed { background: #d1fae5; color: #065f46; }
-.badge.status-cancelled { background: #f1f5f9; color: #475569; }
+.badge.status-pending { background: #fef3c7; color: #92400e !important; }
+.badge.status-confirmed { background: var(--primary-subtle); color: var(--primary-dark) !important; }
+.badge.status-in_progress { background: #ede9fe; color: #5b21b6 !important; }
+.badge.status-completed { background: #d1fae5; color: #065f46 !important; }
+.badge.status-cancelled { background: #f1f5f9; color: #475569 !important; }
 
 /* -------------------------------------------------------------------------- */
 /* Booking wizard                                                             */
@@ -4161,29 +4162,79 @@ body:not(.site-home) .site-navbar {
     letter-spacing: 0.02em;
 }
 
-.role-sysadmin {
+.badge.role-badge.role-sysadmin {
     background: #312e81;
-    color: #fff;
+    color: #fff !important;
 }
 
-.role-admin {
+.badge.role-badge.role-admin {
     background: var(--primary);
-    color: #fff;
+    color: #fff !important;
 }
 
-.role-engineer {
+.badge.role-badge.role-engineer {
     background: #059669;
-    color: #fff;
+    color: #fff !important;
 }
 
-.role-standard {
+.badge.role-badge.role-standard {
+    background: #cbd5e1;
+    color: #1e293b !important;
+}
+
+.badge.role-badge.role-partner {
+    background: #6d28d9;
+    color: #fff !important;
+}
+
+.badge.role-badge.role-guest {
     background: #e2e8f0;
-    color: #475569;
+    color: #334155 !important;
 }
 
-.role-guest {
-    background: #f1f5f9;
+.panel-business-card {
+    background: #f8fafc;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 0.75rem;
+    padding: 1rem 1.125rem;
+    color: var(--text);
+}
+
+.booking-view-section.panel-business-card {
+    background: #f5f3ff;
+    border-color: rgba(109, 40, 217, 0.2);
+    color: var(--text);
+}
+
+.panel-business-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.panel-business-company {
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.panel-business-details {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.panel-business-detail dt {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: #64748b;
+    margin-bottom: 0.15rem;
+}
+
+.panel-business-detail dd {
+    margin-bottom: 0;
+    color: var(--text);
 }
 
 .audit-log-table td {
@@ -4288,5 +4339,75 @@ body:not(.site-home) .site-navbar {
     .coverage-map {
         height: 420px;
         min-height: 320px;
+    }
+}
+
+/* Cookie consent banner */
+.cookie-consent {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1080;
+    padding: 1rem;
+    pointer-events: none;
+}
+
+.cookie-consent-inner {
+    pointer-events: auto;
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.cookie-consent-title {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.cookie-consent-text {
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    max-width: 42rem;
+}
+
+.cookie-consent-text a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.cookie-consent-text a:hover {
+    text-decoration: underline;
+}
+
+.cookie-consent-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 575px) {
+    .cookie-consent-inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cookie-consent-actions {
+        width: 100%;
+    }
+
+    .cookie-consent-actions .btn {
+        flex: 1 1 auto;
     }
 }

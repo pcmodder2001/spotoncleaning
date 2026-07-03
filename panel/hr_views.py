@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
+import json
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -28,6 +29,7 @@ from hr.vehicle_audits import (
     AUDIT_PHOTO_LABELS,
     audit_due_for_user,
     audit_photo_sections,
+    audit_photo_steps,
     audit_week_start,
     current_week_audit,
     get_assigned_vehicle,
@@ -757,7 +759,7 @@ def hr_vehicle_audit_submit_view(request):
         return redirect(_vehicle_audit_detail_url(request, existing.pk))
 
     required = required_photo_types(vehicle)
-    sections = audit_photo_sections(vehicle)
+    photo_steps = audit_photo_steps(vehicle)
 
     if request.method == 'POST':
         mileage_raw = request.POST.get('mileage', '').strip()
@@ -791,7 +793,8 @@ def hr_vehicle_audit_submit_view(request):
 
     return render(request, 'panel/hr/vehicles/audit_form.html', {
         'vehicle': vehicle,
-        'sections': sections,
+        'photo_steps': photo_steps,
+        'photo_steps_json': json.dumps(photo_steps),
         'week_start': week_start,
         'required_count': len(required),
     })

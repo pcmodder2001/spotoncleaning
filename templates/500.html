@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Server error | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}Something went wrong on {{ SITE_NAME }}. Please try again shortly.{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+{% include 'includes/error_page.html' with code='500' icon='bi-exclamation-triangle' title='Something went wrong' message="We're sorry — something unexpected happened on our side. Please try again in a few minutes." %}
+{% endblock %}

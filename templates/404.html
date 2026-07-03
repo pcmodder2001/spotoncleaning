@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Page not found | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}The page you requested could not be found on {{ SITE_NAME }}.{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+{% include 'includes/error_page.html' with code='404' icon='bi-compass' title='Page not found' message="Sorry — we couldn't find that page. It may have been moved, renamed, or the link might be out of date." %}
+{% endblock %}

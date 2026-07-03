@@ -1,0 +1,23 @@
+<section class="error-page">
+    <div class="container">
+        <div class="error-page-card">
+            <p class="error-page-code" aria-hidden="true">{{ code }}</p>
+            <div class="error-page-icon" aria-hidden="true">
+                <i class="bi {{ icon }}"></i>
+            </div>
+            <h1 class="error-page-title">{{ title }}</h1>
+            <p class="error-page-message">{{ message }}</p>
+            <div class="error-page-actions">
+                <a href="{% url 'website:home' %}" class="btn btn-primary">Back to home</a>
+                <a href="{% url 'bookings:create' %}" class="btn btn-outline-primary">Book a clean</a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">My dashboard</a>
+                {% endif %}
+            </div>
+            <p class="error-page-help text-muted small mb-0">
+                Need help? <a href="{% url 'website:home' %}#contact">Contact us</a>
+                or call <a href="tel:{{ SITE_PHONE }}">{{ SITE_PHONE }}</a>.
+            </p>
+        </div>
+    </div>
+</section>

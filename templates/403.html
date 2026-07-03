@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Access denied | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}You do not have permission to view this page on {{ SITE_NAME }}.{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+{% include 'includes/error_page.html' with code='403' icon='bi-shield-lock' title='Access denied' message="You don't have permission to view this page. If you believe this is a mistake, please contact us." %}
+{% endblock %}

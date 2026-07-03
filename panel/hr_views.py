@@ -23,6 +23,7 @@ from hr.models import (
     VehicleAudit,
     VehicleAuditPhoto,
 )
+from hr.media_access import can_view_vehicle_audit, vehicle_audit_photo_url
 from hr.vehicle_audits import (
     AUDIT_PHOTO_LABELS,
     audit_due_for_user,
@@ -671,11 +672,7 @@ def hr_onboarding_emergency_view(request, task_pk):
 
 
 def _can_view_vehicle_audit(request, audit):
-    if hr_manage_mode(request):
-        return True
-    if audit.submitted_by_id == request.user.pk:
-        return True
-    return audit.vehicle.assigned_to_id == request.user.pk
+    return can_view_vehicle_audit(request, audit)
 
 
 def _vehicle_audit_list_url(request):
@@ -816,10 +813,12 @@ def hr_vehicle_audit_detail_view(request, pk):
     photo_map = {photo.photo_type: photo for photo in audit.photos.all()}
     photo_rows = []
     for photo_type in required_photo_types(audit.vehicle):
+        photo = photo_map.get(photo_type)
         photo_rows.append({
             'type': photo_type,
             'label': AUDIT_PHOTO_LABELS[photo_type],
-            'photo': photo_map.get(photo_type),
+            'photo': photo,
+            'photo_url': vehicle_audit_photo_url(request, audit, photo) if photo else '',
         })
 
     return render(request, 'panel/hr/vehicles/audit_detail.html', {
@@ -827,3 +826,24 @@ def hr_vehicle_audit_detail_view(request, pk):
         'photo_rows': photo_rows,
         'can_manage': hr_manage_mode(request),
     })
+
+
+@panel_required
+@require_GET
+def hr_vehicle_audit_photo_view(request, audit_pk, photo_pk):
+    import mimetypes
+
+    audit = get_object_or_404(VehicleAudit.objects.select_related('vehicle'), pk=audit_pk)
+    photo = get_object_or_404(VehicleAuditPhoto, pk=photo_pk, audit=audit)
+    if not can_view_vehicle_audit(request, audit):
+        raise Http404
+    if not photo.image:
+        raise Http404
+
+    content_type, _ = mimetypes.guess_type(photo.image.name)
+    response = FileResponse(
+        photo.image.open('rb'),
+        content_type=content_type or 'image/jpeg',
+    )
+    response['Cache-Control'] = 'private, max-age=3600'
+    return response

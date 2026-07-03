@@ -63,6 +63,11 @@ urlpatterns = [
     path('hr/vehicle-audits/', hr_views.hr_vehicle_audit_list_view, name='hr_vehicle_audit_list'),
     path('hr/vehicle-audits/submit/', hr_views.hr_vehicle_audit_submit_view, name='hr_vehicle_audit_submit'),
     path('hr/vehicle-audits/<int:pk>/', hr_views.hr_vehicle_audit_detail_view, name='hr_vehicle_audit_detail'),
+    path(
+        'hr/vehicle-audits/<int:audit_pk>/photos/<int:photo_pk>/',
+        hr_views.hr_vehicle_audit_photo_view,
+        name='hr_vehicle_audit_photo',
+    ),
     path('hr/rota/', hr_views.hr_rota_view, name='hr_rota'),
     path('hr/payslips/', hr_views.hr_payslip_list_view, name='hr_payslip_list'),
     path('hr/payslips/create/', hr_views.hr_payslip_create_view, name='hr_payslip_create'),

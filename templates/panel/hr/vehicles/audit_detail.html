@@ -28,9 +28,9 @@
         <div class="panel-card card border-0 h-100 vehicle-audit-photo-card">
             <div class="card-header py-2 small fw-semibold">{{ row.label }}</div>
             <div class="card-body p-2">
-                {% if row.photo %}
-                <a href="{{ row.photo.image.url }}" target="_blank" rel="noopener">
-                    <img src="{{ row.photo.image.url }}" alt="{{ row.label }}" class="vehicle-audit-photo-img w-100 rounded">
+                {% if row.photo and row.photo_url %}
+                <a href="{{ row.photo_url }}" target="_blank" rel="noopener">
+                    <img src="{{ row.photo_url }}" alt="{{ row.label }}" class="vehicle-audit-photo-img w-100 rounded">
                 </a>
                 {% else %}
                 <p class="text-muted small mb-0 p-3 text-center">Photo missing</p>

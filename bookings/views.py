@@ -448,10 +448,11 @@ def available_dates_api(request):
     service_ids = _parse_service_ids(request)
     postcode = request.GET.get('postcode', '').strip()
     city = request.GET.get('city', '').strip()
-    if postcode:
-        area_error = _service_area_api_error(postcode)
-        if area_error:
-            return area_error
+    # Location restriction disabled — see bookings/service_area.py
+    # if postcode:
+    #     area_error = _service_area_api_error(postcode)
+    #     if area_error:
+    #         return area_error
     exclude_booking_pk = request.GET.get('exclude_booking')
     if exclude_booking_pk and str(exclude_booking_pk).isdigit():
         exclude_booking_pk = int(exclude_booking_pk)
@@ -504,9 +505,10 @@ def available_slots_api(request):
     if not postcode:
         return JsonResponse({'slots': [], 'error': 'postcode_required'})
 
-    area_error = _service_area_api_error(postcode)
-    if area_error:
-        return area_error
+    # Location restriction disabled — see bookings/service_area.py
+    # area_error = _service_area_api_error(postcode)
+    # if area_error:
+    #     return area_error
 
     duration = None
     if service_ids:

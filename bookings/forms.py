@@ -105,9 +105,10 @@ class BookingForm(forms.ModelForm):
         normalized = normalize_postcode(postcode)
         if not is_valid_uk_postcode(normalized):
             raise forms.ValidationError('Please enter a valid UK postcode.')
-        area_error = postcode_service_area_error(normalized)
-        if area_error:
-            raise forms.ValidationError(area_error)
+        # Location restriction disabled — see bookings/service_area.py
+        # area_error = postcode_service_area_error(normalized)
+        # if area_error:
+        #     raise forms.ValidationError(area_error)
         return normalized
 
     def clean(self):
@@ -302,9 +303,10 @@ class AdminBookingForm(forms.ModelForm):
         normalized = normalize_postcode(postcode)
         if not is_valid_uk_postcode(normalized):
             raise forms.ValidationError('Please enter a valid UK postcode.')
-        area_error = postcode_service_area_error(normalized)
-        if area_error:
-            raise forms.ValidationError(area_error)
+        # Location restriction disabled — see bookings/service_area.py
+        # area_error = postcode_service_area_error(normalized)
+        # if area_error:
+        #     raise forms.ValidationError(area_error)
         return normalized
 
     def clean(self):

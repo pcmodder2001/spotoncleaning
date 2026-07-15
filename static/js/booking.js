@@ -278,10 +278,11 @@
             try {
                 const res = await fetch(cfg.datesUrl + '?' + params.toString());
                 const data = await res.json().catch(function () { return {}; });
-                if (res.status === 400 && data.error === 'outside_service_area') {
-                    showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
-                    return false;
-                }
+                // Location restriction disabled — see bookings/service_area.py
+                // if (res.status === 400 && data.error === 'outside_service_area') {
+                //     showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
+                //     return false;
+                // }
                 clearPostcodeAreaError();
                 return true;
             } catch (err) {
@@ -656,7 +657,7 @@
         function validateStep(step) {
             if (step === 1) {
                 if (!getPostcode() || getPostcode().length < 5 || !postcodeValid) {
-                    showToast('Please enter a valid postcode in our service area.');
+                    showToast('Please enter a valid UK postcode.');
                     return false;
                 }
                 if (!getAddressLine1()) {
@@ -803,10 +804,11 @@
             params.set('month', month + 1);
             const res = await fetch(cfg.datesUrl + '?' + params.toString());
             const data = await res.json().catch(function () { return {}; });
-            if (res.status === 400 && data.error === 'outside_service_area') {
-                showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
-                return { available: new Set(), closed: new Set(), full: new Set(), nextAvailable: null };
-            }
+            // Location restriction disabled — see bookings/service_area.py
+            // if (res.status === 400 && data.error === 'outside_service_area') {
+            //     showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
+            //     return { available: new Set(), closed: new Set(), full: new Set(), nextAvailable: null };
+            // }
             return {
                 available: new Set(data.available || []),
                 closed: new Set(data.closed || []),
@@ -935,11 +937,12 @@
                 if (showScheduleDebug) params.set('debug', '1');
                 const res = await fetch(cfg.slotsUrl + '?' + params.toString());
                 const data = await res.json().catch(function () { return {}; });
-                if (res.status === 400 && data.error === 'outside_service_area') {
-                    showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
-                    timeSlotsGrid.innerHTML = '';
-                    return;
-                }
+                // Location restriction disabled — see bookings/service_area.py
+                // if (res.status === 400 && data.error === 'outside_service_area') {
+                //     showPostcodeAreaError(data.message || 'Sorry — we currently only cover West Yorkshire.');
+                //     timeSlotsGrid.innerHTML = '';
+                //     return;
+                // }
                 if (!res.ok) throw new Error('Server returned ' + res.status);
 
                 if (showScheduleDebug && data.debug) {

@@ -237,6 +237,8 @@ GOOGLE_REVIEWS_URL = os.environ.get('GOOGLE_REVIEWS_URL', '').strip()
 GOOGLE_REVIEW_RATING = os.environ.get('GOOGLE_REVIEW_RATING', '5.0').strip()
 GOOGLE_REVIEW_COUNT = os.environ.get('GOOGLE_REVIEW_COUNT', '').strip()
 SERVICE_AREA_NAME = os.environ.get('SERVICE_AREA_NAME', SITE_LOCAL_AREA)
+# Location restrictions currently disabled in bookings/service_area.py for UK-wide booking.
+# Re-enable there (and in forms/views/booking.js) when rolling out location-specific coverage.
 SERVICE_AREA_ENFORCED = os.environ.get('SERVICE_AREA_ENFORCED', 'True').lower() in (
     'true', '1', 'yes',
 )

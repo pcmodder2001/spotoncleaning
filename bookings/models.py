@@ -420,6 +420,35 @@ class CoverageArea(models.Model):
         return 'Custom area'
 
 
+class EditableCoverageBoundary(models.Model):
+    """Admin-drawn service boundary polygon on the coverage map."""
+
+    slug = models.SlugField(max_length=40, unique=True)
+    name = models.CharField(max_length=100, default='Service area')
+    ring = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Polygon vertices as [[lat, lng], ...].',
+    )
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    estimated_postcode_count = models.PositiveIntegerField(
+        default=0,
+        help_text='Rough count of postcodes inside this boundary.',
+    )
+    district_count = models.PositiveIntegerField(
+        default=0,
+        help_text='Rough count of postcode districts (outward codes) inside this boundary.',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'editable coverage boundaries'
+
+    def __str__(self):
+        return self.name
+
+
 class PromoCode(models.Model):
     class DiscountType(models.TextChoices):
         PERCENT = 'percent', 'Percentage off'

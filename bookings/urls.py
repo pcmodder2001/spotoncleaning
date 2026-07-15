@@ -13,6 +13,7 @@ urlpatterns = [
     path('<int:pk>/', views.booking_detail_view, name='detail'),
     path('<int:pk>/cancel/', views.cancel_booking_view, name='cancel'),
     path('<int:pk>/reschedule/', views.reschedule_booking_view, name='reschedule'),
+    path('api/coverage-check/', views.coverage_check_api, name='coverage_check'),
     path('api/dates/', views.available_dates_api, name='available_dates'),
     path('api/slots/', views.available_slots_api, name='available_slots'),
     path('api/promo/', views.validate_promo_api, name='validate_promo'),

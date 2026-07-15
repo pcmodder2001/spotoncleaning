@@ -5,48 +5,37 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 
-from audit.actions import COVERAGE_AREA_UPDATED
+from audit.actions import COVERAGE_AREA_UPDATED, COVERAGE_BOUNDARY_UPDATED
 from audit.services import log_action
 from bookings.coverage import (
     coverage_areas_for_map,
+    create_editable_coverage_boundary,
+    delete_editable_coverage_boundary,
+    editable_boundaries_geojson,
+    get_editable_coverage_boundaries,
     lookup_coverage_search,
+    save_editable_coverage_boundaries,
     set_coverage_area_enabled,
     set_region_enabled,
 )
-from bookings.coverage_data import EXCLUDED_POSTCODE_DISTRICTS, REGION_GROUP_SLUGS, REGION_GROUPS, REGION_SLUGS
+from bookings.postcode_estimates import coverage_boundary_stats_summary
+from bookings.coverage_data import REGION_SLUGS
 from bookings.models import CoverageArea
-from bookings.service_area import service_area_enforced, service_area_name
+from bookings.service_area import service_area_enforced
 from panel.decorators import admin_required
-
-
-def _region_sections(areas):
-    grouped = {group: [] for group in REGION_GROUPS}
-    for area in areas:
-        grouped.setdefault(area.region_group, []).append(area)
-    return [
-        {
-            'name': group,
-            'slug': REGION_GROUP_SLUGS[group],
-            'areas': grouped.get(group, []),
-        }
-        for group in REGION_GROUPS
-    ]
 
 
 @admin_required
 @require_GET
 def coverage_map_view(request):
-    areas = CoverageArea.objects.order_by('sort_order', 'name')
-    enabled_count = areas.filter(enabled=True).count()
+    boundaries = get_editable_coverage_boundaries()
+    stats = coverage_boundary_stats_summary(boundaries)
     return render(request, 'panel/coverage/map.html', {
-        'areas': areas,
-        'region_sections': _region_sections(areas),
-        'enabled_count': enabled_count,
-        'total_count': areas.count(),
-        'service_area_name': service_area_name(),
+        'boundaries': boundaries,
+        'boundary_count': len(boundaries),
+        'coverage_stats': stats,
+        'editable_boundaries_geojson': json.dumps(editable_boundaries_geojson()),
         'service_area_enforced': service_area_enforced(),
-        'excluded_districts': EXCLUDED_POSTCODE_DISTRICTS,
-        'map_geojson': json.dumps(coverage_areas_for_map()),
     })
 
 
@@ -141,3 +130,113 @@ def coverage_region_toggle_api(request, region_slug):
         ],
         'enabled_count': CoverageArea.objects.filter(enabled=True).count(),
     })
+
+
+@admin_required
+@require_POST
+def coverage_boundary_save_api(request):
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON payload.'}, status=400)
+
+    items = payload.get('boundaries')
+    if items is None and payload.get('ring'):
+        items = [{
+            'slug': payload.get('slug', ''),
+            'ring': payload.get('ring', []),
+            'name': payload.get('name', ''),
+        }]
+
+    try:
+        boundaries = save_editable_coverage_boundaries(items or [])
+    except ValueError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+
+    log_action(
+        COVERAGE_BOUNDARY_UPDATED,
+        f'Saved {len(boundaries)} service boundar{"y" if len(boundaries) == 1 else "ies"} on the coverage map.',
+        request=request,
+        target_type='coverage_boundary',
+        target_label='Service boundaries',
+        metadata={'boundary_count': len(boundaries)},
+    )
+
+    messages.success(request, 'Service boundaries saved.')
+    stats = coverage_boundary_stats_summary(boundaries)
+    return JsonResponse({
+        'success': True,
+        'boundaries': boundaries,
+        'geojson': editable_boundaries_geojson(),
+        'stats': stats,
+    })
+
+
+@admin_required
+@require_POST
+def coverage_boundary_create_api(request):
+    try:
+        center_lat = float(request.POST.get('lat', '53.85'))
+        center_lng = float(request.POST.get('lng', '-1.45'))
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Invalid map centre.'}, status=400)
+
+    boundary = create_editable_coverage_boundary(center_lat, center_lng)
+
+    log_action(
+        COVERAGE_BOUNDARY_UPDATED,
+        f'Added service boundary {boundary["name"]}.',
+        request=request,
+        target_type='coverage_boundary',
+        target_label=boundary['name'],
+        metadata={'slug': boundary['slug'], 'created': True},
+    )
+
+    messages.success(request, f'{boundary["name"]} added — drag it into place, then save all.')
+    boundaries = get_editable_coverage_boundaries()
+    return JsonResponse({
+        'success': True,
+        'boundary': boundary,
+        'boundaries': boundaries,
+        'geojson': editable_boundaries_geojson(),
+        'stats': coverage_boundary_stats_summary(boundaries),
+    })
+
+
+@admin_required
+@require_POST
+def coverage_boundary_delete_api(request, slug):
+    boundary = next(
+        (item for item in get_editable_coverage_boundaries() if item['slug'] == slug),
+        None,
+    )
+    if not boundary:
+        return JsonResponse({'error': 'Boundary not found.'}, status=404)
+
+    delete_editable_coverage_boundary(slug)
+
+    log_action(
+        COVERAGE_BOUNDARY_UPDATED,
+        f'Removed service boundary {boundary["name"]}.',
+        request=request,
+        target_type='coverage_boundary',
+        target_label=boundary['name'],
+        metadata={'slug': slug, 'deleted': True},
+    )
+
+    messages.success(request, f'{boundary["name"]} removed.')
+    boundaries = get_editable_coverage_boundaries()
+    return JsonResponse({
+        'success': True,
+        'slug': slug,
+        'boundaries': boundaries,
+        'geojson': editable_boundaries_geojson(),
+        'stats': coverage_boundary_stats_summary(boundaries),
+    })
+
+
+@admin_required
+@require_POST
+def coverage_boundary_reset_api(request):
+    """Backward-compatible alias for creating a new square."""
+    return coverage_boundary_create_api(request)

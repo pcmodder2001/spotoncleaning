@@ -300,17 +300,25 @@ def lookup_postcode_on_map(postcode):
     normalized = normalize_postcode(postcode)
     outward = outward_code(normalized)
     info = fetch_postcode_info(normalized) if normalized else None
-    matching = find_matching_areas(normalized, info, enabled_only=False)
-    covered = postcode_is_covered(normalized, info)
-    enabled_matches = [area for area in matching if area['enabled']]
+    lat = float(info['latitude']) if info and info.get('latitude') is not None else None
+    lng = float(info['longitude']) if info and info.get('longitude') is not None else None
+    boundaries = get_editable_coverage_boundaries()
+    if boundaries and lat is not None and lng is not None:
+        covered = point_in_any_boundary(lat, lng)
+        matching = []
+        enabled_matches = []
+    else:
+        matching = find_matching_areas(normalized, info, enabled_only=False)
+        covered = postcode_is_covered(normalized, info)
+        enabled_matches = [area['name'] for area in matching if area['enabled']]
 
     return {
         'search_type': 'postcode',
         'postcode': normalized,
         'outward': outward,
         'admin_district': (info or {}).get('admin_district') or '',
-        'lat': float(info['latitude']) if info and info.get('latitude') is not None else None,
-        'lng': float(info['longitude']) if info and info.get('longitude') is not None else None,
+        'lat': lat,
+        'lng': lng,
         'covered': covered,
         'excluded': outward in EXCLUDED_OUTWARD_CODES,
         'area_slug': '',
@@ -324,5 +332,265 @@ def lookup_postcode_on_map(postcode):
             }
             for area in matching
         ],
-        'enabled_matches': [area['name'] for area in enabled_matches],
+        'enabled_matches': enabled_matches,
     }
+
+
+EDITABLE_BOUNDARY_SLUG = 'primary'
+CACHE_KEY_EDITABLE_BOUNDARIES = 'coverage:editable_boundaries'
+BOUNDARY_COLORS = ('#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777')
+
+
+def invalidate_editable_boundary_cache():
+    cache.delete(CACHE_KEY_EDITABLE_BOUNDARIES)
+
+
+def _round_coord(value):
+    return round(float(value), 6)
+
+
+def normalize_boundary_ring(ring):
+    """Return a cleaned, closed [[lat, lng], ...] ring."""
+    if not ring:
+        return []
+
+    cleaned = []
+    for point in ring:
+        if not isinstance(point, (list, tuple)) or len(point) < 2:
+            continue
+        lat = _round_coord(point[0])
+        lng = _round_coord(point[1])
+        if cleaned and cleaned[-1][0] == lat and cleaned[-1][1] == lng:
+            continue
+        cleaned.append([lat, lng])
+
+    if len(cleaned) < 3:
+        return []
+
+    if cleaned[0] != cleaned[-1]:
+        cleaned.append(cleaned[0])
+    return cleaned
+
+
+def densify_boundary_ring(ring, segments_per_side=5):
+    """Add extra vertices along each edge so the shape is easier to drag precisely."""
+    normalized = normalize_boundary_ring(ring)
+    if len(normalized) < 4:
+        return normalized
+
+    vertices = normalized[:-1] if normalized[0] == normalized[-1] else normalized
+    if len(vertices) >= segments_per_side * 4:
+        return normalized
+
+    dense = []
+    for index in range(len(vertices)):
+        start = vertices[index]
+        end = vertices[(index + 1) % len(vertices)]
+        for step in range(segments_per_side):
+            t = step / segments_per_side
+            dense.append([
+                _round_coord(start[0] + (end[0] - start[0]) * t),
+                _round_coord(start[1] + (end[1] - start[1]) * t),
+            ])
+    return normalize_boundary_ring(dense)
+
+
+def square_boundary_ring(center_lat, center_lng, half_width_km=12.0, segments_per_side=5):
+    """Default editable boundary — a square with extra drag points along each edge."""
+    import math
+
+    lat = float(center_lat)
+    lng = float(center_lng)
+    km_per_deg_lat = 111.0
+    km_per_deg_lng = 111.0 * math.cos(math.radians(lat))
+    d_lat = half_width_km / km_per_deg_lat
+    d_lng = half_width_km / km_per_deg_lng
+    corners = [
+        [lat + d_lat, lng - d_lng],
+        [lat + d_lat, lng + d_lng],
+        [lat - d_lat, lng + d_lng],
+        [lat - d_lat, lng - d_lng],
+    ]
+    return densify_boundary_ring(corners, segments_per_side=segments_per_side)
+
+
+def _serialize_editable_boundary(row, index=0):
+    return {
+        'slug': row.slug,
+        'name': row.name,
+        'ring': normalize_boundary_ring(row.ring),
+        'sort_order': row.sort_order,
+        'color': BOUNDARY_COLORS[index % len(BOUNDARY_COLORS)],
+        'estimated_postcode_count': int(row.estimated_postcode_count or 0),
+        'district_count': int(row.district_count or 0),
+        'updated_at': row.updated_at.isoformat() if row.updated_at else '',
+    }
+
+
+def get_editable_coverage_boundaries():
+    cached = cache.get(CACHE_KEY_EDITABLE_BOUNDARIES)
+    if cached is not None:
+        return cached
+
+    from bookings.models import EditableCoverageBoundary
+
+    rows = EditableCoverageBoundary.objects.filter(is_active=True).order_by('sort_order', 'pk')
+    payload = [_serialize_editable_boundary(row, index) for index, row in enumerate(rows)]
+    cache.set(CACHE_KEY_EDITABLE_BOUNDARIES, payload, CACHE_TTL)
+    return payload
+
+
+def get_editable_coverage_boundary():
+    """Backward-compatible helper returning the first saved boundary."""
+    boundaries = get_editable_coverage_boundaries()
+    if boundaries:
+        return boundaries[0]
+    return {
+        'slug': '',
+        'name': 'Service area',
+        'ring': [],
+        'sort_order': 0,
+        'color': BOUNDARY_COLORS[0],
+        'estimated_postcode_count': 0,
+        'district_count': 0,
+        'updated_at': '',
+    }
+
+
+def create_editable_coverage_boundary(center_lat, center_lng):
+    import uuid
+
+    from bookings.models import EditableCoverageBoundary
+
+    ring = square_boundary_ring(center_lat, center_lng)
+    count = EditableCoverageBoundary.objects.filter(is_active=True).count()
+    row = EditableCoverageBoundary.objects.create(
+        slug=f'area-{uuid.uuid4().hex[:8]}',
+        name=f'Area {count + 1}',
+        ring=ring,
+        is_active=True,
+        sort_order=count,
+    )
+    invalidate_editable_boundary_cache()
+    return _serialize_editable_boundary(row, count)
+
+
+def save_editable_coverage_boundaries(items):
+    from bookings.models import EditableCoverageBoundary
+    from bookings.postcode_estimates import refresh_boundary_postcode_stats
+
+    if not items:
+        raise ValueError('No boundaries to save.')
+
+    saved = 0
+    for item in items:
+        slug = (item.get('slug') or '').strip()
+        ring = normalize_boundary_ring(item.get('ring', []))
+        if not slug or len(ring) < 4:
+            continue
+
+        row = EditableCoverageBoundary.objects.filter(slug=slug, is_active=True).first()
+        if not row:
+            continue
+
+        row.ring = ring
+        name = (item.get('name') or '').strip()
+        if name:
+            row.name = name
+        row.save(update_fields=['ring', 'name', 'updated_at'])
+        refresh_boundary_postcode_stats(row)
+        saved += 1
+
+    if not saved:
+        raise ValueError('No valid boundaries to save.')
+
+    invalidate_editable_boundary_cache()
+    return get_editable_coverage_boundaries()
+
+
+def save_editable_coverage_boundary(ring, slug=None):
+    """Backward-compatible single-boundary save."""
+    target_slug = slug or EDITABLE_BOUNDARY_SLUG
+    return save_editable_coverage_boundaries([{'slug': target_slug, 'ring': ring}])
+
+
+def delete_editable_coverage_boundary(slug):
+    from bookings.models import EditableCoverageBoundary
+
+    deleted, _details = EditableCoverageBoundary.objects.filter(slug=slug).delete()
+    if deleted:
+        invalidate_editable_boundary_cache()
+    return deleted
+
+
+def editable_boundaries_geojson():
+    from bookings.coverage_boundaries import ring_to_geojson_polygon
+
+    features = []
+    for boundary in get_editable_coverage_boundaries():
+        ring = boundary['ring']
+        if len(ring) < 4:
+            continue
+        coordinates = ring_to_geojson_polygon(ring[:-1] if ring[0] == ring[-1] else ring)
+        if not coordinates:
+            continue
+        features.append({
+            'type': 'Feature',
+            'properties': {
+                'slug': boundary['slug'],
+                'name': boundary['name'],
+                'color': boundary['color'],
+                'estimated_postcode_count': boundary['estimated_postcode_count'],
+                'district_count': boundary['district_count'],
+                'editable': True,
+            },
+            'geometry': {
+                'type': 'Polygon',
+                'coordinates': coordinates,
+            },
+        })
+    return {
+        'type': 'FeatureCollection',
+        'features': features,
+    }
+
+
+def editable_boundary_geojson():
+    """Backward-compatible helper returning the first boundary feature."""
+    collection = editable_boundaries_geojson()
+    features = collection.get('features') or []
+    return features[0] if features else None
+
+
+def point_in_boundary(lat, lng, ring=None):
+    """Ray-casting point-in-polygon test for a [[lat, lng], ...] ring."""
+    if ring is None:
+        return point_in_any_boundary(lat, lng)
+    if len(ring) < 4:
+        return False
+
+    vertices = ring[:-1] if ring[0] == ring[-1] else ring
+    inside = False
+    j = len(vertices) - 1
+    test_lat = float(lat)
+    test_lng = float(lng)
+
+    for i in range(len(vertices)):
+        yi, xi = float(vertices[i][0]), float(vertices[i][1])
+        yj, xj = float(vertices[j][0]), float(vertices[j][1])
+        intersects = (
+            (yi > test_lat) != (yj > test_lat)
+            and test_lng < (xj - xi) * (test_lat - yi) / ((yj - yi) or 1e-12) + xi
+        )
+        if intersects:
+            inside = not inside
+        j = i
+    return inside
+
+
+def point_in_any_boundary(lat, lng):
+    """Return True when a point falls inside any saved service boundary."""
+    for boundary in get_editable_coverage_boundaries():
+        if point_in_boundary(lat, lng, boundary['ring']):
+            return True
+    return False

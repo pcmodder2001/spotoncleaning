@@ -5,116 +5,91 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.3/dist/leaflet-geoman.css" crossorigin="">
 {% endblock %}
 
 {% block panel_content %}
 <div class="coverage-admin">
-    <div class="row g-4">
-        <div class="col-lg-8 coverage-admin-map-col">
-            <div class="panel-card card border-0">
-                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <span>Coverage map</span>
-                    <span class="badge coverage-active-badge {% if enabled_count %}bg-success{% else %}bg-danger{% endif %}">
-                        {{ enabled_count }} / {{ total_count }} areas active
-                    </span>
-                </div>
-                <div class="card-body p-3 border-bottom">
-                    <form id="coverageSearchForm" class="coverage-search-form row g-2 align-items-end">
-                        <div class="col-sm-8">
-                            <label for="coverageSearchInput" class="form-label small mb-1">Search postcode or area</label>
-                            <input type="search"
-                                   id="coverageSearchInput"
-                                   class="form-control"
-                                   placeholder="e.g. LS1 1AA, Ripon, Barnsley, York"
-                                   autocomplete="off">
-                        </div>
-                        <div class="col-sm-4">
-                            <button type="submit" class="btn btn-primary w-100">Search</button>
-                        </div>
-                    </form>
-                    <div id="coverageSearchResult" class="coverage-search-result small mt-2" hidden></div>
-                </div>
-                <div class="card-body p-0">
-                    <div id="coverageMap" class="coverage-map" role="application" aria-label="Service coverage map"></div>
-                </div>
-                <div class="card-footer text-muted small">
-                    Shaded areas show real district boundaries. The bold outline marks your combined active coverage. Click an area to turn towns on or off.
-                </div>
-            </div>
+    <div class="panel-card card border-0">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span>Service boundaries</span>
+            <span class="badge bg-secondary" id="coverageBoundaryCountBadge">{{ boundary_count }} area{{ boundary_count|pluralize }}</span>
         </div>
-        <div class="col-lg-4 coverage-admin-sidebar">
-            <div class="panel-card card border-0 coverage-how-card">
-                <div class="card-header">How it works</div>
-                <div class="card-body">
-                    <p class="small text-muted mb-3">
-                        Customers can only book online when their postcode falls within an
-                        <strong>enabled</strong> town or region.
-                    </p>
-                    {% if service_area_enforced %}
-                    <p class="small mb-0"><i class="bi bi-check-circle text-success me-1"></i> Service area enforcement is <strong>on</strong>.</p>
+        <div class="card-body p-3 border-bottom">
+            <div class="coverage-boundary-toolbar d-flex flex-wrap gap-2 align-items-center mb-3">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="coverageBoundaryAddBtn">
+                    <i class="bi bi-plus-square"></i> Add square
+                </button>
+                <button type="button" class="btn btn-sm btn-primary" id="coverageBoundaryEditBtn">
+                    <i class="bi bi-pencil-square"></i> Edit shapes
+                </button>
+                <button type="button" class="btn btn-sm btn-success" id="coverageBoundarySaveBtn" disabled>
+                    <i class="bi bi-check-lg"></i> Save all
+                </button>
+                <span id="coverageBoundaryStatus" class="small text-muted ms-auto">
+                    {% if boundary_count %}
+                    {{ boundary_count }} saved area{{ boundary_count|pluralize }} loaded
                     {% else %}
-                    <p class="small mb-0"><i class="bi bi-exclamation-triangle text-warning me-1"></i> Service area enforcement is <strong>off</strong> in settings.</p>
+                    No areas yet — pan to a town and click Add square
                     {% endif %}
-                </div>
+                </span>
             </div>
-
-            <div class="panel-card card border-0 coverage-areas-card">
-                <div class="card-header">Areas by region</div>
-                <div class="coverage-area-list-scroll coverage-region-groups" id="coverageAreaList">
-                    {% for section in region_sections %}
-                    <div class="coverage-region-group" data-region="{{ section.name }}">
-                        <div class="coverage-region-header px-3 py-2 d-flex justify-content-between align-items-center">
-                            <strong class="small">{{ section.name }}</strong>
-                            <div class="btn-group btn-group-sm">
-                                <button type="button"
-                                        class="btn btn-outline-success coverage-region-toggle"
-                                        data-region-slug="{{ section.slug }}"
-                                        data-enabled="true">All on</button>
-                                <button type="button"
-                                        class="btn btn-outline-secondary coverage-region-toggle"
-                                        data-region-slug="{{ section.slug }}"
-                                        data-enabled="false">All off</button>
-                            </div>
-                        </div>
-                        <ul class="list-group list-group-flush">
-                            {% for area in section.areas %}
-                            <li class="list-group-item coverage-area-list-item px-3 py-3"
-                                data-slug="{{ area.slug }}"
-                                data-region="{{ area.region_group }}"
-                                data-enabled="{{ area.enabled|yesno:'true,false' }}">
-                                <div class="d-flex justify-content-between align-items-start gap-2">
-                                    <div>
-                                        <span class="coverage-area-swatch" style="background: {{ area.map_color }};"></span>
-                                        <strong>{{ area.name }}</strong>
-                                        <div class="small text-muted">{{ area.postcode_label }}</div>
-                                    </div>
-                                    <button type="button"
-                                            class="btn btn-sm coverage-toggle-btn {% if area.enabled %}btn-success{% else %}btn-outline-secondary{% endif %}"
-                                            data-slug="{{ area.slug }}"
-                                            data-enabled="{{ area.enabled|yesno:'true,false' }}">
-                                        {% if area.enabled %}On{% else %}Off{% endif %}
-                                    </button>
-                                </div>
-                            </li>
-                            {% endfor %}
-                        </ul>
+            <p class="small text-muted mb-2">
+                Add one square per patch you cover — for example London and Leeds. Each square has extra drag points along the edges for finer adjustments.
+            </p>
+            <p class="small text-muted mb-3">
+                Drag any dot to reshape, drag inside the shape to move it, or click a straight edge to add another point.
+                When you save, we estimate how many postcodes fall inside each area.
+            </p>
+            <div id="coverageBoundaryStats" class="coverage-boundary-stats small mb-3{% if not coverage_stats.total_estimated_postcodes %} d-none{% endif %}">
+                <strong>Total in system:</strong>
+                ~<span id="coverageTotalPostcodes">{{ coverage_stats.total_estimated_postcodes|default:0 }}</span> postcodes
+                across <span id="coverageTotalAreas">{{ coverage_stats.area_count|default:0 }}</span> area{{ coverage_stats.area_count|pluralize }}
+                (<span id="coverageTotalDistricts">{{ coverage_stats.total_districts|default:0 }}</span> districts)
+            </div>
+            <div id="coverageBoundaryList" class="coverage-boundary-list mb-3{% if not boundaries %} d-none{% endif %}">
+                {% for boundary in boundaries %}
+                <div class="coverage-boundary-list-item" data-slug="{{ boundary.slug }}">
+                    <span class="coverage-boundary-swatch" style="background: {{ boundary.color }};"></span>
+                    <div class="coverage-boundary-copy">
+                        <span class="coverage-boundary-name">{{ boundary.name }}</span>
+                        <span class="coverage-boundary-meta text-muted small">
+                            {% if boundary.estimated_postcode_count %}
+                            ~{{ boundary.estimated_postcode_count }} postcodes · {{ boundary.district_count }} districts
+                            {% else %}
+                            Save to calculate postcode estimate
+                            {% endif %}
+                        </span>
                     </div>
-                    {% endfor %}
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger coverage-boundary-delete-btn"
+                            data-slug="{{ boundary.slug }}"
+                            data-name="{{ boundary.name }}">
+                        Remove
+                    </button>
                 </div>
+                {% endfor %}
             </div>
-
-            {% if excluded_districts %}
-            <div class="panel-card card border-0 coverage-excluded-card">
-                <div class="card-header">Always excluded</div>
-                <ul class="list-group list-group-flush">
-                    {% for item in excluded_districts %}
-                    <li class="list-group-item px-3 py-2 small text-muted">
-                        <strong>{{ item.code }}</strong> — {{ item.name }}
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
+            <form id="coverageSearchForm" class="coverage-search-form row g-2 align-items-end">
+                <div class="col-sm-8">
+                    <label for="coverageSearchInput" class="form-label small mb-1">Find a location on the map</label>
+                    <input type="search"
+                           id="coverageSearchInput"
+                           class="form-control"
+                           placeholder="e.g. London, Leeds, WF6 1TN"
+                           autocomplete="off">
+                </div>
+                <div class="col-sm-4">
+                    <button type="submit" class="btn btn-outline-primary w-100">Go to location</button>
+                </div>
+            </form>
+            <div id="coverageSearchResult" class="coverage-search-result small mt-2" hidden></div>
+        </div>
+        <div class="card-body p-0">
+            <div id="coverageMap" class="coverage-map coverage-map-full" role="application" aria-label="Service boundary map"></div>
+        </div>
+        <div class="card-footer text-muted small">
+            Each coloured outline is a separate service area. Add as many as you need, then save.
         </div>
     </div>
 </div>
@@ -122,13 +97,14 @@
 
 {% block extra_js %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js" crossorigin=""></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.3/dist/leaflet-geoman.js" crossorigin=""></script>
 <script>
 window.panelCoverageConfig = {
-    geojson: {{ map_geojson|safe }},
-    toggleUrlTemplate: "{% url 'panel:coverage_toggle' slug='__slug__' %}",
-    regionToggleUrlTemplate: "{% url 'panel:coverage_region_toggle' region_slug='__region__' %}",
+    editableBoundaries: {{ editable_boundaries_geojson|safe }},
     searchUrl: "{% url 'panel:coverage_search' %}",
+    boundarySaveUrl: "{% url 'panel:coverage_boundary_save' %}",
+    boundaryCreateUrl: "{% url 'panel:coverage_boundary_create' %}",
+    boundaryDeleteUrlTemplate: "{% url 'panel:coverage_boundary_delete' slug='__slug__' %}",
     csrfToken: '{{ csrf_token }}',
 };
 </script>

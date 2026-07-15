@@ -2312,6 +2312,28 @@ body.booking-page {
     max-width: 28rem;
 }
 
+.coverage-check-support {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.95rem;
+}
+
+.coverage-check-support a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.coverage-check-support a:hover {
+    text-decoration: underline;
+}
+
+#postcodeAreaSuccess .bi-check-circle-fill {
+    color: #16a34a;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
 .hero-coverage-label {
     display: block;
     font-size: 0.8125rem;
@@ -5034,6 +5056,11 @@ body:not(.site-home) .site-navbar {
     background: #e2e8f0;
 }
 
+.coverage-map-full {
+    height: min(72vh, 640px);
+    min-height: 420px;
+}
+
 .coverage-area-swatch {
     display: inline-block;
     width: 0.85rem;
@@ -5073,6 +5100,77 @@ body:not(.site-home) .site-navbar {
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
     background: var(--bg);
+}
+
+.coverage-boundary-toolbar {
+    padding: 0.65rem 0.75rem;
+    border-radius: 0.65rem;
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.coverage-boundary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.coverage-boundary-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.55rem;
+    background: var(--bg);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.coverage-boundary-swatch {
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+
+.coverage-boundary-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.coverage-boundary-name {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.coverage-boundary-meta {
+    display: block;
+}
+
+.coverage-boundary-stats {
+    padding: 0.65rem 0.75rem;
+    border-radius: 0.55rem;
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+.coverage-admin .leaflet-marker-icon,
+.coverage-admin .marker-icon {
+    width: 12px !important;
+    height: 12px !important;
+    margin-left: -6px !important;
+    margin-top: -6px !important;
+    border-radius: 999px;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.35);
+}
+
+.coverage-admin .leaflet-interactive {
+    cursor: grab;
+}
+
+.coverage-admin .leaflet-interactive:active {
+    cursor: grabbing;
 }
 
 @media (min-width: 992px) {

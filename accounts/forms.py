@@ -240,10 +240,9 @@ class SavedAddressForm(forms.ModelForm):
         normalized = normalize_postcode(postcode)
         if not is_valid_uk_postcode(normalized):
             raise forms.ValidationError('Please enter a valid UK postcode.')
-        # Location restriction disabled — see bookings/service_area.py
-        # area_error = postcode_service_area_error(normalized)
-        # if area_error:
-        #     raise forms.ValidationError(area_error)
+        area_error = postcode_service_area_error(normalized)
+        if area_error:
+            raise forms.ValidationError(area_error)
         return normalized
 
 
@@ -305,8 +304,7 @@ class PropertyForm(forms.ModelForm):
         normalized = normalize_postcode(postcode)
         if not is_valid_uk_postcode(normalized):
             raise forms.ValidationError('Please enter a valid UK postcode.')
-        # Location restriction disabled — see bookings/service_area.py
-        # area_error = postcode_service_area_error(normalized)
-        # if area_error:
-        #     raise forms.ValidationError(area_error)
+        area_error = postcode_service_area_error(normalized)
+        if area_error:
+            raise forms.ValidationError(area_error)
         return normalized

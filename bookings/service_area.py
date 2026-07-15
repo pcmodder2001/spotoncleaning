@@ -1,13 +1,10 @@
-"""Restrict bookings to enabled coverage areas."""
+"""Restrict bookings to editable service boundary polygons."""
 
 from django.conf import settings
 
 from bookings.coverage import (
-    EXCLUDED_OUTWARD_CODES,
-    get_enabled_coverage_areas,
-    invalidate_coverage_cache,
-    outward_code,
-    postcode_is_covered,
+    get_editable_coverage_boundaries,
+    point_in_any_boundary,
 )
 from bookings.routing import fetch_postcode_info, normalize_postcode
 
@@ -22,45 +19,57 @@ def service_area_enforced():
 
 def service_area_error_message():
     return (
-        f'Sorry — we currently only cover selected areas around {service_area_name()}. '
-        'Please enter a postcode within our service area.'
+        'Sorry — we do not currently cover your postcode. '
+        'Please check you are within one of our service areas on the map.'
     )
 
 
 def no_coverage_error_message():
     return (
-        'We are not currently accepting online bookings — please contact us directly.'
+        'We are not currently accepting online bookings in your area — please contact us directly.'
     )
+
+
+def postcode_lookup_error_message():
+    return 'We could not verify that postcode. Please check it and try again.'
 
 
 def is_postcode_in_service_area(postcode):
     """Return (allowed, error_message). error_message is empty when allowed."""
-    # UK-wide booking: only validate postcode format until location-specific
-    # coverage is rebuilt. Uncomment the block below to restore area restrictions.
+    if not service_area_enforced():
+        return True, ''
+
     normalized = normalize_postcode(postcode)
     if not normalized:
         return False, 'Please enter a valid UK postcode.'
-    return True, ''
 
-    # --- Location restrictions (disabled) ---
-    # if not service_area_enforced():
-    #     return True, ''
-    #
-    # normalized = normalize_postcode(postcode)
-    # if not normalized:
-    #     return False, service_area_error_message()
-    #
+    boundaries = get_editable_coverage_boundaries()
+    if not boundaries:
+        return False, no_coverage_error_message()
+
+    info = fetch_postcode_info(normalized)
+    if not info or info.get('latitude') is None or info.get('longitude') is None:
+        return False, postcode_lookup_error_message()
+
+    if point_in_any_boundary(float(info['latitude']), float(info['longitude'])):
+        return True, ''
+
+    return False, service_area_error_message()
+
+    # --- Old postcode-district restrictions (replaced by map boundaries) ---
+    # from bookings.coverage import (
+    #     EXCLUDED_OUTWARD_CODES,
+    #     get_enabled_coverage_areas,
+    #     outward_code,
+    #     postcode_is_covered,
+    # )
     # outward = outward_code(normalized)
     # if outward in EXCLUDED_OUTWARD_CODES:
     #     return False, service_area_error_message()
-    #
-    # info = fetch_postcode_info(normalized)
     # if not postcode_is_covered(normalized, info):
     #     if not get_enabled_coverage_areas():
     #         return False, no_coverage_error_message()
     #     return False, service_area_error_message()
-    #
-    # return True, ''
 
 
 def postcode_service_area_error(postcode):
@@ -69,10 +78,8 @@ def postcode_service_area_error(postcode):
 
 
 __all__ = [
-    'EXCLUDED_OUTWARD_CODES',
-    'invalidate_coverage_cache',
     'is_postcode_in_service_area',
-    'outward_code',
+    'no_coverage_error_message',
     'postcode_service_area_error',
     'service_area_enforced',
     'service_area_error_message',

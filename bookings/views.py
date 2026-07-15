@@ -4,9 +4,11 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 import json
 import mimetypes
+from urllib.parse import quote
 
 from bookings.completion_report import (
     booking_from_completion_report_token,
@@ -17,6 +19,7 @@ from bookings.ics import build_booking_ics
 from bookings.models import Booking, BookingPhoto, BookingStatus
 from bookings.photo_access import can_view_booking_photo
 from bookings.notifications import send_booking_created_email, send_booking_rescheduled_email
+from bookings.routing import normalize_postcode
 from bookings.service_area import is_postcode_in_service_area, service_area_error_message
 from bookings.utils import (
     cancel_booking,
@@ -436,6 +439,38 @@ def _service_area_api_error(postcode):
 
 
 @require_GET
+def coverage_check_api(request):
+    """Public postcode coverage check for the homepage and marketing pages."""
+    postcode = request.GET.get('postcode', '').strip()
+    if not postcode:
+        return JsonResponse({'error': 'Enter a postcode.'}, status=400)
+
+    allowed, message = is_postcode_in_service_area(postcode)
+    normalized = normalize_postcode(postcode)
+
+    if not normalized:
+        return JsonResponse({'error': message or 'Please enter a valid UK postcode.'}, status=400)
+
+    if allowed:
+        return JsonResponse({
+            'covered': True,
+            'postcode': normalized,
+            'message': f'Great news — we cover {normalized}.',
+            'book_url': f"{request.build_absolute_uri(reverse('bookings:create'))}?postcode={quote(normalized)}",
+        })
+
+    return JsonResponse({
+        'covered': False,
+        'postcode': normalized,
+        'message': message or service_area_error_message(),
+        'support_message': 'Please contact our team for more information.',
+        'support_email': settings.SITE_EMAIL,
+        'support_phone': settings.SITE_PHONE,
+        'contact_url': request.build_absolute_uri(reverse('website:home')) + '#contact',
+    })
+
+
+@require_GET
 def available_dates_api(request):
     try:
         year = int(request.GET.get('year', ''))
@@ -448,11 +483,10 @@ def available_dates_api(request):
     service_ids = _parse_service_ids(request)
     postcode = request.GET.get('postcode', '').strip()
     city = request.GET.get('city', '').strip()
-    # Location restriction disabled — see bookings/service_area.py
-    # if postcode:
-    #     area_error = _service_area_api_error(postcode)
-    #     if area_error:
-    #         return area_error
+    if postcode:
+        area_error = _service_area_api_error(postcode)
+        if area_error:
+            return area_error
     exclude_booking_pk = request.GET.get('exclude_booking')
     if exclude_booking_pk and str(exclude_booking_pk).isdigit():
         exclude_booking_pk = int(exclude_booking_pk)
@@ -505,10 +539,9 @@ def available_slots_api(request):
     if not postcode:
         return JsonResponse({'slots': [], 'error': 'postcode_required'})
 
-    # Location restriction disabled — see bookings/service_area.py
-    # area_error = _service_area_api_error(postcode)
-    # if area_error:
-    #     return area_error
+    area_error = _service_area_api_error(postcode)
+    if area_error:
+        return area_error
 
     duration = None
     if service_ids:

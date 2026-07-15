@@ -71,6 +71,48 @@ def fetch_postcode_info(postcode):
         return None
 
 
+def outward_code_from_postcode(postcode):
+    from bookings.coverage import outward_code
+    return outward_code(postcode)
+
+
+def fetch_postcodes_near_location(lat, lng, *, radius_m=3500, limit=100):
+    """Return nearby UK postcodes from postcodes.io (cached)."""
+    lat = round(float(lat), 4)
+    lng = round(float(lng), 4)
+    radius_m = int(radius_m)
+    limit = min(max(int(limit), 1), 100)
+
+    cache_key = f'postcode-near:{lat}:{lng}:{radius_m}:{limit}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    url = (
+        'https://api.postcodes.io/postcodes'
+        f'?lon={lng}&lat={lat}&radius={radius_m}&limit={limit}'
+    )
+    try:
+        with urlopen(url, timeout=6) as response:
+            data = json.loads(response.read().decode())
+        if data.get('status') != 200:
+            cache.set(cache_key, [], 60 * 30)
+            return []
+        results = []
+        for item in data.get('result') or []:
+            results.append({
+                'postcode': item.get('postcode'),
+                'latitude': item.get('latitude'),
+                'longitude': item.get('longitude'),
+            })
+        cache.set(cache_key, results, 60 * 60 * 24)
+        return results
+    except (URLError, TimeoutError, KeyError, ValueError, json.JSONDecodeError) as exc:
+        logger.warning('Nearby postcode lookup failed for %s,%s: %s', lat, lng, exc)
+        cache.set(cache_key, [], 60 * 10)
+        return []
+
+
 def geocode_place_name(place_name, *, country='gb'):
     """Return lat/lng and label for a place name via OpenStreetMap Nominatim."""
     cleaned = (place_name or '').strip()

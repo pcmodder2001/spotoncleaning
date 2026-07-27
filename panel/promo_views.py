@@ -90,19 +90,25 @@ def promo_list_view(request):
                 ),
             )
         elif action == 'delete':
-            promo = get_object_or_404(PromoCode, pk=request.POST.get('promo_id'))
-            code = promo.code
-            promo_id = promo.pk
-            promo.delete()
-            log_action(
-                PROMO_DELETED,
-                f'Deleted promo code {code}.',
-                request=request,
-                target_type='promo',
-                target_id=promo_id,
-                target_label=code,
-            )
-            messages.success(request, f'Promo code {code} deleted.')
+            if not request.user.is_sysadmin:
+                messages.error(request, 'Only system admins can delete promo codes.')
+            else:
+                promo = get_object_or_404(PromoCode, pk=request.POST.get('promo_id'))
+                code = promo.code
+                promo_id = promo.pk
+                promo.delete()
+                log_action(
+                    PROMO_DELETED,
+                    f'Deleted promo code {code}.',
+                    request=request,
+                    target_type='promo',
+                    target_id=promo_id,
+                    target_label=code,
+                )
+                messages.success(request, f'Promo code {code} deleted.')
         return redirect('panel:promo_list')
 
-    return render(request, 'panel/promos/list.html', {'promos': promos})
+    return render(request, 'panel/promos/list.html', {
+        'promos': promos,
+        'can_delete_promos': request.user.is_sysadmin,
+    })

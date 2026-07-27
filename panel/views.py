@@ -537,33 +537,48 @@ def enquiry_delete_view(request, pk):
 @admin_required
 def service_list_view(request):
     services = Service.objects.all()
+    status_filter = (request.GET.get('status') or 'all').lower()
+    type_filter = (request.GET.get('type') or 'all').lower()
+    query = (request.GET.get('q') or '').strip()
+
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'add':
-            name = request.POST.get('name', '')
+            name = request.POST.get('name', '').strip()
+            description = request.POST.get('description', '').strip()
             service_type = request.POST.get('service_type', ServiceType.OVEN)
-            exclusive_group = 'hob' if name.lower().startswith(('4 hob', '5 hob', '6-8 hob', '6–8 hob')) else ''
-            service = Service.objects.create(
-                name=name,
-                description=request.POST.get('description'),
-                price=request.POST.get('price'),
-                sort_order=request.POST.get('sort_order', 0),
-                service_type=service_type,
-                exclusive_group=exclusive_group,
+            exclusive_group = (
+                'hob'
+                if name.lower().startswith(('4 hob', '5 hob', '6-8 hob', '6–8 hob'))
+                else ''
             )
-            log_action(
-                SERVICE_CREATED,
-                f'Created service {service.name}.',
-                request=request,
-                target_type='service',
-                target_id=service.pk,
-                target_label=service.name,
-            )
-            messages.success(request, 'Service added.')
+            try:
+                duration = int(request.POST.get('duration_minutes') or 60)
+                sort_order = int(request.POST.get('sort_order') or 0)
+                service = Service.objects.create(
+                    name=name,
+                    description=description,
+                    price=request.POST.get('price'),
+                    sort_order=sort_order,
+                    service_type=service_type,
+                    exclusive_group=exclusive_group,
+                    duration_minutes=max(15, duration),
+                )
+                log_action(
+                    SERVICE_CREATED,
+                    f'Created service {service.name}.',
+                    request=request,
+                    target_type='service',
+                    target_id=service.pk,
+                    target_label=service.name,
+                )
+                messages.success(request, 'Service added.')
+            except (ValueError, TypeError):
+                messages.error(request, 'Could not add service. Check the values and try again.')
         elif action == 'toggle':
             service = get_object_or_404(Service, pk=request.POST.get('service_id'))
             service.active = not service.active
-            service.save()
+            service.save(update_fields=['active'])
             log_action(
                 SERVICE_UPDATED,
                 f'{"Activated" if service.active else "Deactivated"} service {service.name}.',
@@ -577,7 +592,7 @@ def service_list_view(request):
             service = get_object_or_404(Service, pk=request.POST.get('service_id'))
             try:
                 service.price = request.POST.get('price')
-                service.save()
+                service.save(update_fields=['price'])
                 log_action(
                     SERVICE_UPDATED,
                     f'Updated price for {service.name} to £{service.price}.',
@@ -589,8 +604,76 @@ def service_list_view(request):
                 messages.success(request, f'Price updated for {service.name}.')
             except (ValueError, TypeError):
                 messages.error(request, 'Please enter a valid price.')
+        elif action == 'bulk_delete_inactive':
+            if not request.user.is_sysadmin:
+                messages.error(request, 'Only system admins can bulk-delete inactive services.')
+            else:
+                inactive = list(Service.objects.filter(active=False))
+                deleted = 0
+                skipped = 0
+                for service in inactive:
+                    has_bookings = (
+                        Booking.objects.filter(services=service).exists()
+                        or Booking.objects.filter(service=service).exists()
+                    )
+                    if has_bookings:
+                        skipped += 1
+                        continue
+                    name = service.name
+                    service.delete()
+                    log_action(
+                        SERVICE_DELETED,
+                        f'Deleted inactive service {name}.',
+                        request=request,
+                        target_type='service',
+                        target_label=name,
+                    )
+                    deleted += 1
+                if deleted and skipped:
+                    messages.success(
+                        request,
+                        f'Deleted {deleted} inactive service(s). Skipped {skipped} still linked to bookings.',
+                    )
+                elif deleted:
+                    messages.success(request, f'Deleted {deleted} inactive service(s).')
+                elif skipped:
+                    messages.warning(
+                        request,
+                        f'No services deleted — {skipped} inactive service(s) are linked to bookings.',
+                    )
+                else:
+                    messages.info(request, 'No inactive services to delete.')
         return redirect('panel:service_list')
-    return render(request, 'panel/services/list.html', {'services': services})
+
+    active_count = Service.objects.filter(active=True).count()
+    inactive_count = Service.objects.filter(active=False).count()
+
+    if status_filter == 'active':
+        services = services.filter(active=True)
+    elif status_filter == 'inactive':
+        services = services.filter(active=False)
+    else:
+        status_filter = 'all'
+
+    if type_filter in (ServiceType.OVEN, ServiceType.ADDON):
+        services = services.filter(service_type=type_filter)
+    else:
+        type_filter = 'all'
+
+    if query:
+        services = services.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        )
+
+    return render(request, 'panel/services/list.html', {
+        'services': services,
+        'status_filter': status_filter,
+        'type_filter': type_filter,
+        'query': query,
+        'filtered_count': services.count(),
+        'active_count': active_count,
+        'inactive_count': inactive_count,
+    })
 
 
 @admin_required
@@ -620,12 +703,18 @@ def service_edit_view(request, pk):
             return redirect('panel:service_list')
         except (ValueError, TypeError):
             messages.error(request, 'Please enter a valid price.')
-    return render(request, 'panel/services/edit.html', {'edit_service': service})
+    return render(request, 'panel/services/edit.html', {
+        'edit_service': service,
+        'can_delete_service': request.user.is_sysadmin,
+    })
 
 
 @admin_required
 @require_POST
 def service_delete_view(request, pk):
+    if not request.user.is_sysadmin:
+        messages.error(request, 'Only system admins can delete services.')
+        return redirect('panel:service_list')
     service = get_object_or_404(Service, pk=pk)
     has_bookings = (
         Booking.objects.filter(services=service).exists()

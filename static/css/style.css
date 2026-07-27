@@ -3463,6 +3463,265 @@ body.page-panel .site-footer {
     }
 }
 
+/* Services panel */
+.service-panel-toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.service-panel-kicker {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.service-panel-summary {
+    font-size: 0.9rem;
+}
+
+.service-panel-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.service-panel-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem 1rem;
+    margin-bottom: 1.15rem;
+}
+
+.service-filter-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.2rem;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.service-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.7rem;
+    border-radius: calc(var(--radius) - 2px);
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background var(--transition), color var(--transition);
+}
+
+.service-filter-chip:hover {
+    color: var(--primary-dark);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.service-filter-chip.is-active {
+    background: var(--surface);
+    color: var(--primary-dark);
+    box-shadow: var(--shadow-xs);
+}
+
+.service-filter-search {
+    flex: 1 1 12rem;
+    min-width: 10rem;
+    max-width: 18rem;
+}
+
+.service-panel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.service-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+    flex-wrap: wrap;
+    padding: 1.1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+}
+
+.service-row--off {
+    background: #faf8f4;
+    opacity: 0.92;
+}
+
+.service-row-main {
+    min-width: min(100%, 16rem);
+    flex: 1 1 16rem;
+}
+
+.service-row-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.55rem;
+    margin-bottom: 0.3rem;
+}
+
+.service-row-name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.service-row-desc {
+    margin: 0 0 0.55rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.service-row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.service-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.service-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.service-status--on {
+    background: rgba(61, 107, 79, 0.12);
+    color: var(--success);
+}
+
+.service-status--off {
+    background: rgba(107, 115, 104, 0.12);
+    color: var(--text-muted);
+}
+
+.service-type-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.service-type-chip--oven {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+.service-type-chip--addon {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+}
+
+.service-row-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.55rem;
+    min-width: min(100%, 14rem);
+}
+
+.service-price-form .input-group {
+    width: 10.5rem;
+}
+
+.service-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+}
+
+.service-panel-toolbar-actions .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.service-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+}
+
+.service-empty i {
+    display: inline-flex;
+    font-size: 1.75rem;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+}
+
+.service-create-popup {
+    border-radius: var(--radius-lg) !important;
+}
+
+.service-create-html {
+    overflow: visible !important;
+}
+
+.service-create-form .form-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+@media (max-width: 767.98px) {
+    .service-row-side {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .service-price-form .input-group {
+        width: 100%;
+    }
+
+    .service-row-actions {
+        justify-content: stretch;
+    }
+
+    .service-row-actions form,
+    .service-row-actions > .btn {
+        flex: 1 1 auto;
+    }
+
+    .service-row-actions .btn {
+        width: 100%;
+    }
+}
+
 .enquiry-message {
     white-space: pre-wrap;
     word-break: break-word;

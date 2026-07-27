@@ -55,7 +55,12 @@
                       data-confirm-yes="Yes, delete"
                       data-confirm-danger="true">
                     {% csrf_token %}
+                    {% if can_delete_service %}
                     <button type="submit" class="btn btn-outline-danger">Delete Service</button>
+                    {% else %}
+                    <button type="button" class="btn btn-outline-danger" disabled title="Only system admins can delete services">Delete Service</button>
+                    <p class="text-muted small mt-2 mb-0">Turn the service off instead if you need to hide it from booking.</p>
+                    {% endif %}
                 </form>
             </div>
         </div>

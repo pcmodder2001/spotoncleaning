@@ -1,85 +1,117 @@
-{% extends 'panel/base_panel.html' %}
-
-{% block panel_title %}Services{% endblock %}
-
-{% block panel_content %}
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="panel-card card border-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead><tr><th>Name</th><th>Type</th><th>Price</th><th>Status</th><th></th></tr></thead>
-                    <tbody>
-                        {% for service in services %}
-                        <tr>
-                            <td>
-                                <strong>{{ service.name }}</strong>
-                                <br><small class="text-muted">{{ service.description|truncatewords:12 }}</small>
-                            </td>
-                            <td><span class="badge {% if service.service_type == 'oven' %}bg-primary-subtle text-primary{% else %}bg-secondary-subtle text-secondary{% endif %}">{{ service.get_service_type_display }}</span></td>
-                            <td>
-                                <form method="post" class="d-flex gap-1 align-items-center">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="action" value="update_price">
-                                    <input type="hidden" name="service_id" value="{{ service.pk }}">
-                                    <div class="input-group input-group-sm" style="width: 130px;">
-                                        <span class="input-group-text">&pound;</span>
-                                        <input type="number" name="price" value="{{ service.price }}" step="0.01" min="0" class="form-control" required>
-                                    </div>
-                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Save price">Save</button>
-                                </form>
-                            </td>
-                            <td>{% if service.active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
-                            <td>
-                                <div class="d-flex gap-1 flex-wrap">
-                                    <a href="{% url 'panel:service_edit' service.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <form method="post">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="action" value="toggle">
-                                        <input type="hidden" name="service_id" value="{{ service.pk }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">{% if service.active %}Deactivate{% else %}Activate{% endif %}</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5" class="text-center text-muted py-4">No services</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="panel-card card border-0">
-            <div class="card-header bg-primary-soft text-primary fw-bold">Add Service</div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="add">
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" name="name" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="3" required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select name="service_type" class="form-select">
-                            <option value="oven">Oven (pick one per booking)</option>
-                            <option value="addon">Add-on (can combine)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Price (&pound;)</label>
-                        <input type="number" name="price" step="0.01" min="0" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Add Service</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+{% extends 'panel/base_panel.html' %}
+{% load static static_version %}
+
+{% block panel_title %}Services{% endblock %}
+
+{% block panel_content %}
+<div class="service-panel" id="servicePanel" data-csrf="{{ csrf_token }}">
+    <div class="service-panel-toolbar">
+        <div>
+            <p class="service-panel-kicker mb-1">Catalog</p>
+            <p class="service-panel-summary text-muted mb-0">
+                {{ filtered_count }} shown
+                · {{ active_count }} active
+                · {{ inactive_count }} inactive
+            </p>
+        </div>
+        <div class="service-panel-toolbar-actions">
+            {% if user.is_sysadmin and inactive_count %}
+            <form method="post" id="bulkDeleteInactiveForm"
+                  data-confirm="Permanently delete all inactive services that are not linked to bookings? This cannot be undone."
+                  data-confirm-title="Delete inactive services?"
+                  data-confirm-yes="Delete inactive"
+                  data-confirm-danger="true">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="bulk_delete_inactive">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-trash me-1" aria-hidden="true"></i>Remove inactive
+                </button>
+            </form>
+            {% elif inactive_count %}
+            <button type="button" class="btn btn-outline-danger" disabled title="Only system admins can bulk-delete inactive services">
+                <i class="bi bi-trash me-1" aria-hidden="true"></i>Remove inactive
+            </button>
+            {% endif %}
+            <button type="button" class="btn btn-primary" id="serviceCreateBtn">
+                <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add service
+            </button>
+        </div>
+    </div>
+
+    <form method="get" class="service-panel-filters" id="serviceFilters">
+        <div class="service-filter-group" role="group" aria-label="Status filter">
+            <a href="?status=all&amp;type={{ type_filter }}&amp;q={{ query|urlencode }}" class="service-filter-chip{% if status_filter == 'all' %} is-active{% endif %}">All</a>
+            <a href="?status=active&amp;type={{ type_filter }}&amp;q={{ query|urlencode }}" class="service-filter-chip{% if status_filter == 'active' %} is-active{% endif %}">Active</a>
+            <a href="?status=inactive&amp;type={{ type_filter }}&amp;q={{ query|urlencode }}" class="service-filter-chip{% if status_filter == 'inactive' %} is-active{% endif %}">Inactive</a>
+        </div>
+        <div class="service-filter-group" role="group" aria-label="Type filter">
+            <a href="?status={{ status_filter }}&amp;type=all&amp;q={{ query|urlencode }}" class="service-filter-chip{% if type_filter == 'all' %} is-active{% endif %}">All types</a>
+            <a href="?status={{ status_filter }}&amp;type=oven&amp;q={{ query|urlencode }}" class="service-filter-chip{% if type_filter == 'oven' %} is-active{% endif %}">Ovens</a>
+            <a href="?status={{ status_filter }}&amp;type=addon&amp;q={{ query|urlencode }}" class="service-filter-chip{% if type_filter == 'addon' %} is-active{% endif %}">Add-ons</a>
+        </div>
+        <div class="service-filter-search">
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <input type="hidden" name="type" value="{{ type_filter }}">
+            <input type="search" name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="Search services…" aria-label="Search services">
+        </div>
+    </form>
+
+    <div class="service-panel-list">
+        {% for service in services %}
+        <article class="service-row{% if not service.active %} service-row--off{% endif %}">
+            <div class="service-row-main">
+                <div class="service-row-title">
+                    <h2 class="service-row-name">{{ service.name }}</h2>
+                    {% if service.active %}
+                    <span class="service-status service-status--on">Active</span>
+                    {% else %}
+                    <span class="service-status service-status--off">Inactive</span>
+                    {% endif %}
+                    <span class="service-type-chip service-type-chip--{{ service.service_type }}">{{ service.get_service_type_display }}</span>
+                </div>
+                <p class="service-row-desc">{{ service.description|truncatewords:18 }}</p>
+                <div class="service-row-meta">
+                    <span class="service-meta-item"><i class="bi bi-clock" aria-hidden="true"></i> {{ service.duration_minutes }} min</span>
+                    <span class="service-meta-item">Sort {{ service.sort_order }}</span>
+                </div>
+            </div>
+            <div class="service-row-side">
+                <form method="post" class="service-price-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_price">
+                    <input type="hidden" name="service_id" value="{{ service.pk }}">
+                    <label class="visually-hidden" for="price-{{ service.pk }}">Price for {{ service.name }}</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">&pound;</span>
+                        <input type="number" name="price" id="price-{{ service.pk }}" value="{{ service.price }}" step="0.01" min="0" class="form-control" required>
+                        <button type="submit" class="btn btn-outline-primary">Save</button>
+                    </div>
+                </form>
+                <div class="service-row-actions">
+                    <a href="{% url 'panel:service_edit' service.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle">
+                        <input type="hidden" name="service_id" value="{{ service.pk }}">
+                        <button type="submit" class="btn btn-sm {% if service.active %}btn-outline-primary{% else %}btn-primary{% endif %}">
+                            {% if service.active %}Turn off{% else %}Turn on{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </article>
+        {% empty %}
+        <div class="service-empty">
+            <i class="bi bi-tools" aria-hidden="true"></i>
+            <p class="mb-1 fw-semibold">No services match</p>
+            <p class="text-muted small mb-3">Try clearing filters, or add a new service to the catalog.</p>
+            <button type="button" class="btn btn-primary btn-sm" id="serviceCreateEmptyBtn">Add service</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static_v 'js/panel-services.js' %}" defer></script>
+{% endblock %}

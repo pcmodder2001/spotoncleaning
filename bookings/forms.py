@@ -135,6 +135,8 @@ class BookingForm(forms.ModelForm):
             try:
                 promo = get_valid_promo(promo_code)
                 subtotal = sum(s.price for s in services)
+                if not promo.qualifies_for_services(services):
+                    raise PromoError('This promo does not apply to the selected services.')
                 discount = promo.calculate_discount(subtotal)
                 if discount <= 0:
                     raise PromoError(
@@ -144,6 +146,15 @@ class BookingForm(forms.ModelForm):
                 cleaned_data['_discount'] = discount
             except PromoError as exc:
                 raise forms.ValidationError(str(exc)) from exc
+        elif services:
+            from bookings.promo import get_auto_promo_for_services
+            auto_promo = get_auto_promo_for_services(services)
+            if auto_promo:
+                subtotal = sum(s.price for s in services)
+                discount = auto_promo.calculate_discount(subtotal)
+                if discount > 0:
+                    cleaned_data['_promo'] = auto_promo
+                    cleaned_data['_discount'] = discount
         return cleaned_data
 
     def save(self, commit=True):
@@ -157,6 +168,7 @@ class BookingForm(forms.ModelForm):
             booking.save()
             service_ids = [s.pk for s in self.cleaned_data['services']]
             booking.services.set(self.cleaned_data['services'])
+            booking.sync_pricing_snapshot(self.cleaned_data['services'], save=True)
             booking.geocode_and_set_duration(service_ids)
         return booking
 
@@ -199,6 +211,7 @@ class GuestBookingForm(BookingForm):
             booking.save()
             booking.services.set(self.cleaned_data['services'])
             service_ids = [s.pk for s in self.cleaned_data['services']]
+            booking.sync_pricing_snapshot(self.cleaned_data['services'], save=True)
             booking.geocode_and_set_duration(service_ids)
         return booking
 
@@ -351,6 +364,14 @@ class AdminBookingForm(forms.ModelForm):
                     + ' Use Start job and Complete job in the booking view.'
                 )
 
+        if self.instance.pk and self.instance.pricing_is_locked and services:
+            current_ids = set(self.instance.get_services().values_list('pk', flat=True))
+            new_ids = {s.pk for s in services}
+            if current_ids != new_ids:
+                raise forms.ValidationError(
+                    'Cannot change services on a completed or cancelled booking.'
+                )
+
         return cleaned_data
 
     def save(self, commit=True):
@@ -359,8 +380,10 @@ class AdminBookingForm(forms.ModelForm):
             booking.save()
             service_ids = [s.pk for s in self.cleaned_data['services']]
             booking.services.set(self.cleaned_data['services'])
+            if not booking.pricing_is_locked:
+                booking.sync_pricing_snapshot(self.cleaned_data['services'], save=True)
+                booking.recalculate_pricing(save=True)
             booking.geocode_and_set_duration(service_ids)
-            booking.recalculate_pricing(save=True)
         return booking
 
 
@@ -427,8 +450,10 @@ class AdminCreateBookingForm(AdminBookingForm):
             booking.save()
             service_ids = [s.pk for s in self.cleaned_data['services']]
             booking.services.set(self.cleaned_data['services'])
+            if not booking.pricing_is_locked:
+                booking.sync_pricing_snapshot(self.cleaned_data['services'], save=True)
+                booking.recalculate_pricing(save=True)
             booking.geocode_and_set_duration(service_ids)
-            booking.recalculate_pricing(save=True)
         return booking
 
 

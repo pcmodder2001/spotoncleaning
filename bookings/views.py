@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 import json
 import mimetypes
+from decimal import Decimal
 from urllib.parse import quote
 
 from bookings.completion_report import (
@@ -150,6 +151,7 @@ def create_booking_view(request):
                         service_ids = [s.pk for s in form.cleaned_data['services']]
                         booking.save()
                         booking.services.set(form.cleaned_data['services'])
+                        booking.sync_pricing_snapshot(form.cleaned_data['services'], save=True)
                         _attach_booking_property(booking, request)
                         booking.geocode_and_set_duration(service_ids)
                         if request.POST.get('save_address') == '1':
@@ -583,32 +585,54 @@ def validate_promo_api(request):
     if not service_ids:
         return JsonResponse({'valid': False, 'error': 'Select at least one service first.'})
 
-    from decimal import Decimal
-
-    from bookings.promo import PromoError, get_valid_promo
+    from bookings.promo import PromoError, resolve_promo_for_services
     from services.models import Service
 
     try:
-        promo = get_valid_promo(code)
-        subtotal = sum(
-            s.price for s in Service.objects.filter(pk__in=service_ids)
-        )
-        discount = promo.calculate_discount(subtotal)
-        if discount <= 0:
+        services = list(Service.objects.filter(pk__in=service_ids, active=True))
+        pricing = resolve_promo_for_services(services, manual_code=code)
+        if not pricing['has_promo']:
             return JsonResponse({
                 'valid': False,
-                'error': (
-                    f'This code requires a minimum order of '
-                    f'£{promo.min_order_amount:.2f}.'
-                ),
+                'error': 'This promo code could not be applied to your booking.',
             })
-        total = subtotal - discount
         return JsonResponse({
             'valid': True,
-            'code': promo.code,
-            'discount': str(discount.quantize(Decimal('0.01'))),
-            'subtotal': str(subtotal.quantize(Decimal('0.01'))),
-            'total': str(total.quantize(Decimal('0.01'))),
+            'code': pricing['promo_code'],
+            'discount': str(pricing['discount']),
+            'subtotal': str(pricing['subtotal']),
+            'total': str(pricing['total']),
         })
     except PromoError as exc:
         return JsonResponse({'valid': False, 'error': str(exc)})
+
+
+@require_GET
+def auto_promo_api(request):
+    service_ids = _parse_service_ids(request)
+    if not service_ids:
+        return JsonResponse({'applies': False})
+
+    from bookings.promo import auto_promo_message, get_auto_promo_for_services
+    from services.models import Service
+
+    services = list(Service.objects.filter(pk__in=service_ids, active=True))
+    promo = get_auto_promo_for_services(services)
+    if not promo:
+        return JsonResponse({'applies': False})
+
+    subtotal = sum(service.price for service in services)
+    discount = promo.calculate_discount(subtotal)
+    if discount <= 0:
+        return JsonResponse({'applies': False})
+
+    total = subtotal - discount
+    return JsonResponse({
+        'applies': True,
+        'code': promo.code,
+        'description': promo.description,
+        'message': auto_promo_message(promo, discount),
+        'discount': str(discount.quantize(Decimal('0.01'))),
+        'subtotal': str(subtotal.quantize(Decimal('0.01'))),
+        'total': str(total.quantize(Decimal('0.01'))),
+    })

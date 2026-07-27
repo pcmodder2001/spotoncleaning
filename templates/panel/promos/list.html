@@ -38,6 +38,18 @@
                         <label class="form-label">Min order (£)</label>
                         <input type="number" step="0.01" min="0" name="min_order_amount" class="form-control" value="0">
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Min appliances</label>
+                        <input type="number" min="2" name="min_appliance_count" class="form-control" placeholder="For auto promos only">
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="auto_apply" value="1" id="autoApplyPromo">
+                            <label class="form-check-label" for="autoApplyPromo">
+                                Auto-apply when conditions are met (no code required)
+                            </label>
+                        </div>
+                    </div>
                     <div class="col-12">
                         <button type="submit" class="btn btn-primary">Create code</button>
                     </div>
@@ -55,6 +67,7 @@
                         <tr>
                             <th>Code</th>
                             <th>Discount</th>
+                            <th>Rules</th>
                             <th>Uses</th>
                             <th>Status</th>
                             <th></th>
@@ -69,6 +82,17 @@
                             </td>
                             <td>
                                 {% if promo.discount_type == 'percent' %}{{ promo.discount_value }}%{% else %}£{{ promo.discount_value }}{% endif %}
+                            </td>
+                            <td>
+                                {% if promo.auto_apply %}
+                                <span class="badge bg-info text-dark">Auto</span>
+                                {% endif %}
+                                {% if promo.min_appliance_count %}
+                                <small class="text-muted d-block">{{ promo.min_appliance_count }}+ appliances</small>
+                                {% endif %}
+                                {% if promo.min_order_amount %}
+                                <small class="text-muted d-block">Min £{{ promo.min_order_amount }}</small>
+                                {% endif %}
                             </td>
                             <td>{{ promo.times_used }}{% if promo.max_uses %} / {{ promo.max_uses }}{% endif %}</td>
                             <td>{% if promo.active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Off</span>{% endif %}</td>
@@ -92,7 +116,7 @@
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="5" class="text-center text-muted py-4">No promo codes yet</td></tr>
+                        <tr><td colspan="6" class="text-center text-muted py-4">No promo codes yet</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

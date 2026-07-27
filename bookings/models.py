@@ -138,6 +138,17 @@ class Booking(models.Model):
         decimal_places=2,
         default=Decimal('0.00'),
     )
+    subtotal = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text='Service subtotal at time of booking (snapshot; not affected by catalog price changes).',
+    )
+    service_line_items = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Per-service price snapshot: [{service_id, name, price}, ...].',
+    )
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     signed_by_name = models.CharField(max_length=200, blank=True)
@@ -257,7 +268,22 @@ class Booking(models.Model):
         return ', '.join(names) if names else '—'
 
     @property
+    def pricing_is_locked(self):
+        return self.status in (BookingStatus.COMPLETED, BookingStatus.CANCELLED)
+
+    def service_price_for(self, service):
+        """Booked price for a service, or live catalog price if not snapshotted."""
+        for item in self.service_line_items or []:
+            if item.get('service_id') == service.pk:
+                return Decimal(item['price'])
+        return service.price
+
+    @property
     def total_price(self):
+        if self.service_line_items:
+            return sum(Decimal(item['price']) for item in self.service_line_items)
+        if self.subtotal:
+            return self.subtotal
         return sum(s.price for s in self.get_services())
 
     @property
@@ -268,14 +294,40 @@ class Booking(models.Model):
     def has_promo(self):
         return bool(self.promo_code_id and self.discount_amount)
 
-    def recalculate_pricing(self, *, save=True):
-        """Recompute discount from promo code when attached; preserve manual discount otherwise."""
-        if self.promo_code_id:
-            self.discount_amount = self.promo_code.calculate_discount(self.total_price)
-        elif self.discount_amount and self.discount_amount > self.total_price:
-            self.discount_amount = self.total_price
+    def sync_pricing_snapshot(self, services=None, *, save=False):
+        """Store current service prices on the booking."""
+        if self.pricing_is_locked:
+            return self.subtotal or Decimal('0.00')
+
+        if services is None:
+            services = list(self.get_services())
+
+        items = []
+        total = Decimal('0.00')
+        for service in services:
+            price = Decimal(service.price).quantize(Decimal('0.01'))
+            items.append({
+                'service_id': service.pk,
+                'name': service.name,
+                'price': str(price),
+            })
+            total += price
+
+        self.service_line_items = items
+        self.subtotal = total.quantize(Decimal('0.01'))
         if save and self.pk:
-            self.save(update_fields=['discount_amount', 'updated_at'])
+            self.save(update_fields=['subtotal', 'service_line_items', 'updated_at'])
+        return self.subtotal
+
+    def recalculate_pricing(self, *, save=True):
+        """Recompute promo/discount from services and attached promo rules."""
+        if self.pricing_is_locked:
+            return
+        from bookings.promo import refresh_booking_promo
+
+        refresh_booking_promo(self)
+        if save and self.pk:
+            self.save(update_fields=['promo_code', 'discount_amount', 'updated_at'])
 
     @property
     def is_cancellable(self):
@@ -472,6 +524,15 @@ class PromoCode(models.Model):
         decimal_places=2,
         default=Decimal('0.00'),
     )
+    auto_apply = models.BooleanField(
+        default=False,
+        help_text='Apply automatically when booking conditions are met (no code required).',
+    )
+    min_appliance_count = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text='Minimum number of main appliances (oven-type services) required for auto promos.',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -503,6 +564,19 @@ class PromoCode(models.Model):
         if self.discount_type == self.DiscountType.PERCENT:
             return min(subtotal, (subtotal * self.discount_value / Decimal('100')).quantize(Decimal('0.01')))
         return min(subtotal, self.discount_value)
+
+    def qualifies_for_services(self, services):
+        if not self.is_valid_today():
+            return False
+        if self.min_appliance_count:
+            from services.models import ServiceType
+
+            appliance_count = sum(
+                1 for service in services if service.service_type == ServiceType.OVEN
+            )
+            if appliance_count < self.min_appliance_count:
+                return False
+        return True
 
 
 class BookingPhoto(models.Model):

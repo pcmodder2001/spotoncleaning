@@ -427,6 +427,7 @@
         datesUrl: "{% url 'bookings:available_dates' %}",
         slotsUrl: "{% url 'bookings:available_slots' %}",
         promoUrl: "{% url 'bookings:validate_promo' %}",
+        autoPromoUrl: "{% url 'bookings:auto_promo' %}",
         initialService: "{{ selected_service.pk|default:'' }}",
         initialServices: [{% if form.initial.services %}{% for id in form.initial.services %}"{{ id }}"{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}],
         initialDate: "{{ form.date.value|default:'' }}",

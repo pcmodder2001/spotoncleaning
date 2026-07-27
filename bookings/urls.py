@@ -17,4 +17,5 @@ urlpatterns = [
     path('api/dates/', views.available_dates_api, name='available_dates'),
     path('api/slots/', views.available_slots_api, name='available_slots'),
     path('api/promo/', views.validate_promo_api, name='validate_promo'),
+    path('api/auto-promo/', views.auto_promo_api, name='auto_promo'),
 ]

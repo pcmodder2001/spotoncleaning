@@ -60,7 +60,7 @@ def _service_payload(request, booking, service):
     return {
         'id': service.pk,
         'name': service.name,
-        'price': f'{service.price:.2f}',
+        'price': f'{booking.service_price_for(service):.2f}',
         'service_type': service.service_type,
         'before_photo_url': _photo_url(request, before),
         'after_photo_url': _photo_url(request, after),
@@ -125,8 +125,8 @@ def booking_detail_api(request, pk):
 @require_POST
 def booking_update_services_api(request, pk):
     booking = get_object_or_404(Booking, pk=pk)
-    if booking.status == BookingStatus.CANCELLED:
-        return JsonResponse({'error': 'Cannot change services on a cancelled booking.'}, status=400)
+    if booking.status in (BookingStatus.CANCELLED, BookingStatus.COMPLETED):
+        return JsonResponse({'error': 'Cannot change services on this booking.'}, status=400)
 
     try:
         service_ids = [int(value) for value in request.POST.getlist('service_ids') if value.isdigit()]
@@ -145,9 +145,8 @@ def booking_update_services_api(request, pk):
         return JsonResponse({'error': 'Only one hob size allowed per booking.'}, status=400)
 
     booking.services.set(services)
-    booking.recalculate_pricing(save=False)
+    booking.sync_pricing_snapshot(services, save=False)
     booking.geocode_and_set_duration(service_ids)
-    booking.refresh_from_db()
     booking.recalculate_pricing(save=True)
 
     log_action(
@@ -366,21 +365,18 @@ def booking_quote_api(request, pk):
     if len(services) != len(set(service_ids)):
         return JsonResponse({'error': 'One or more services are invalid.'}, status=400)
 
-    subtotal = sum(service.price for service in services)
-    if booking.promo_code_id:
-        discount = booking.promo_code.calculate_discount(subtotal)
-    else:
-        discount = min(booking.discount_amount or Decimal('0.00'), subtotal)
-    total = max(Decimal('0.00'), subtotal - discount)
+    from bookings.promo import resolve_promo_for_services
 
+    pricing = resolve_promo_for_services(services, booking=booking)
     return JsonResponse({
         'pricing': {
-            'subtotal': f'{subtotal:.2f}',
-            'discount': f'{discount:.2f}',
-            'total': f'{total:.2f}',
-            'has_discount': discount > 0,
-            'has_promo': bool(booking.promo_code_id and discount),
-            'promo_code': booking.promo_code.code if booking.promo_code_id else None,
+            'subtotal': f"{pricing['subtotal']:.2f}",
+            'discount': f"{pricing['discount']:.2f}",
+            'total': f"{pricing['total']:.2f}",
+            'has_discount': pricing['has_discount'],
+            'has_promo': pricing['has_promo'],
+            'promo_code': pricing['promo_code'],
+            'promo_auto': pricing['promo_auto'],
         },
     })
 

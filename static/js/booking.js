@@ -125,6 +125,7 @@
             } else {
                 setCalendarMode(false);
             }
+            await refreshAutoPromo();
             updateSummary();
             updateServiceStepUI();
             updateContinueButtons();
@@ -414,17 +415,17 @@
                             item.classList.remove('selected');
                             delete selectedServices[item.dataset.serviceId];
                         });
-                        applyServiceSelection(el, true);
+                        applyServiceSelection(el, false);
                     } else {
                         const id = el.dataset.serviceId;
                         if (el.classList.contains('selected')) {
                             el.classList.remove('selected');
                             delete selectedServices[id];
                         } else {
-                            applyServiceSelection(el, true);
+                            applyServiceSelection(el, false);
                         }
                     }
-                    onServicesChanged();
+                    void onServicesChanged();
                 });
                 el.addEventListener('keydown', function (ev) {
                     if (ev.key === 'Enter' || ev.key === ' ') {
@@ -449,7 +450,12 @@
         }
 
         async function onServicesChanged() {
-            if (promoInput && promoInput.value.trim()) validatePromoField();
+            syncServiceInputs();
+            if (promoInput && promoInput.value.trim()) {
+                await validatePromoField();
+            } else {
+                await refreshAutoPromo();
+            }
             updateMainServiceSummary();
             if (postcodeValid && Object.keys(selectedServices).length) {
                 if (currentStep === 3 && selectedDate) {
@@ -459,6 +465,7 @@
                 }
             }
             updateContinueButtons();
+            updateSummary();
         }
 
         function hasMainServiceSelected() {
@@ -617,9 +624,7 @@
             if (!promoInput || !cfg.promoUrl) return;
             const code = promoInput.value.trim();
             if (!code) {
-                promoState = { valid: false, discount: 0, code: '', total: 0 };
-                setPromoFeedback('');
-                updateSummary();
+                await refreshAutoPromo();
                 return;
             }
             if (!Object.keys(selectedServices).length) {
@@ -637,17 +642,46 @@
                         discount: parseFloat(data.discount),
                         code: data.code,
                         total: parseFloat(data.total),
+                        auto: false,
                     };
                     setPromoFeedback('Code applied — you save £' + parseFloat(data.discount).toFixed(2), 'success');
                 } else {
-                    promoState = { valid: false, discount: 0, code: '', total: 0 };
+                    promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
                     setPromoFeedback(data.error || 'Invalid promo code.', 'error');
                 }
             } catch (err) {
-                promoState = { valid: false, discount: 0, code: '', total: 0 };
+                promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
                 setPromoFeedback('Could not validate promo code.', 'error');
             }
-            updateSummary();
+        }
+
+        async function refreshAutoPromo() {
+            if (!cfg.autoPromoUrl || !Object.keys(selectedServices).length) {
+                promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
+                setPromoFeedback('');
+                return;
+            }
+            try {
+                const params = buildScheduleParams();
+                const res = await fetch(cfg.autoPromoUrl + '?' + params.toString());
+                const data = await res.json().catch(function () { return {}; });
+                if (data.applies) {
+                    promoState = {
+                        valid: true,
+                        discount: parseFloat(data.discount),
+                        code: data.code,
+                        total: parseFloat(data.total),
+                        auto: true,
+                    };
+                    setPromoFeedback(data.message || ('Discount applied — save £' + parseFloat(data.discount).toFixed(2)), 'success');
+                } else {
+                    promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
+                    setPromoFeedback('');
+                }
+            } catch (err) {
+                promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
+                setPromoFeedback('');
+            }
         }
 
         function setPromoFeedback(message, type) {
@@ -1185,7 +1219,10 @@
 
             if (reviewPromoRow && reviewPromo) {
                 if (promoState.valid) {
-                    reviewPromo.textContent = promoState.code + ' (−£' + promoState.discount.toFixed(2) + ')';
+                    const label = promoState.auto
+                        ? (promoState.code + ' (automatic)')
+                        : promoState.code;
+                    reviewPromo.textContent = label + ' (−£' + promoState.discount.toFixed(2) + ')';
                     reviewPromoRow.hidden = false;
                 } else {
                     reviewPromoRow.hidden = true;

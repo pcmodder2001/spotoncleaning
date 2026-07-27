@@ -16,8 +16,12 @@ def promo_list_view(request):
         action = request.POST.get('action')
         if action == 'add':
             code = request.POST.get('code', '').strip()
+            auto_apply = request.POST.get('auto_apply') == '1'
+            min_appliances = request.POST.get('min_appliance_count') or None
             if not code:
                 messages.error(request, 'Enter a promo code.')
+            elif auto_apply and not min_appliances:
+                messages.error(request, 'Auto promos need a minimum appliance count.')
             else:
                 try:
                     max_uses = request.POST.get('max_uses') or None
@@ -30,6 +34,12 @@ def promo_list_view(request):
                         discount_value=Decimal(request.POST.get('discount_value', '0')),
                         max_uses=int(max_uses) if max_uses else None,
                         min_order_amount=Decimal(request.POST.get('min_order_amount') or '0'),
+                        auto_apply=request.POST.get('auto_apply') == '1',
+                        min_appliance_count=(
+                            int(request.POST.get('min_appliance_count'))
+                            if request.POST.get('min_appliance_count')
+                            else None
+                        ),
                     )
                     log_action(
                         PROMO_CREATED,

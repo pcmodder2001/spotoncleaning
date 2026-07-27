@@ -144,6 +144,7 @@ class Command(BaseCommand):
                     status=status,
                 )
                 booking.services.set(services)
+                booking.sync_pricing_snapshot(services, save=True)
                 booking.geocode_and_set_duration(service_ids)
 
                 created += 1

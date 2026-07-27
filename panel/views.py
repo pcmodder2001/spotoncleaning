@@ -423,21 +423,23 @@ def booking_delete_view(request, pk):
 
 @admin_required
 def availability_view(request):
+    from datetime import datetime, timedelta
+
     weekly_schedule = WeeklySchedule.objects.all()
     time_slots = TimeSlot.objects.all()
-    blocked_dates = BlockedDate.objects.all()
+    today = timezone.localdate()
+
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'weekly':
             for schedule in weekly_schedule:
                 schedule.is_available = request.POST.get(f'day_{schedule.day_of_week}') == 'on'
-                schedule.save()
+                schedule.save(update_fields=['is_available'])
             log_action(AVAILABILITY_UPDATED, 'Updated weekly schedule.', request=request, target_type='availability')
             messages.success(request, 'Weekly schedule updated.')
         elif action == 'add_slot':
             time_str = request.POST.get('time')
             if time_str:
-                from datetime import datetime
                 time_obj = datetime.strptime(time_str, '%H:%M').time()
                 TimeSlot.objects.get_or_create(time=time_obj)
                 log_action(AVAILABILITY_UPDATED, f'Added time slot {time_str}.', request=request, target_type='availability')
@@ -445,39 +447,123 @@ def availability_view(request):
         elif action == 'toggle_slot':
             slot = get_object_or_404(TimeSlot, pk=request.POST.get('slot_id'))
             slot.active = not slot.active
-            slot.save()
+            slot.save(update_fields=['active'])
             log_action(AVAILABILITY_UPDATED, f'Toggled time slot {slot}.', request=request, target_type='availability')
             messages.success(request, f'Time slot {slot} updated.')
         elif action == 'delete_slot':
-            slot = get_object_or_404(TimeSlot, pk=request.POST.get('slot_id'))
-            slot.delete()
-            log_action(AVAILABILITY_UPDATED, 'Deleted a time slot.', request=request, target_type='availability')
-            messages.success(request, 'Time slot deleted.')
+            if not request.user.is_sysadmin:
+                messages.error(request, 'Only system admins can delete time slots.')
+            else:
+                slot = get_object_or_404(TimeSlot, pk=request.POST.get('slot_id'))
+                slot.delete()
+                log_action(AVAILABILITY_UPDATED, 'Deleted a time slot.', request=request, target_type='availability')
+                messages.success(request, 'Time slot deleted.')
         elif action == 'block_date':
             date_str = request.POST.get('date')
-            reason = request.POST.get('reason', '')
+            reason = (request.POST.get('reason') or '').strip()
+            closure_type = request.POST.get('closure_type', BlockedDate.ClosureType.CLOSED)
+            if closure_type not in BlockedDate.ClosureType.values:
+                closure_type = BlockedDate.ClosureType.CLOSED
             if date_str:
-                from datetime import datetime
                 date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                if not reason:
+                    reason = (
+                        'Fully booked'
+                        if closure_type == BlockedDate.ClosureType.FULL
+                        else 'Closed'
+                    )
                 BlockedDate.objects.update_or_create(
                     date=date_obj,
                     defaults={
                         'reason': reason,
-                        'closure_type': BlockedDate.ClosureType.CLOSED,
+                        'closure_type': closure_type,
                     },
                 )
-                log_action(AVAILABILITY_UPDATED, f'Blocked date {date_str}.', request=request, target_type='availability')
-                messages.success(request, f'Date {date_str} blocked.')
+                log_action(
+                    AVAILABILITY_UPDATED,
+                    f'Blocked date {date_str} ({closure_type}).',
+                    request=request,
+                    target_type='availability',
+                )
+                label = 'fully booked' if closure_type == BlockedDate.ClosureType.FULL else 'closed'
+                messages.success(request, f'{date_obj.strftime("%d %b %Y")} marked as {label}.')
         elif action == 'unblock_date':
             blocked = get_object_or_404(BlockedDate, pk=request.POST.get('blocked_id'))
             blocked.delete()
             log_action(AVAILABILITY_UPDATED, 'Unblocked a date.', request=request, target_type='availability')
             messages.success(request, 'Date unblocked.')
+        elif action == 'close_tomorrow':
+            target = today + timedelta(days=1)
+            BlockedDate.objects.update_or_create(
+                date=target,
+                defaults={
+                    'reason': request.POST.get('reason') or 'Closed',
+                    'closure_type': BlockedDate.ClosureType.CLOSED,
+                },
+            )
+            log_action(
+                AVAILABILITY_UPDATED,
+                f'Quick-closed tomorrow ({target}).',
+                request=request,
+                target_type='availability',
+            )
+            messages.success(request, f'{target.strftime("%d %b %Y")} marked as closed.')
+        elif action == 'full_today':
+            BlockedDate.objects.update_or_create(
+                date=today,
+                defaults={
+                    'reason': request.POST.get('reason') or 'Fully booked',
+                    'closure_type': BlockedDate.ClosureType.FULL,
+                },
+            )
+            log_action(
+                AVAILABILITY_UPDATED,
+                f'Quick-marked today full ({today}).',
+                request=request,
+                target_type='availability',
+            )
+            messages.success(request, f'{today.strftime("%d %b %Y")} marked as fully booked.')
         return redirect('panel:availability')
+
+    when_filter = (request.GET.get('when') or 'upcoming').lower()
+    kind_filter = (request.GET.get('kind') or 'all').lower()
+    blocked_qs = BlockedDate.objects.all()
+    if when_filter == 'past':
+        blocked_qs = blocked_qs.filter(date__lt=today)
+    elif when_filter == 'all':
+        pass
+    else:
+        when_filter = 'upcoming'
+        blocked_qs = blocked_qs.filter(date__gte=today)
+
+    if kind_filter == 'closed':
+        blocked_qs = blocked_qs.filter(closure_type=BlockedDate.ClosureType.CLOSED)
+    elif kind_filter == 'full':
+        blocked_qs = blocked_qs.filter(closure_type=BlockedDate.ClosureType.FULL)
+    else:
+        kind_filter = 'all'
+
+    if when_filter == 'past':
+        blocked_qs = blocked_qs.order_by('-date')
+    else:
+        blocked_qs = blocked_qs.order_by('date')
+
+    this_week_monday = today - timedelta(days=today.weekday())
+    next_week_monday = this_week_monday + timedelta(days=7)
+
     return render(request, 'panel/availability.html', {
         'weekly_schedule': weekly_schedule,
         'time_slots': time_slots,
-        'blocked_dates': blocked_dates,
+        'blocked_dates': blocked_qs,
+        'blocked_total': BlockedDate.objects.count(),
+        'when_filter': when_filter,
+        'kind_filter': kind_filter,
+        'today': today,
+        'tomorrow': today + timedelta(days=1),
+        'this_week_monday': this_week_monday,
+        'next_week_monday': next_week_monday,
+        'can_delete_slots': request.user.is_sysadmin,
+        'active_slot_count': TimeSlot.objects.filter(active=True).count(),
     })
 
 

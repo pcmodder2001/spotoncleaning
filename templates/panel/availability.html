@@ -1,151 +1,182 @@
 {% extends 'panel/base_panel.html' %}
+{% load static static_version %}
 
-{% block panel_title %}Availability Management{% endblock %}
+{% block panel_title %}Availability{% endblock %}
 
 {% block panel_content %}
-<div class="row g-4">
-    <div class="col-lg-6">
-        <div class="panel-card card border-0 mb-4">
-            <div class="card-header">Regular closed days</div>
-            <div class="card-body">
-                <p class="text-muted small mb-3">Untick any weekday you are normally closed. These show as <strong>Closed</strong> on the booking calendar (e.g. Sundays).</p>
-                <form method="post">
+<div class="avail-panel" id="availPanel" data-csrf="{{ csrf_token }}">
+    <div class="avail-panel-toolbar">
+        <div>
+            <p class="avail-panel-kicker mb-1">Schedule controls</p>
+            <p class="avail-panel-summary text-muted mb-0">
+                {{ active_slot_count }} active slot{{ active_slot_count|pluralize }}
+                · {{ blocked_total }} blocked date{{ blocked_total|pluralize }}
+            </p>
+        </div>
+        <div class="avail-panel-toolbar-actions">
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="full_today">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Fully book today</button>
+            </form>
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="close_tomorrow">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Close tomorrow</button>
+            </form>
+            <button type="button" class="btn btn-primary btn-sm" id="availBlockDateBtn">
+                <i class="bi bi-calendar-x me-1" aria-hidden="true"></i>Block a date
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <section class="avail-section">
+                <div class="avail-section-head">
+                    <h2 class="avail-section-title">Regular open days</h2>
+                    <p class="avail-section-note text-muted mb-0">Untick days you are normally closed.</p>
+                </div>
+                <form method="post" class="avail-week-form">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="weekly">
-                    {% for schedule in weekly_schedule %}
-                    <div class="form-check mb-2">
-                        <input type="checkbox" name="day_{{ schedule.day_of_week }}" class="form-check-input" id="day{{ schedule.day_of_week }}" {% if schedule.is_available %}checked{% endif %}>
-                        <label class="form-check-label" for="day{{ schedule.day_of_week }}">{{ schedule.get_day_of_week_display }}</label>
+                    <div class="avail-day-chips" role="group" aria-label="Weekday availability">
+                        {% for schedule in weekly_schedule %}
+                        <label class="avail-day-chip">
+                            <input type="checkbox" name="day_{{ schedule.day_of_week }}" {% if schedule.is_available %}checked{% endif %}>
+                            <span>{{ schedule.get_day_of_week_display|slice:":3" }}</span>
+                        </label>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-primary mt-2">Save schedule</button>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">Save weekdays</button>
                 </form>
-            </div>
-        </div>
+            </section>
 
-        <div class="panel-card card border-0">
-            <div class="card-header">One-off dates</div>
-            <div class="card-body">
-                <form method="post" class="row g-2 mb-3">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="block_date">
-                    <div class="col-12">
-                        <label class="form-label small fw-semibold mb-1">Close a day</label>
+            <section class="avail-section mt-4">
+                <div class="avail-section-head avail-section-head--row">
+                    <div>
+                        <h2 class="avail-section-title">One-off dates</h2>
+                        <p class="avail-section-note text-muted mb-0">Closed days and fully booked dates.</p>
                     </div>
-                    <div class="col-md-5">
-                        <input type="date" name="date" class="form-control" required>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="availBlockDateBtnSecondary">Block a date</button>
+                </div>
+
+                <div class="avail-filters">
+                    <div class="avail-filter-group" role="group" aria-label="When">
+                        <a href="?when=upcoming&amp;kind={{ kind_filter }}" class="avail-filter-chip{% if when_filter == 'upcoming' %} is-active{% endif %}">Upcoming</a>
+                        <a href="?when=past&amp;kind={{ kind_filter }}" class="avail-filter-chip{% if when_filter == 'past' %} is-active{% endif %}">Past</a>
+                        <a href="?when=all&amp;kind={{ kind_filter }}" class="avail-filter-chip{% if when_filter == 'all' %} is-active{% endif %}">All</a>
                     </div>
-                    <div class="col-md-5">
-                        <input type="text" name="reason" class="form-control" placeholder="Reason (optional)">
+                    <div class="avail-filter-group" role="group" aria-label="Type">
+                        <a href="?when={{ when_filter }}&amp;kind=all" class="avail-filter-chip{% if kind_filter == 'all' %} is-active{% endif %}">All types</a>
+                        <a href="?when={{ when_filter }}&amp;kind=closed" class="avail-filter-chip{% if kind_filter == 'closed' %} is-active{% endif %}">Closed</a>
+                        <a href="?when={{ when_filter }}&amp;kind=full" class="avail-filter-chip{% if kind_filter == 'full' %} is-active{% endif %}">Fully booked</a>
                     </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-secondary w-100">Close</button>
-                    </div>
-                </form>
-                <form method="post" action="{% url 'panel:availability_quick' %}" class="row g-2 mb-3">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="block_day_full">
-                    <div class="col-12">
-                        <label class="form-label small fw-semibold mb-1">Mark as fully booked</label>
-                    </div>
-                    <div class="col-md-5">
-                        <input type="date" name="date" class="form-control" required>
-                    </div>
-                    <div class="col-md-5">
-                        <input type="text" name="reason" class="form-control" value="Fully booked" placeholder="Reason">
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-warning w-100">Full</button>
-                    </div>
-                </form>
-                <ul class="list-group list-group-flush">
+                </div>
+
+                <div class="avail-blocked-list">
                     {% for blocked in blocked_dates %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <span>
-                            {{ blocked.date|date:"d M Y" }}
-                            {% if blocked.closure_type == 'full' %}
-                                <span class="badge bg-warning text-dark ms-1">Fully booked</span>
-                            {% else %}
-                                <span class="badge bg-secondary ms-1">Closed</span>
-                            {% endif %}
-                            {% if blocked.reason %}<span class="text-muted small"> — {{ blocked.reason }}</span>{% endif %}
-                        </span>
+                    <article class="avail-blocked-row">
+                        <div>
+                            <div class="avail-blocked-date">{{ blocked.date|date:"D d M Y" }}</div>
+                            <div class="avail-blocked-meta">
+                                {% if blocked.closure_type == 'full' %}
+                                <span class="avail-badge avail-badge--full">Fully booked</span>
+                                {% else %}
+                                <span class="avail-badge avail-badge--closed">Closed</span>
+                                {% endif %}
+                                {% if blocked.reason %}<span class="text-muted">{{ blocked.reason }}</span>{% endif %}
+                            </div>
+                        </div>
                         <form method="post">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="unblock_date">
                             <input type="hidden" name="blocked_id" value="{{ blocked.pk }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Remove</button>
                         </form>
-                    </li>
+                    </article>
                     {% empty %}
-                    <li class="list-group-item text-muted px-0">No one-off closed or fully booked dates</li>
+                    <div class="avail-empty">
+                        <p class="mb-0 text-muted">No matching blocked dates.</p>
+                    </div>
                     {% endfor %}
-                </ul>
-            </div>
-        </div>
+                </div>
+            </section>
 
-        <div class="panel-card card border-0 mt-4">
-            <div class="card-header">Copy availability</div>
-            <div class="card-body">
-                <p class="text-muted small">Copy closed dates and per-slot overrides from one week to the next.</p>
-                <form method="post" action="{% url 'panel:availability_quick' %}" class="row g-2">
+            <section class="avail-section mt-4">
+                <div class="avail-section-head">
+                    <h2 class="avail-section-title">Copy week</h2>
+                    <p class="avail-section-note text-muted mb-0">
+                        Copy blocked dates and slot overrides from one week to the next
+                        (Mon {{ this_week_monday|date:"d M" }} → Mon {{ next_week_monday|date:"d M" }} if you pick this week).
+                    </p>
+                </div>
+                <form method="post" action="{% url 'panel:availability_quick' %}" class="row g-2 align-items-end">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="duplicate_week">
                     <div class="col-md-8">
-                        <label class="form-label">Source week (any date in that week)</label>
-                        <input type="date" name="source_week_start" class="form-control" required>
+                        <label class="form-label small fw-semibold" for="sourceWeekStart">Any date in the source week</label>
+                        <input type="date" name="source_week_start" id="sourceWeekStart" class="form-control" value="{{ this_week_monday|date:'Y-m-d' }}" required>
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
+                    <div class="col-md-4">
                         <button type="submit" class="btn btn-outline-primary w-100">Copy to next week</button>
                     </div>
                 </form>
-            </div>
+            </section>
         </div>
-    </div>
 
-    <div class="col-lg-6">
-        <div class="panel-card card border-0">
-            <div class="card-header">Time Slots</div>
-            <div class="card-body">
-                <form method="post" class="row g-2 mb-3">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="add_slot">
-                    <div class="col-8">
-                        <input type="time" name="time" class="form-control" required>
+        <div class="col-lg-5">
+            <section class="avail-section">
+                <div class="avail-section-head avail-section-head--row">
+                    <div>
+                        <h2 class="avail-section-title">Time slots</h2>
+                        <p class="avail-section-note text-muted mb-0">Turn slots on/off for online booking.</p>
                     </div>
-                    <div class="col-4">
-                        <button type="submit" class="btn btn-primary w-100">Add Slot</button>
-                    </div>
-                </form>
-                <ul class="list-group list-group-flush">
+                    <button type="button" class="btn btn-primary btn-sm" id="availAddSlotBtn">Add slot</button>
+                </div>
+
+                <div class="avail-slot-grid">
                     {% for slot in time_slots %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <span>{{ slot.time|time:"H:i" }} {% if slot.active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</span>
-                        <div class="d-flex gap-1">
+                    <div class="avail-slot-card{% if not slot.active %} avail-slot-card--off{% endif %}">
+                        <div class="avail-slot-time">{{ slot.time|time:"H:i" }}</div>
+                        <div class="avail-slot-actions">
                             <form method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="toggle_slot">
                                 <input type="hidden" name="slot_id" value="{{ slot.pk }}">
-                                <button type="submit" class="btn btn-sm btn-outline-primary">Toggle</button>
+                                <button type="submit" class="btn btn-sm {% if slot.active %}btn-outline-primary{% else %}btn-primary{% endif %}">
+                                    {% if slot.active %}On{% else %}Off{% endif %}
+                                </button>
                             </form>
+                            {% if can_delete_slots %}
                             <form method="post"
                                   data-confirm="This time slot will be removed from the schedule."
-                                  data-confirm-title="Delete this slot?"
-                                  data-confirm-yes="Yes, delete"
+                                  data-confirm-title="Delete {{ slot.time|time:'H:i' }}?"
+                                  data-confirm-yes="Delete"
                                   data-confirm-danger="true">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="delete_slot">
                                 <input type="hidden" name="slot_id" value="{{ slot.pk }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                             </form>
+                            {% else %}
+                            <button type="button" class="btn btn-sm btn-outline-danger" disabled title="Only system admins can delete time slots">Delete</button>
+                            {% endif %}
                         </div>
-                    </li>
+                    </div>
                     {% empty %}
-                    <li class="list-group-item text-muted px-0">No time slots configured</li>
+                    <div class="avail-empty w-100">
+                        <p class="mb-2 text-muted">No time slots yet.</p>
+                        <button type="button" class="btn btn-primary btn-sm" id="availAddSlotEmptyBtn">Add your first slot</button>
+                    </div>
                     {% endfor %}
-                </ul>
-            </div>
+                </div>
+            </section>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static_v 'js/panel-availability.js' %}" defer></script>
 {% endblock %}

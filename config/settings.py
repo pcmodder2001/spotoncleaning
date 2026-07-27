@@ -158,6 +158,7 @@ STATIC_CACHE_VERSIONS = build_static_cache_versions(
     'js/panel-coverage.js',
     'js/panel-promos.js',
     'js/panel-services.js',
+    'js/panel-availability.js',
     'js/schedule-debug.js',
 )
 

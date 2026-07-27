@@ -37,6 +37,7 @@ from .forms import (
     BusinessProfileForm,
     CompleteAccountFromBookingForm,
     CustomPasswordChangeForm,
+    CustomSetPasswordForm,
     EmployeeInviteRegistrationForm,
     LoginForm,
     ProfileForm,
@@ -579,6 +580,7 @@ class CustomPasswordResetDoneView(PasswordResetDoneView):
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     template_name = 'accounts/password_reset_confirm.html'
+    form_class = CustomSetPasswordForm
     success_url = reverse_lazy('accounts:password_reset_complete')
 
 

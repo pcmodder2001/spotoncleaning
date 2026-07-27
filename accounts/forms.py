@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, SetPasswordForm, UserCreationForm
 from django.contrib.auth import get_user_model
 
 from accounts.account_types import AccountType
@@ -183,6 +183,27 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
+
+
+class CustomSetPasswordForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['new_password1'].label = 'New password'
+        self.fields['new_password2'].label = 'Confirm new password'
+        self.fields['new_password1'].widget = forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'new-password',
+            'placeholder': 'Enter a new password',
+        })
+        self.fields['new_password2'].widget = forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'new-password',
+            'placeholder': 'Re-enter your new password',
+        })
+        self.fields['new_password1'].help_text = (
+            'Use at least 8 characters. Avoid passwords that are too common or entirely numeric.'
+        )
+        self.fields['new_password2'].help_text = ''
 
 
 class CompleteAccountFromBookingForm(forms.Form):

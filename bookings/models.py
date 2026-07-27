@@ -133,6 +133,11 @@ class Booking(models.Model):
         blank=True,
         related_name='bookings',
     )
+    applied_promos = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Snapshot of applied promos: [{id, code, discount, auto}, ...].',
+    )
     discount_amount = models.DecimalField(
         max_digits=8,
         decimal_places=2,
@@ -292,7 +297,19 @@ class Booking(models.Model):
 
     @property
     def has_promo(self):
-        return bool(self.promo_code_id and self.discount_amount)
+        return bool(self.discount_amount) and (
+            bool(self.promo_code_id) or bool(self.applied_promos)
+        )
+
+    def applied_promo_ids(self):
+        ids = []
+        for row in self.applied_promos or []:
+            promo_id = row.get('id')
+            if promo_id is not None:
+                ids.append(int(promo_id))
+        if self.promo_code_id and self.promo_code_id not in ids:
+            ids.append(self.promo_code_id)
+        return ids
 
     def sync_pricing_snapshot(self, services=None, *, save=False):
         """Store current service prices on the booking."""
@@ -327,7 +344,7 @@ class Booking(models.Model):
 
         refresh_booking_promo(self)
         if save and self.pk:
-            self.save(update_fields=['promo_code', 'discount_amount', 'updated_at'])
+            self.save(update_fields=['promo_code', 'applied_promos', 'discount_amount', 'updated_at'])
 
     @property
     def is_cancellable(self):
@@ -528,10 +545,18 @@ class PromoCode(models.Model):
         default=False,
         help_text='Apply automatically when booking conditions are met (no code required).',
     )
+    stackable = models.BooleanField(
+        default=False,
+        help_text='Can be used in conjunction with other stackable offers.',
+    )
     min_appliance_count = models.PositiveIntegerField(
         null=True,
         blank=True,
-        help_text='Minimum number of main appliances (oven-type services) required for auto promos.',
+        help_text='Minimum number of appliances required for auto promos.',
+    )
+    count_addons = models.BooleanField(
+        default=False,
+        help_text='When set, add-on services also count toward the minimum appliance total.',
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -571,9 +596,12 @@ class PromoCode(models.Model):
         if self.min_appliance_count:
             from services.models import ServiceType
 
-            appliance_count = sum(
-                1 for service in services if service.service_type == ServiceType.OVEN
-            )
+            appliance_count = 0
+            for service in services:
+                if service.service_type == ServiceType.OVEN:
+                    appliance_count += 1
+                elif self.count_addons and service.service_type == ServiceType.ADDON:
+                    appliance_count += 1
             if appliance_count < self.min_appliance_count:
                 return False
         return True

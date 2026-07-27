@@ -193,9 +193,10 @@ def booking_update_discount_api(request, pk):
     previous_promo = booking.promo_code.code if booking.promo_code_id else None
 
     booking.discount_amount = discount
-    if discount > 0 or booking.promo_code_id:
+    if discount > 0 or booking.promo_code_id or booking.applied_promos:
         booking.promo_code = None
-    booking.save(update_fields=['discount_amount', 'promo_code', 'updated_at'])
+        booking.applied_promos = []
+    booking.save(update_fields=['discount_amount', 'promo_code', 'applied_promos', 'updated_at'])
 
     email_sent = None
     if discount != previous:

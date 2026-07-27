@@ -20,8 +20,15 @@ def _usage_limit_reached(promo):
     return promo.max_uses is not None and promo.times_used >= promo.max_uses
 
 
-def count_appliances(services):
-    return sum(1 for service in services if service.service_type == ServiceType.OVEN)
+def count_appliances(services, *, include_addons=False):
+    """Count services toward a promo minimum. Main appliances always count; add-ons only when enabled."""
+    total = 0
+    for service in services:
+        if service.service_type == ServiceType.OVEN:
+            total += 1
+        elif include_addons and service.service_type == ServiceType.ADDON:
+            total += 1
+    return total
 
 
 def get_valid_promo(code):
@@ -47,10 +54,10 @@ def get_valid_promo(code):
     return promo
 
 
-def get_auto_promo_for_services(services):
-    """Best matching active auto promo for the selected services, if any."""
+def get_qualifying_auto_promos(services):
+    """All active auto promos that qualify for the selected services."""
     if not services:
-        return None
+        return []
 
     candidates = PromoCode.objects.filter(
         active=True,
@@ -58,10 +65,41 @@ def get_auto_promo_for_services(services):
         min_appliance_count__isnull=False,
     ).order_by('-min_appliance_count', '-discount_value')
 
-    for promo in candidates:
-        if promo.qualifies_for_services(services):
-            return promo
-    return None
+    return [promo for promo in candidates if promo.qualifies_for_services(services)]
+
+
+def get_auto_promo_for_services(services):
+    """Best matching active auto promo for the selected services, if any."""
+    promos = select_auto_promos(services)
+    return promos[0] if promos else None
+
+
+def select_auto_promos(services):
+    """
+    Choose which auto promos to apply.
+
+    Stackable autos can all apply together. Non-stackable autos are exclusive —
+    only the best one is used, and it cannot mix with stackables.
+    """
+    qualifying = get_qualifying_auto_promos(services)
+    if not qualifying:
+        return []
+
+    stackable = [p for p in qualifying if p.stackable]
+    exclusive = [p for p in qualifying if not p.stackable]
+
+    if exclusive and not stackable:
+        return [exclusive[0]]
+    if stackable and not exclusive:
+        return stackable
+
+    # Both kinds qualify — pick whichever bundle saves more on the current subtotal.
+    subtotal = _services_subtotal(services)
+    exclusive_discount = _total_discount_for_promos([exclusive[0]], subtotal)
+    stackable_discount = _total_discount_for_promos(stackable, subtotal)
+    if exclusive_discount >= stackable_discount:
+        return [exclusive[0]]
+    return stackable
 
 
 def _booking_subtotal(booking, services):
@@ -83,45 +121,165 @@ def calculate_promo_discount(promo, subtotal):
     return discount
 
 
-def build_pricing_payload(*, subtotal, discount, promo=None):
+def _discount_rows_for_promos(promos, subtotal):
+    """Apply promos sequentially on the remaining balance; return rows + total."""
+    remaining = Decimal(subtotal)
+    rows = []
+    total = Decimal('0.00')
+    for promo in promos:
+        if remaining <= 0:
+            break
+        amount = promo.calculate_discount(remaining)
+        if amount <= 0:
+            continue
+        amount = min(amount, remaining).quantize(Decimal('0.01'))
+        rows.append({
+            'id': promo.pk,
+            'code': promo.code,
+            'description': promo.description or '',
+            'discount': amount,
+            'auto': bool(promo.auto_apply),
+            'stackable': bool(promo.stackable),
+        })
+        total += amount
+        remaining -= amount
+    return rows, total.quantize(Decimal('0.01'))
+
+
+def _total_discount_for_promos(promos, subtotal):
+    _, total = _discount_rows_for_promos(promos, subtotal)
+    return total
+
+
+def build_pricing_payload(*, subtotal, discount, promo=None, promos=None, rows=None):
     total = max(Decimal('0.00'), subtotal - discount)
+    promo_list = promos or ([promo] if promo else [])
+    if rows is None and promo_list:
+        rows, discount = _discount_rows_for_promos(promo_list, subtotal)
+        total = max(Decimal('0.00'), subtotal - discount)
+
+    primary = promo_list[0] if promo_list else promo
     return {
         'subtotal': subtotal.quantize(Decimal('0.01')),
         'discount': discount.quantize(Decimal('0.01')),
         'total': total.quantize(Decimal('0.01')),
         'has_discount': discount > 0,
-        'has_promo': bool(promo and discount),
-        'promo_code': promo.code if promo else None,
-        'promo_description': promo.description if promo else '',
-        'promo_auto': bool(promo and promo.auto_apply),
+        'has_promo': bool(promo_list and discount > 0),
+        'promo_code': primary.code if primary else None,
+        'promo_description': primary.description if primary else '',
+        'promo_auto': bool(primary and primary.auto_apply),
+        'promos': [
+            {
+                'code': row['code'],
+                'description': row.get('description', ''),
+                'discount': str(row['discount'].quantize(Decimal('0.01'))),
+                'auto': bool(row.get('auto')),
+                'stackable': bool(row.get('stackable')),
+            }
+            for row in (rows or [])
+        ],
+        'message': combined_promo_message(rows or [], discount),
     }
 
 
-def resolve_promo_for_services(services, *, booking=None, manual_code=None):
-    """Pick promo + discount for a service selection without mutating a booking."""
+def combined_promo_message(rows, discount):
+    if not rows or discount <= 0:
+        return ''
+    if len(rows) == 1:
+        row = rows[0]
+        if row.get('description'):
+            return f'{row["description"]} — save £{discount:.2f}'
+        if row.get('auto'):
+            return f'{row["code"]} applied — save £{discount:.2f}'
+        return f'{row["code"]} applied — save £{discount:.2f}'
+    codes = ', '.join(row['code'] for row in rows)
+    return f'{codes} combined — save £{discount:.2f}'
+
+
+def resolve_promos_for_services(services, *, booking=None, manual_code=None):
+    """
+    Resolve which promos apply and the combined discount.
+
+    Stacking rules:
+    - A manual code and an auto promo combine only when both are stackable.
+    - Multiple stackable autos can combine with each other.
+    - Non-stackable promos are exclusive.
+    """
     subtotal = _services_subtotal(services)
-    promo = None
-    discount = Decimal('0.00')
+    selected = []
 
     if manual_code:
-        promo = get_valid_promo(manual_code)
-        if not promo.qualifies_for_services(services):
+        manual = get_valid_promo(manual_code)
+        if not manual.qualifies_for_services(services):
             raise PromoError('This promo does not apply to the selected services.')
-        discount = calculate_promo_discount(promo, subtotal)
+        calculate_promo_discount(manual, subtotal)
+        # Stackable auto offers (e.g. multi-appliance) stay applied with a typed code.
+        autos = [
+            auto for auto in select_auto_promos(services)
+            if auto.stackable and auto.pk != manual.pk
+        ]
+        selected = autos + [manual]
     elif booking and booking.promo_code_id and not booking.promo_code.auto_apply:
-        promo = booking.promo_code
-        discount = promo.calculate_discount(subtotal)
+        manual = booking.promo_code
+        autos = [
+            auto for auto in select_auto_promos(services)
+            if auto.stackable and auto.pk != manual.pk
+        ]
+        selected = autos + [manual]
+        rows, discount = _discount_rows_for_promos(selected, subtotal)
         if discount <= 0:
-            promo = None
-            discount = Decimal('0.00')
-    elif booking and booking.discount_amount and not booking.promo_code_id:
+            selected = select_auto_promos(services)
+    elif booking and booking.discount_amount and not booking.promo_code_id and not booking.applied_promos:
         discount = min(booking.discount_amount, subtotal)
+        return build_pricing_payload(subtotal=subtotal, discount=discount, promo=None, promos=[], rows=[])
     else:
-        promo = get_auto_promo_for_services(services)
-        if promo:
-            discount = promo.calculate_discount(subtotal)
+        selected = select_auto_promos(services)
 
-    return build_pricing_payload(subtotal=subtotal, discount=discount, promo=promo)
+    rows, discount = _discount_rows_for_promos(selected, subtotal)
+    # Drop zero-discount promos from selection
+    kept_ids = {row['id'] for row in rows}
+    selected = [promo for promo in selected if promo.pk in kept_ids]
+    return build_pricing_payload(
+        subtotal=subtotal,
+        discount=discount,
+        promo=selected[0] if selected else None,
+        promos=selected,
+        rows=rows,
+    )
+
+
+def resolve_promo_for_services(services, *, booking=None, manual_code=None):
+    """Backward-compatible alias."""
+    return resolve_promos_for_services(services, booking=booking, manual_code=manual_code)
+
+
+def _apply_pricing_to_booking(booking, pricing, promos):
+    booking.discount_amount = pricing['discount']
+    by_code = {promo.code: promo for promo in promos}
+    booking.applied_promos = [
+        {
+            'id': by_code[row['code']].pk,
+            'code': row['code'],
+            'description': row.get('description', ''),
+            'discount': row['discount'],
+            'auto': bool(row.get('auto')),
+            'stackable': bool(row.get('stackable')),
+        }
+        for row in pricing.get('promos', [])
+        if row['code'] in by_code
+    ]
+    # Prefer a customer-entered (non-auto) code as the primary FK for display.
+    primary = next((p for p in promos if not p.auto_apply), None) or (promos[0] if promos else None)
+    booking.promo_code = primary
+    return booking
+
+
+def _promos_from_pricing(pricing):
+    if not pricing.get('has_promo'):
+        return []
+    codes = [row['code'] for row in pricing.get('promos', [])]
+    by_code = {p.code: p for p in PromoCode.objects.filter(code__in=codes)}
+    return [by_code[code] for code in codes if code in by_code]
 
 
 def refresh_booking_promo(booking, services=None, *, manual_code=None):
@@ -132,77 +290,39 @@ def refresh_booking_promo(booking, services=None, *, manual_code=None):
     if services is None:
         services = list(booking.get_services())
 
-    subtotal = _booking_subtotal(booking, services)
-
     if manual_code is not None:
         return apply_promo_to_booking(booking, manual_code)
 
-    if manual_code is None and booking.promo_code_id and not booking.promo_code.auto_apply:
-        discount = booking.promo_code.calculate_discount(subtotal)
-        if discount <= 0:
-            booking.promo_code = None
-            booking.discount_amount = Decimal('0.00')
-        else:
-            booking.discount_amount = discount
-        return booking
+    pricing = resolve_promos_for_services(services, booking=booking)
+    promos = _promos_from_pricing(pricing)
 
-    if booking.discount_amount and not booking.promo_code_id:
+    if booking.discount_amount and not booking.promo_code_id and not booking.applied_promos and not pricing['has_promo']:
+        subtotal = _booking_subtotal(booking, services)
         if booking.discount_amount > subtotal:
             booking.discount_amount = subtotal
         return booking
 
-    auto_promo = get_auto_promo_for_services(services)
-    if auto_promo:
-        booking.promo_code = auto_promo
-        booking.discount_amount = auto_promo.calculate_discount(subtotal)
-        return booking
-
-    if booking.promo_code_id and booking.promo_code.auto_apply:
-        booking.promo_code = None
-    booking.discount_amount = Decimal('0.00')
-    return booking
+    return _apply_pricing_to_booking(booking, pricing, promos)
 
 
 def apply_promo_to_booking(booking, code):
     """Validate promo and set discount on booking (does not save)."""
-    promo = get_valid_promo(code)
-    if promo is None:
-        booking.promo_code = None
-        booking.discount_amount = Decimal('0.00')
-        return booking
-
     services = list(booking.get_services()) if booking.pk else []
     if not services and hasattr(booking, '_pending_service_ids'):
         services = list(Service.objects.filter(pk__in=booking._pending_service_ids))
 
-    subtotal = _booking_subtotal(booking, services) if services else Decimal('0.00')
-    if not subtotal and hasattr(booking, '_pending_service_ids'):
-        subtotal = sum(
-            service.price
-            for service in Service.objects.filter(pk__in=booking._pending_service_ids)
-        )
+    if not code:
+        pricing = resolve_promos_for_services(services)
+        return _apply_pricing_to_booking(booking, pricing, _promos_from_pricing(pricing))
 
-    if services and not promo.qualifies_for_services(services):
-        raise PromoError('This promo does not apply to the selected services.')
-
-    discount = calculate_promo_discount(promo, subtotal)
-    booking.promo_code = promo
-    booking.discount_amount = discount
-    return booking
+    pricing = resolve_promos_for_services(services, manual_code=code)
+    return _apply_pricing_to_booking(booking, pricing, _promos_from_pricing(pricing))
 
 
 def apply_auto_promo_to_booking(booking, services):
-    """Apply the best auto promo for services (does not save)."""
-    auto_promo = get_auto_promo_for_services(services)
-    if not auto_promo:
-        booking.promo_code = None
-        booking.discount_amount = Decimal('0.00')
-        return booking
-
-    subtotal = sum(service.price for service in services)
-    booking.promo_code = auto_promo
-    booking.discount_amount = auto_promo.calculate_discount(subtotal)
-    return booking
+    """Apply matching auto promo(s) for services (does not save)."""
+    pricing = resolve_promos_for_services(services)
+    return _apply_pricing_to_booking(booking, pricing, _promos_from_pricing(pricing))
 
 
 def auto_promo_message(promo, discount):
@@ -225,6 +345,17 @@ def record_promo_use(promo):
         PromoCode.objects.filter(pk=promo_id).update(times_used=F('times_used') + 1)
 
 
+def record_promos_use(promos):
+    """Record usage for one or more promos."""
+    seen = set()
+    for promo in promos or []:
+        promo_id = promo.pk if isinstance(promo, PromoCode) else int(promo)
+        if promo_id in seen:
+            continue
+        seen.add(promo_id)
+        record_promo_use(promo_id)
+
+
 def release_promo_use(promo):
     """Return a promo use when a booking with that code is cancelled."""
     if not promo:
@@ -233,6 +364,12 @@ def release_promo_use(promo):
     PromoCode.objects.filter(pk=promo_id, times_used__gt=0).update(
         times_used=F('times_used') - 1,
     )
+
+
+def release_booking_promos(booking):
+    """Release usage for every promo attached to a booking."""
+    for promo_id in booking.applied_promo_ids():
+        release_promo_use(promo_id)
 
 
 def sync_promo_times_used(promo=None):
@@ -245,10 +382,17 @@ def sync_promo_times_used(promo=None):
         promos = promos.filter(pk=promo_id)
 
     for row in promos:
-        count = (
+        by_fk = (
             Booking.objects.filter(promo_code=row)
             .exclude(status=BookingStatus.CANCELLED)
-            .count()
+            .values_list('pk', flat=True)
         )
+        by_json = (
+            Booking.objects.exclude(status=BookingStatus.CANCELLED)
+            .exclude(applied_promos=[])
+            .filter(applied_promos__contains=[{'id': row.pk}])
+            .values_list('pk', flat=True)
+        )
+        count = len(set(list(by_fk) + list(by_json)))
         if row.times_used != count:
             PromoCode.objects.filter(pk=row.pk).update(times_used=count)

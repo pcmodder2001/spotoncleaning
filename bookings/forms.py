@@ -77,7 +77,16 @@ class BookingForm(forms.ModelForm):
             )
 
     def _selected_service_ids(self):
-        raw = self.data.getlist('services') if self.data else []
+        if not self.data:
+            return []
+        if hasattr(self.data, 'getlist'):
+            raw = self.data.getlist('services')
+        else:
+            raw = self.data.get('services', [])
+            if raw is None:
+                raw = []
+            elif not isinstance(raw, (list, tuple)):
+                raw = [raw]
         return [int(pk) for pk in raw if str(pk).isdigit()]
 
     def clean_services(self):
@@ -131,37 +140,63 @@ class BookingForm(forms.ModelForm):
                 raise forms.ValidationError(message)
 
         if promo_code and services:
-            from bookings.promo import PromoError, get_valid_promo
+            from bookings.promo import PromoError, resolve_promos_for_services
             try:
-                promo = get_valid_promo(promo_code)
-                subtotal = sum(s.price for s in services)
-                if not promo.qualifies_for_services(services):
-                    raise PromoError('This promo does not apply to the selected services.')
-                discount = promo.calculate_discount(subtotal)
-                if discount <= 0:
-                    raise PromoError(
-                        f'This code requires a minimum order of £{promo.min_order_amount:.2f}.'
-                    )
-                cleaned_data['_promo'] = promo
-                cleaned_data['_discount'] = discount
-            except PromoError as exc:
-                raise forms.ValidationError(str(exc)) from exc
+                pricing = resolve_promos_for_services(services, manual_code=promo_code)
+                if not pricing['has_promo']:
+                    raise PromoError('This promo code could not be applied to your booking.')
+                self._apply_promo_pricing(cleaned_data, pricing)
+            except PromoError:
+                # Invalid typed code — keep any automatic offers instead of blocking.
+                pricing = resolve_promos_for_services(services)
+                if pricing['has_promo']:
+                    self._apply_promo_pricing(cleaned_data, pricing)
+                    cleaned_data['promo_code'] = ''
+                else:
+                    cleaned_data['promo_code'] = ''
         elif services:
-            from bookings.promo import get_auto_promo_for_services
-            auto_promo = get_auto_promo_for_services(services)
-            if auto_promo:
-                subtotal = sum(s.price for s in services)
-                discount = auto_promo.calculate_discount(subtotal)
-                if discount > 0:
-                    cleaned_data['_promo'] = auto_promo
-                    cleaned_data['_discount'] = discount
+            from bookings.promo import resolve_promos_for_services
+            pricing = resolve_promos_for_services(services)
+            if pricing['has_promo']:
+                self._apply_promo_pricing(cleaned_data, pricing)
         return cleaned_data
+
+    def _apply_promo_pricing(self, cleaned_data, pricing):
+        from bookings.models import PromoCode
+
+        codes = [row['code'] for row in pricing['promos']]
+        by_code = {p.code: p for p in PromoCode.objects.filter(code__in=codes)}
+        promos = [by_code[c] for c in codes if c in by_code]
+        cleaned_data['_promo'] = promos[0] if promos else None
+        cleaned_data['_promos'] = promos
+        cleaned_data['_discount'] = pricing['discount']
+        cleaned_data['_applied_promos'] = [
+            {
+                'id': by_code[row['code']].pk,
+                'code': row['code'],
+                'description': row.get('description', ''),
+                'discount': row['discount'],
+                'auto': bool(row.get('auto')),
+                'stackable': bool(row.get('stackable')),
+            }
+            for row in pricing['promos']
+            if row['code'] in by_code
+        ]
 
     def save(self, commit=True):
         booking = super().save(commit=False)
         promo = self.cleaned_data.get('_promo')
+        promos = self.cleaned_data.get('_promos') or ([promo] if promo else [])
         discount = self.cleaned_data.get('_discount')
-        if promo:
+        applied = self.cleaned_data.get('_applied_promos')
+        if discount:
+            booking.discount_amount = discount
+        if applied is not None:
+            booking.applied_promos = applied
+        if promos:
+            primary = next((p for p in promos if not p.auto_apply), None) or promos[0]
+            booking.promo_code = primary
+        elif promo:
             booking.promo_code = promo
             booking.discount_amount = discount
         if commit:
@@ -295,7 +330,16 @@ class AdminBookingForm(forms.ModelForm):
         return None
 
     def _selected_service_ids(self):
-        raw = self.data.getlist('services') if self.data else []
+        if not self.data:
+            return []
+        if hasattr(self.data, 'getlist'):
+            raw = self.data.getlist('services')
+        else:
+            raw = self.data.get('services', [])
+            if raw is None:
+                raw = []
+            elif not isinstance(raw, (list, tuple)):
+                raw = [raw]
         return [int(pk) for pk in raw if str(pk).isdigit()]
 
     def clean_services(self):

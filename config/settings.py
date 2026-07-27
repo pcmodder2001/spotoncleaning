@@ -27,7 +27,7 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
         'DJANGO_ALLOWED_HOSTS',
-        'localhost,127.0.0.1,spoton.vehiclecare.online,192.168.0.50,spotonappliancecleaning.co.uk,www.spotonappliancecleaning.co.uk,192.168.0.93',
+        'localhost,127.0.0.1,spoton.vehiclecare.online,192.168.0.50,spotonappliancecleaning.co.uk,www.spotonappliancecleaning.co.uk,192.168.0.93,172.17.18.15',
     ).split(',')
     if host.strip()
 ]
@@ -36,7 +36,7 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
         'DJANGO_CSRF_TRUSTED_ORIGINS',
-        'https://spoton.vehiclecare.online,https://spotonappliancecleaning.co.uk,https://www.spotonappliancecleaning.co.uk,http://localhost,http://127.0.0.1,http://localhost:8999,http://127.0.0.1:8999,http://192.168.0.50:8999',
+        'https://spoton.vehiclecare.online,https://spotonappliancecleaning.co.uk,https://www.spotonappliancecleaning.co.uk,http://localhost,http://127.0.0.1,http://localhost:8999,http://127.0.0.1:8999,http://192.168.0.50:8999,http://172.17.18.15,http://172.17.18.15:8999',
     ).split(',')
     if origin.strip()
 ]

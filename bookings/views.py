@@ -141,7 +141,7 @@ def create_booking_view(request):
     if request.method == 'POST':
         form = form_class(request.POST)
         if form.is_valid():
-            from bookings.promo import PromoError, record_promo_use
+            from bookings.promo import PromoError, record_promos_use
 
             try:
                 with transaction.atomic():
@@ -167,9 +167,11 @@ def create_booking_view(request):
                     else:
                         booking = form.save()
 
-                    promo = form.cleaned_data.get('_promo')
-                    if promo:
-                        record_promo_use(promo.pk)
+                    promos = form.cleaned_data.get('_promos') or []
+                    if not promos and form.cleaned_data.get('_promo'):
+                        promos = [form.cleaned_data['_promo']]
+                    if promos:
+                        record_promos_use(promos)
             except PromoError as exc:
                 messages.error(request, str(exc))
                 return render(
@@ -585,12 +587,12 @@ def validate_promo_api(request):
     if not service_ids:
         return JsonResponse({'valid': False, 'error': 'Select at least one service first.'})
 
-    from bookings.promo import PromoError, resolve_promo_for_services
+    from bookings.promo import PromoError, resolve_promos_for_services
     from services.models import Service
 
     try:
         services = list(Service.objects.filter(pk__in=service_ids, active=True))
-        pricing = resolve_promo_for_services(services, manual_code=code)
+        pricing = resolve_promos_for_services(services, manual_code=code)
         if not pricing['has_promo']:
             return JsonResponse({
                 'valid': False,
@@ -602,6 +604,9 @@ def validate_promo_api(request):
             'discount': str(pricing['discount']),
             'subtotal': str(pricing['subtotal']),
             'total': str(pricing['total']),
+            'message': pricing.get('message', ''),
+            'promos': pricing.get('promos', []),
+            'stacked': len(pricing.get('promos', [])) > 1,
         })
     except PromoError as exc:
         return JsonResponse({'valid': False, 'error': str(exc)})
@@ -613,26 +618,22 @@ def auto_promo_api(request):
     if not service_ids:
         return JsonResponse({'applies': False})
 
-    from bookings.promo import auto_promo_message, get_auto_promo_for_services
+    from bookings.promo import resolve_promos_for_services
     from services.models import Service
 
     services = list(Service.objects.filter(pk__in=service_ids, active=True))
-    promo = get_auto_promo_for_services(services)
-    if not promo:
+    pricing = resolve_promos_for_services(services)
+    if not pricing['has_promo']:
         return JsonResponse({'applies': False})
 
-    subtotal = sum(service.price for service in services)
-    discount = promo.calculate_discount(subtotal)
-    if discount <= 0:
-        return JsonResponse({'applies': False})
-
-    total = subtotal - discount
     return JsonResponse({
         'applies': True,
-        'code': promo.code,
-        'description': promo.description,
-        'message': auto_promo_message(promo, discount),
-        'discount': str(discount.quantize(Decimal('0.01'))),
-        'subtotal': str(subtotal.quantize(Decimal('0.01'))),
-        'total': str(total.quantize(Decimal('0.01'))),
+        'code': pricing['promo_code'],
+        'description': pricing.get('promo_description', ''),
+        'message': pricing.get('message', ''),
+        'discount': str(pricing['discount']),
+        'subtotal': str(pricing['subtotal']),
+        'total': str(pricing['total']),
+        'promos': pricing.get('promos', []),
+        'stacked': len(pricing.get('promos', [])) > 1,
     })

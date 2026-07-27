@@ -35,6 +35,8 @@ def promo_list_view(request):
                         max_uses=int(max_uses) if max_uses else None,
                         min_order_amount=Decimal(request.POST.get('min_order_amount') or '0'),
                         auto_apply=request.POST.get('auto_apply') == '1',
+                        stackable=request.POST.get('stackable') == '1',
+                        count_addons=request.POST.get('count_addons') == '1',
                         min_appliance_count=(
                             int(request.POST.get('min_appliance_count'))
                             if request.POST.get('min_appliance_count')
@@ -64,6 +66,29 @@ def promo_list_view(request):
                 target_label=promo.code,
             )
             messages.success(request, f'{promo.code} updated.')
+        elif action == 'toggle_count_addons':
+            promo = get_object_or_404(PromoCode, pk=request.POST.get('promo_id'))
+            promo.count_addons = not promo.count_addons
+            promo.save(update_fields=['count_addons'])
+            log_action(
+                PROMO_UPDATED,
+                (
+                    f'{"Enabled" if promo.count_addons else "Disabled"} add-ons counting '
+                    f'for promo code {promo.code}.'
+                ),
+                request=request,
+                target_type='promo',
+                target_id=promo.pk,
+                target_label=promo.code,
+            )
+            messages.success(
+                request,
+                (
+                    f'{promo.code}: add-ons now count toward the minimum.'
+                    if promo.count_addons
+                    else f'{promo.code}: only main appliances count toward the minimum.'
+                ),
+            )
         elif action == 'delete':
             promo = get_object_or_404(PromoCode, pk=request.POST.get('promo_id'))
             code = promo.code

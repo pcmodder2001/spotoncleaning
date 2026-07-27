@@ -18,7 +18,7 @@ from bookings.models import (
     WeeklySchedule,
 )
 from bookings.checklist import checklist_from_post, merge_checklist
-from bookings.promo import release_promo_use
+from bookings.promo import release_booking_promos
 from bookings.utils import cancel_booking
 from bookings.notifications import send_booking_created_email, send_booking_status_email
 from accounts.account_types import AccountType
@@ -402,8 +402,8 @@ def booking_delete_view(request, pk):
     booking_id = booking.pk
     customer = booking.contact_full_name
 
-    if booking.promo_code_id and booking.status != BookingStatus.CANCELLED:
-        release_promo_use(booking.promo_code_id)
+    if booking.status != BookingStatus.CANCELLED and booking.applied_promo_ids():
+        release_booking_promos(booking)
 
     for photo in booking.photos.all():
         photo.image.delete(save=False)

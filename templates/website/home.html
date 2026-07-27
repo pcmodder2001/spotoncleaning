@@ -11,10 +11,10 @@
 {% block body_class %}site-home{% endblock %}
 
 {% block site_topbar %}
-<div class="site-topbar d-none d-md-block">
+<div class="site-topbar site-topbar--with-offer">
     <div class="container">
         <div class="site-topbar-inner">
-            <div class="site-topbar-contacts">
+            <div class="site-topbar-contacts d-none d-md-flex">
                 <a href="tel:{{ SITE_PHONE }}" class="site-topbar-link">
                     <i class="bi bi-telephone"></i> {{ SITE_PHONE }}
                 </a>
@@ -22,7 +22,14 @@
                     <i class="bi bi-envelope"></i> {{ SITE_EMAIL }}
                 </a>
             </div>
-            <div class="site-topbar-meta">
+            <p class="site-topbar-offer">
+                <strong>10% off</strong>
+                <span class="site-topbar-offer-sep" aria-hidden="true">·</span>
+                <span class="d-none d-sm-inline">2+ appliances, add-ons included — applied automatically</span>
+                <span class="d-sm-none">2+ cleans · add-ons included</span>
+                <a href="{% url 'bookings:create' %}" class="site-topbar-offer-link">Book</a>
+            </p>
+            <div class="site-topbar-meta d-none d-lg-flex">
                 <span><i class="bi bi-geo-alt"></i> {{ SITE_LOCAL_AREA }}</span>
             </div>
         </div>

@@ -72,7 +72,7 @@
         let postcodeDebounce = null;
         let postcodeValid = false;
         let nextAvailableDate = null;
-        let promoState = { valid: false, discount: 0, code: '', total: 0 };
+        let promoState = { valid: false, discount: 0, code: '', total: 0, auto: false, stacked: false };
         let savedAddresses = Array.isArray(cfg.savedAddresses) ? cfg.savedAddresses : [];
         let servicesPhase = 'main';
 
@@ -618,6 +618,11 @@
         function bindPromoField() {
             if (!promoInput || !cfg.promoUrl) return;
             promoInput.addEventListener('blur', validatePromoField);
+            promoInput.addEventListener('input', function () {
+                if (!promoInput.value.trim()) {
+                    validatePromoField();
+                }
+            });
         }
 
         async function validatePromoField() {
@@ -625,6 +630,8 @@
             const code = promoInput.value.trim();
             if (!code) {
                 await refreshAutoPromo();
+                updateReviewBlock();
+                updateSummary();
                 return;
             }
             if (!Object.keys(selectedServices).length) {
@@ -637,27 +644,45 @@
                 const res = await fetch(cfg.promoUrl + '?' + params.toString());
                 const data = await res.json().catch(function () { return {}; });
                 if (data.valid) {
+                    const codes = (data.promos || []).map(function (p) { return p.code; }).filter(Boolean);
+                    const hasAuto = (data.promos || []).some(function (p) { return p.auto; });
                     promoState = {
                         valid: true,
                         discount: parseFloat(data.discount),
-                        code: data.code,
+                        code: codes.length ? codes.join(' + ') : data.code,
                         total: parseFloat(data.total),
-                        auto: false,
+                        auto: hasAuto,
+                        stacked: !!data.stacked || codes.length > 1,
                     };
-                    setPromoFeedback('Code applied — you save £' + parseFloat(data.discount).toFixed(2), 'success');
+                    const msg = data.message
+                        || (promoState.stacked
+                            ? ('Offers combined — you save £' + parseFloat(data.discount).toFixed(2))
+                            : ('Code applied — you save £' + parseFloat(data.discount).toFixed(2)));
+                    setPromoFeedback(msg, 'success');
                 } else {
-                    promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
-                    setPromoFeedback(data.error || 'Invalid promo code.', 'error');
+                    const errorMsg = data.error || 'Invalid promo code.';
+                    await refreshAutoPromo();
+                    if (promoState.valid) {
+                        setPromoFeedback(errorMsg + ' Automatic discount still applied.', 'error');
+                    } else {
+                        setPromoFeedback(errorMsg, 'error');
+                    }
                 }
             } catch (err) {
-                promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
-                setPromoFeedback('Could not validate promo code.', 'error');
+                await refreshAutoPromo();
+                if (promoState.valid) {
+                    setPromoFeedback('Could not validate promo code. Automatic discount still applied.', 'error');
+                } else {
+                    setPromoFeedback('Could not validate promo code.', 'error');
+                }
             }
+            updateReviewBlock();
+            updateSummary();
         }
 
         async function refreshAutoPromo() {
             if (!cfg.autoPromoUrl || !Object.keys(selectedServices).length) {
-                promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
+                promoState = { valid: false, discount: 0, code: '', total: 0, auto: false, stacked: false };
                 setPromoFeedback('');
                 return;
             }
@@ -666,22 +691,34 @@
                 const res = await fetch(cfg.autoPromoUrl + '?' + params.toString());
                 const data = await res.json().catch(function () { return {}; });
                 if (data.applies) {
+                    const codes = (data.promos || []).map(function (p) { return p.code; }).filter(Boolean);
                     promoState = {
                         valid: true,
                         discount: parseFloat(data.discount),
-                        code: data.code,
+                        code: codes.length ? codes.join(' + ') : data.code,
                         total: parseFloat(data.total),
                         auto: true,
+                        stacked: !!data.stacked,
                     };
                     setPromoFeedback(data.message || ('Discount applied — save £' + parseFloat(data.discount).toFixed(2)), 'success');
                 } else {
-                    promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
+                    promoState = { valid: false, discount: 0, code: '', total: 0, auto: false, stacked: false };
                     setPromoFeedback('');
                 }
             } catch (err) {
-                promoState = { valid: false, discount: 0, code: '', total: 0, auto: false };
+                promoState = { valid: false, discount: 0, code: '', total: 0, auto: false, stacked: false };
                 setPromoFeedback('');
             }
+        }
+
+        async function syncPromosForConfirmStep() {
+            if (promoInput && promoInput.value.trim()) {
+                await validatePromoField();
+            } else {
+                await refreshAutoPromo();
+            }
+            updateReviewBlock();
+            updateSummary();
         }
 
         function setPromoFeedback(message, type) {
@@ -782,7 +819,7 @@
                 renderCalendar();
             }
             if (step === 4) {
-                updateReviewBlock();
+                syncPromosForConfirmStep();
             }
             updateContinueButtons();
             scrollToWizardTop();
@@ -1219,9 +1256,12 @@
 
             if (reviewPromoRow && reviewPromo) {
                 if (promoState.valid) {
-                    const label = promoState.auto
-                        ? (promoState.code + ' (automatic)')
-                        : promoState.code;
+                    let label = promoState.code || 'Discount';
+                    if (promoState.auto && !promoState.stacked) {
+                        label += ' (automatic)';
+                    } else if (promoState.stacked) {
+                        label += promoState.auto ? ' (automatic)' : ' (combined)';
+                    }
                     reviewPromo.textContent = label + ' (−£' + promoState.discount.toFixed(2) + ')';
                     reviewPromoRow.hidden = false;
                 } else {

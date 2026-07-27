@@ -164,12 +164,12 @@ def cancel_booking(booking, *, notify=True):
     """Cancel a booking and optionally notify the customer."""
     if booking.status == BookingStatus.CANCELLED:
         return False
-    promo_id = booking.promo_code_id
+    from bookings.promo import release_booking_promos
+    should_release = bool(booking.applied_promo_ids())
     booking.status = BookingStatus.CANCELLED
     booking.save(update_fields=['status', 'updated_at'])
-    if promo_id:
-        from bookings.promo import release_promo_use
-        release_promo_use(promo_id)
+    if should_release:
+        release_booking_promos(booking)
     if notify:
         from bookings.notifications import send_booking_status_email
         send_booking_status_email(booking)

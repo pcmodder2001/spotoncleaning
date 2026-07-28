@@ -5,6 +5,8 @@ Django settings for Spot On Appliance Cleaning.
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 _env_file = BASE_DIR / '.env'
@@ -93,24 +95,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-if os.environ.get('DB_ENGINE', '').lower() in ('postgresql', 'postgres'):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'spotoncleaning'),
-            'USER': os.environ.get('DB_USER', 'spoton'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
-        }
+# PostgreSQL only — no SQLite / local-db fallback.
+_db_engine = os.environ.get('DB_ENGINE', 'postgresql').lower()
+if _db_engine not in ('postgresql', 'postgres'):
+    raise ImproperlyConfigured(
+        f'Unsupported DB_ENGINE={_db_engine!r}. Set DB_ENGINE=postgresql and point '
+        'DB_HOST/DB_NAME/DB_USER/DB_PASSWORD at the production database.'
+    )
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'spotoncleaning'),
+        'USER': os.environ.get('DB_USER', 'spoton'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.environ.get('SQLITE_PATH', str(BASE_DIR / 'db.sqlite3')),
-        }
-    }
+}
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 

@@ -183,7 +183,40 @@ def login_view(request):
             return redirect(next_url or 'accounts:dashboard')
     else:
         form = LoginForm()
-    return render(request, 'accounts/login.html', {'form': form})
+    return render(request, 'accounts/login.html', {
+        'form': form,
+        'db_debug': _login_db_debug() if settings.DEBUG else None,
+    })
+
+
+def _login_db_debug():
+    """DEBUG-only connection summary for the login page (never includes password)."""
+    from django.db import connection
+
+    cfg = settings.DATABASES.get('default', {})
+    engine = (cfg.get('ENGINE') or '').rsplit('.', 1)[-1]
+    info = {
+        'engine': engine,
+        'name': cfg.get('NAME') or '—',
+        'host': cfg.get('HOST') or '—',
+        'port': cfg.get('PORT') or '—',
+        'user': cfg.get('USER') or '—',
+        'ok': False,
+        'server': '',
+        'error': '',
+    }
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT current_database(), inet_server_addr(), inet_server_port(), version()')
+            db_name, server_addr, server_port, version = cursor.fetchone()
+        info['ok'] = True
+        info['name'] = db_name or info['name']
+        if server_addr:
+            info['server'] = f'{server_addr}:{server_port or info["port"]}'
+        info['version'] = (version or '').split(',')[0].strip()
+    except Exception as exc:
+        info['error'] = str(exc).split('\n')[0][:180]
+    return info
 
 
 def logout_view(request):

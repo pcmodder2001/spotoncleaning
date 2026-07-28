@@ -89,12 +89,7 @@ DEFAULT_FROM_EMAIL=Spot On Appliance Cleaning <info@spotonappliancecleaning.co.u
 
 Restart `runserver` after editing `.env`. Test from `/panel/debug/`.
 
-Or use SQLite locally (no postgres env vars):
-
-```bash
-python manage.py migrate
-python manage.py runserver 8999
-```
+PostgreSQL is required — there is no SQLite / local-db mode.
 
 ## Environment variables
 

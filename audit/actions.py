@@ -41,6 +41,7 @@ ENQUIRY_DELETED = 'admin.enquiry_deleted'
 ENQUIRY_CREATED = 'admin.enquiry_created'
 COVERAGE_AREA_UPDATED = 'admin.coverage_area_updated'
 COVERAGE_BOUNDARY_UPDATED = 'admin.coverage_boundary_updated'
+HOMEPAGE_OFFER_UPDATED = 'admin.homepage_offer_updated'
 
 ACTION_LABELS = {
     AUTH_LOGIN: 'Logged in',
@@ -77,6 +78,7 @@ ACTION_LABELS = {
     ENQUIRY_CREATED: 'Submitted contact enquiry',
     COVERAGE_AREA_UPDATED: 'Updated service coverage area',
     COVERAGE_BOUNDARY_UPDATED: 'Updated editable service boundary',
+    HOMEPAGE_OFFER_UPDATED: 'Updated homepage offer banner',
 }
 
 CATEGORY_CHOICES = [
@@ -121,4 +123,5 @@ ACTION_CATEGORIES = {
     ENQUIRY_CREATED: 'admin',
     COVERAGE_AREA_UPDATED: 'admin',
     COVERAGE_BOUNDARY_UPDATED: 'admin',
+    HOMEPAGE_OFFER_UPDATED: 'admin',
 }

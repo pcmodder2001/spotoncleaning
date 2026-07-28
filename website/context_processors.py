@@ -9,6 +9,21 @@ from website.cookies import (
 from website.tracking import meta_pixel_enabled, pop_meta_pixel_events
 
 
+def _homepage_offer():
+    try:
+        from website.models import HomepageOffer
+        return HomepageOffer.get_solo()
+    except Exception:
+        # Migrations / DB unavailable — fall back to current defaults.
+        return type('HomepageOfferFallback', (), {
+            'enabled': True,
+            'headline': '10% off',
+            'message': '2+ appliances, add-ons included — applied automatically',
+            'message_mobile': '2+ cleans · add-ons included',
+            'cta_label': 'Book',
+        })()
+
+
 def site_settings(request):
     pixel_configured = bool(getattr(settings, 'META_PIXEL_ID', '').strip())
     pixel_active = meta_pixel_enabled(request)
@@ -34,4 +49,5 @@ def site_settings(request):
         'GOOGLE_REVIEWS_URL': getattr(settings, 'GOOGLE_REVIEWS_URL', ''),
         'GOOGLE_REVIEW_RATING': getattr(settings, 'GOOGLE_REVIEW_RATING', ''),
         'GOOGLE_REVIEW_COUNT': getattr(settings, 'GOOGLE_REVIEW_COUNT', ''),
+        'homepage_offer': _homepage_offer(),
     }

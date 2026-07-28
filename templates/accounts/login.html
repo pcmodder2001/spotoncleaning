@@ -88,6 +88,31 @@
                                     <a href="{% url 'accounts:register' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}" class="fw-semibold">Create one free</a>
                                 </p>
                             </div>
+
+                            {% if db_debug %}
+                            <div class="auth-db-debug mt-4 p-3 rounded border small" style="background:#f8f9fa;font-family:ui-monospace,monospace;">
+                                <div class="fw-semibold mb-2">
+                                    DB debug
+                                    {% if db_debug.ok %}
+                                    <span class="badge bg-success ms-1">connected</span>
+                                    {% else %}
+                                    <span class="badge bg-danger ms-1">failed</span>
+                                    {% endif %}
+                                </div>
+                                <div><span class="text-muted">engine</span> {{ db_debug.engine }}</div>
+                                <div><span class="text-muted">name</span> {{ db_debug.name }}</div>
+                                <div><span class="text-muted">config</span> {{ db_debug.user }}@{{ db_debug.host }}:{{ db_debug.port }}</div>
+                                {% if db_debug.server %}
+                                <div><span class="text-muted">server</span> {{ db_debug.server }}</div>
+                                {% endif %}
+                                {% if db_debug.version %}
+                                <div><span class="text-muted">version</span> {{ db_debug.version }}</div>
+                                {% endif %}
+                                {% if db_debug.error %}
+                                <div class="text-danger mt-1">{{ db_debug.error }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -96,7 +121,6 @@
     </div>
 </section>
 {% endblock %}
-
 {% block extra_js %}
 <script>
     document.querySelectorAll('.auth-password-toggle').forEach(function (btn) {

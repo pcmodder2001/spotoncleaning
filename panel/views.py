@@ -32,6 +32,7 @@ from audit.actions import (
     BOOKING_UPDATED,
     ENQUIRY_DELETED,
     ENQUIRY_READ,
+    HOMEPAGE_OFFER_UPDATED,
     SERVICE_CREATED,
     SERVICE_DELETED,
     SERVICE_UPDATED,
@@ -51,7 +52,8 @@ from panel.email_debug import (
     send_test_email,
 )
 from services.models import Service, ServiceType
-from website.models import ContactMessage
+from website.forms import HomepageOfferForm
+from website.models import ContactMessage, HomepageOffer
 
 User = get_user_model()
 
@@ -829,9 +831,28 @@ def service_delete_view(request, pk):
 def marketing_view(request):
     from django.conf import settings
 
+    offer = HomepageOffer.get_solo()
+    if request.method == 'POST' and request.POST.get('form') == 'homepage_offer':
+        offer_form = HomepageOfferForm(request.POST, instance=offer)
+        if offer_form.is_valid():
+            offer_form.save()
+            log_action(
+                HOMEPAGE_OFFER_UPDATED,
+                f'Updated homepage offer: {offer.headline}'
+                + (' (visible)' if offer.enabled else ' (hidden)'),
+                request=request,
+                target_type='homepage_offer',
+                target_label=offer.headline,
+            )
+            messages.success(request, 'Homepage offer banner updated.')
+            return redirect('panel:marketing')
+    else:
+        offer_form = HomepageOfferForm(instance=offer)
+
     pixel_id = getattr(settings, 'META_PIXEL_ID', '')
     context = get_marketing_dashboard_context(days=30)
     context.update({
+        'offer_form': offer_form,
         'meta_pixel_id': pixel_id,
         'meta_pixel_active': bool(pixel_id),
         'meta_events_manager_url': 'https://business.facebook.com/events_manager2',

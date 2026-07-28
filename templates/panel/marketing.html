@@ -4,6 +4,66 @@
 
 {% block panel_content %}
 <div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="panel-card card border-0">
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                    <div>
+                        <h2 class="h6 fw-bold mb-1">Homepage top-bar offer</h2>
+                        <p class="small text-muted mb-0">
+                            Controls the promo line on the homepage header (e.g. “10% off · 2+ appliances…”).
+                        </p>
+                    </div>
+                    {% if offer_form.instance.enabled %}
+                    <span class="badge bg-success">Visible</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Hidden</span>
+                    {% endif %}
+                </div>
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="form" value="homepage_offer">
+                    <div class="col-12">
+                        <div class="form-check">
+                            {{ offer_form.enabled }}
+                            <label class="form-check-label" for="{{ offer_form.enabled.id_for_label }}">
+                                {{ offer_form.enabled.label }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="{{ offer_form.headline.id_for_label }}">{{ offer_form.headline.label }}</label>
+                        {{ offer_form.headline }}
+                        {% if offer_form.headline.errors %}<div class="invalid-feedback d-block">{{ offer_form.headline.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="{{ offer_form.cta_label.id_for_label }}">{{ offer_form.cta_label.label }}</label>
+                        {{ offer_form.cta_label }}
+                        {% if offer_form.cta_label.errors %}<div class="invalid-feedback d-block">{{ offer_form.cta_label.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label" for="{{ offer_form.message.id_for_label }}">{{ offer_form.message.label }}</label>
+                        {{ offer_form.message }}
+                        {% if offer_form.message.errors %}<div class="invalid-feedback d-block">{{ offer_form.message.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="{{ offer_form.message_mobile.id_for_label }}">{{ offer_form.message_mobile.label }}</label>
+                        {{ offer_form.message_mobile }}
+                        {% if offer_form.message_mobile.errors %}<div class="invalid-feedback d-block">{{ offer_form.message_mobile.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Save offer text</button>
+                        <a href="{% url 'website:home' %}" class="btn btn-outline-secondary ms-2" target="_blank" rel="noopener noreferrer">
+                            Preview homepage
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
     <div class="col-lg-4">
         <div class="panel-card card border-0 h-100">
             <div class="card-body">

@@ -3,9 +3,8 @@ set -e
 
 mkdir -p /app/media /app/staticfiles
 
-if [ "$DB_ENGINE" = "postgresql" ]; then
-    echo "Waiting for PostgreSQL at ${DB_HOST:-host.docker.internal}:${DB_PORT:-5432}..."
-    python <<'PY'
+echo "Waiting for PostgreSQL at ${DB_HOST:-host.docker.internal}:${DB_PORT:-5432}..."
+python <<'PY'
 import os
 import sys
 import time
@@ -36,7 +35,6 @@ for attempt in range(60):
             sys.exit(1)
         time.sleep(1)
 PY
-fi
 
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput --clear

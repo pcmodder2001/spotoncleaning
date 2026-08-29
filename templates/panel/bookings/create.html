@@ -1,144 +1,320 @@
 {% extends 'panel/base_panel.html' %}
+{% load static static_version %}
 
 {% block panel_title %}Create Booking{% endblock %}
 
 {% block panel_content %}
-<div class="row justify-content-center">
-    <div class="col-lg-9">
-        <div class="panel-card card border-0">
-            <div class="card-body p-4">
-                {% if form.non_field_errors %}
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        showAppToast("{{ form.non_field_errors.0|escapejs }}", 'error');
-                    });
-                </script>
-                {% endif %}
+<div class="panel-booking-create-page">
+    <div class="panel-booking-create-header">
+        <a href="{% url 'panel:booking_list' %}" class="panel-booking-create-back">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            Back to bookings
+        </a>
+        <div class="panel-booking-create-header__main">
+            <div>
+                <p class="panel-booking-create-kicker">Phone &amp; admin bookings</p>
+                <h2 class="panel-booking-create-title">Create booking</h2>
+                <p class="panel-booking-create-lead">
+                    Work through each step — schedule conflicts are warnings only and won&rsquo;t block saving.
+                </p>
+            </div>
+            <div class="panel-booking-create-header__badge" aria-hidden="true">
+                <i class="bi bi-telephone-outbound"></i>
+            </div>
+        </div>
+    </div>
 
-                <form method="post">
-                    {% csrf_token %}
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
+            <div class="panel-card card border-0 panel-booking-create-card">
+                <div class="card-body p-0">
+                    {% if form.non_field_errors %}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            showAppToast("{{ form.non_field_errors.0|escapejs }}", 'error');
+                        });
+                    </script>
+                    {% endif %}
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label" for="{{ form.user.id_for_label }}">Customer account</label>
-                            {{ form.user }}
-                            <div class="form-text">Leave blank for a guest / phone booking.</div>
-                            {% if form.user.errors %}<div class="text-danger small">{{ form.user.errors.0 }}</div>{% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="{{ form.status.id_for_label }}">Status</label>
-                            {{ form.status }}
-                            {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors.0 }}</div>{% endif %}
-                        </div>
+                    <div id="adminBookingCreate"
+                         data-schedule-check-url="{% url 'panel:booking_schedule_check' %}"
+                         data-initial-step="{% if form.user.errors or form.guest_first_name.errors or form.guest_last_name.errors or form.guest_email.errors or form.status.errors %}0{% elif form.services.errors %}1{% elif form.date.errors or form.appointment_hour.errors or form.appointment_minute.errors %}2{% elif form.address_line_1.errors or form.city.errors or form.postcode.errors %}3{% else %}0{% endif %}">
+                        {% if schedule_warnings %}{{ schedule_warnings|json_script:"initial-schedule-warnings" }}{% endif %}
+
+                        <ol class="panel-booking-create-steps" aria-label="Booking steps">
+                            <li class="panel-booking-create-steps__item is-active" data-step-indicator="0">
+                                <span class="panel-booking-create-steps__number">1</span>
+                                <span class="panel-booking-create-steps__label">Customer</span>
+                            </li>
+                            <li class="panel-booking-create-steps__item" data-step-indicator="1">
+                                <span class="panel-booking-create-steps__number">2</span>
+                                <span class="panel-booking-create-steps__label">Services</span>
+                            </li>
+                            <li class="panel-booking-create-steps__item" data-step-indicator="2">
+                                <span class="panel-booking-create-steps__number">3</span>
+                                <span class="panel-booking-create-steps__label">Date &amp; time</span>
+                            </li>
+                            <li class="panel-booking-create-steps__item" data-step-indicator="3">
+                                <span class="panel-booking-create-steps__number">4</span>
+                                <span class="panel-booking-create-steps__label">Address</span>
+                            </li>
+                        </ol>
+
+                        <form method="post" class="panel-booking-create-form" novalidate>
+                            {% csrf_token %}
+
+                            <section class="panel-booking-create-step is-active{% if form.user.errors or form.guest_first_name.errors or form.guest_last_name.errors or form.guest_email.errors or form.status.errors %} has-errors{% endif %}"
+                                     data-create-step="0" aria-labelledby="createStepTitle0">
+                                <div class="panel-booking-create-step__head">
+                                    <span class="panel-booking-create-section__icon"><i class="bi bi-person"></i></span>
+                                    <div>
+                                        <h3 class="panel-booking-create-step__title" id="createStepTitle0">Customer</h3>
+                                        <p class="panel-booking-create-step__hint">Link an account or enter guest details for phone bookings.</p>
+                                    </div>
+                                </div>
+                                <div class="panel-booking-create-step__body">
+                                    <div class="row g-3">
+                                        <div class="col-md-7">
+                                            <label class="form-label" for="{{ form.user.id_for_label }}">Customer account</label>
+                                            {{ form.user }}
+                                            <div class="form-text">Leave blank for a guest booking.</div>
+                                            {% if form.user.errors %}<div class="text-danger small">{{ form.user.errors.0 }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label class="form-label" for="{{ form.status.id_for_label }}">Status</label>
+                                            {{ form.status }}
+                                            {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors.0 }}</div>{% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="panel-booking-create-guest mt-4" id="guestDetailsSection">
+                                        <div class="panel-booking-create-guest__label">
+                                            <i class="bi bi-person-lines-fill" aria-hidden="true"></i>
+                                            Guest details
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="{{ form.guest_first_name.id_for_label }}">First name</label>
+                                                {{ form.guest_first_name }}
+                                                {% if form.guest_first_name.errors %}<div class="text-danger small">{{ form.guest_first_name.errors.0 }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="{{ form.guest_last_name.id_for_label }}">Last name</label>
+                                                {{ form.guest_last_name }}
+                                                {% if form.guest_last_name.errors %}<div class="text-danger small">{{ form.guest_last_name.errors.0 }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="{{ form.guest_email.id_for_label }}">Email</label>
+                                                {{ form.guest_email }}
+                                                {% if form.guest_email.errors %}<div class="text-danger small">{{ form.guest_email.errors.0 }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="{{ form.guest_phone.id_for_label }}">Phone</label>
+                                                {{ form.guest_phone }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="panel-booking-create-step{% if form.services.errors %} has-errors{% endif %}"
+                                     data-create-step="1" aria-labelledby="createStepTitle1" hidden>
+                                <div class="panel-booking-create-step__head">
+                                    <span class="panel-booking-create-section__icon"><i class="bi bi-tools"></i></span>
+                                    <div>
+                                        <h3 class="panel-booking-create-step__title" id="createStepTitle1">Services</h3>
+                                        <p class="panel-booking-create-step__hint">Choose the oven type and any add-ons for this job.</p>
+                                    </div>
+                                </div>
+                                <div class="panel-booking-create-step__body">
+                                    <div id="servicesStepError" class="alert alert-danger py-2 px-3 small d-none" role="alert"></div>
+                                    {% if form.services.errors %}
+                                    <div class="text-danger small mb-3">{{ form.services.errors.0 }}</div>
+                                    {% endif %}
+
+                                    <div class="panel-service-editor">
+                                        {% if oven_services %}
+                                        <div class="panel-service-group">
+                                            <h4 class="service-group-title">Oven cleaning <span class="text-muted fw-normal">(select one)</span></h4>
+                                            <div class="service-picker">
+                                                {% for service in oven_services %}
+                                                <label class="service-pick service-pick-exclusive panel-service-pick admin-create-service-pick{% if service.pk in selected_service_ids %} selected{% endif %}">
+                                                    <input class="visually-hidden admin-service-oven admin-create-service-input"
+                                                           type="checkbox" name="services" value="{{ service.pk }}"
+                                                           data-price="{{ service.price }}"
+                                                           {% if service.pk in selected_service_ids %}checked{% endif %}>
+                                                    <span class="service-pick-icon"><i class="bi bi-fire"></i></span>
+                                                    <span class="service-pick-info">
+                                                        <strong>{{ service.name }}</strong>
+                                                        {% if service.description %}
+                                                        <small>{{ service.description|truncatewords:14 }}</small>
+                                                        {% else %}
+                                                        <small class="text-muted">Oven / cooker clean</small>
+                                                        {% endif %}
+                                                    </span>
+                                                    <span class="service-pick-price">&pound;{{ service.price }}</span>
+                                                    <span class="panel-service-pick-tick" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if addon_services %}
+                                        <div class="panel-service-group">
+                                            <h4 class="service-group-title">Add-ons <span class="text-muted fw-normal">(optional — select any)</span></h4>
+                                            <div class="service-picker">
+                                                {% for service in addon_services %}
+                                                <label class="service-pick service-pick-addon panel-service-pick admin-create-service-pick{% if service.pk in selected_service_ids %} selected{% endif %}">
+                                                    <input class="visually-hidden admin-create-service-input"
+                                                           type="checkbox" name="services" value="{{ service.pk }}"
+                                                           data-price="{{ service.price }}"
+                                                           {% if service.pk in selected_service_ids %}checked{% endif %}>
+                                                    <span class="service-pick-icon"><i class="bi bi-plus-circle"></i></span>
+                                                    <span class="service-pick-info">
+                                                        <strong>{{ service.name }}</strong>
+                                                        {% if service.description %}
+                                                        <small>{{ service.description|truncatewords:14 }}</small>
+                                                        {% else %}
+                                                        <small class="text-muted">Optional add-on</small>
+                                                        {% endif %}
+                                                    </span>
+                                                    <span class="service-pick-price">&pound;{{ service.price }}</span>
+                                                    <span class="panel-service-pick-tick" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="panel-booking-create-pricing" id="createBookingPricing" hidden>
+                                        <span class="panel-booking-create-pricing__label">Estimated subtotal</span>
+                                        <strong class="panel-booking-create-pricing__value" id="createBookingPricingValue">&pound;0.00</strong>
+                                        <span class="panel-booking-create-pricing__note">Promos applied when booking is saved</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="panel-booking-create-step{% if form.date.errors or form.appointment_hour.errors or form.appointment_minute.errors %} has-errors{% endif %}"
+                                     data-create-step="2" aria-labelledby="createStepTitle2" hidden>
+                                <div class="panel-booking-create-step__head">
+                                    <span class="panel-booking-create-section__icon"><i class="bi bi-calendar-event"></i></span>
+                                    <div>
+                                        <h3 class="panel-booking-create-step__title" id="createStepTitle2">Date &amp; time</h3>
+                                        <p class="panel-booking-create-step__hint">Any date and time is allowed for admin bookings.</p>
+                                    </div>
+                                </div>
+                                <div class="panel-booking-create-step__body">
+                                    <div id="scheduleStepError" class="alert alert-danger py-2 px-3 small d-none" role="alert"></div>
+                                    <div class="panel-booking-create-schedule-grid">
+                                        <div>
+                                            <label class="form-label" for="{{ form.date.id_for_label }}">Date</label>
+                                            {{ form.date }}
+                                            {% if form.date.errors %}<div class="text-danger small">{{ form.date.errors.0 }}</div>{% endif %}
+                                        </div>
+                                        <div>
+                                            <span class="form-label d-block">Time</span>
+                                            <div class="panel-booking-create-time-split">
+                                                <div>
+                                                    <label class="form-label small mb-1" for="{{ form.appointment_hour.id_for_label }}">Hour</label>
+                                                    {{ form.appointment_hour }}
+                                                    {% if form.appointment_hour.errors %}<div class="text-danger small">{{ form.appointment_hour.errors.0 }}</div>{% endif %}
+                                                </div>
+                                                <div>
+                                                    <label class="form-label small mb-1" for="{{ form.appointment_minute.id_for_label }}">Minutes</label>
+                                                    {{ form.appointment_minute }}
+                                                    {% if form.appointment_minute.errors %}<div class="text-danger small">{{ form.appointment_minute.errors.0 }}</div>{% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="form-text">Minutes are in 15-minute steps.</div>
+                                        </div>
+                                    </div>
+
+                                    <div id="scheduleStatus" class="panel-booking-create-schedule-status d-none" aria-live="polite">
+                                        <div id="scheduleWarnings" class="panel-booking-create-schedule-alert d-none" role="alert">
+                                            <div class="panel-booking-create-schedule-alert__icon">
+                                                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                                            </div>
+                                            <div>
+                                                <strong>Schedule conflicts detected</strong>
+                                                <ul id="scheduleWarningsList" class="mb-0 mt-2"></ul>
+                                                <p class="mb-0 mt-2 small panel-booking-create-schedule-alert__note">
+                                                    You can still create this booking — availability rules are ignored for admin bookings.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div id="scheduleClear" class="panel-booking-create-schedule-ok d-none">
+                                            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                                            <span>No schedule conflicts detected for this date and time.</span>
+                                        </div>
+                                        <div id="schedulePending" class="panel-booking-create-schedule-pending d-none">
+                                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            <span>Checking schedule…</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="panel-booking-create-step{% if form.address_line_1.errors or form.city.errors or form.postcode.errors %} has-errors{% endif %}"
+                                     data-create-step="3" aria-labelledby="createStepTitle3" hidden>
+                                <div class="panel-booking-create-step__head">
+                                    <span class="panel-booking-create-section__icon"><i class="bi bi-geo-alt"></i></span>
+                                    <div>
+                                        <h3 class="panel-booking-create-step__title" id="createStepTitle3">Address &amp; notes</h3>
+                                        <p class="panel-booking-create-step__hint">Where the clean will take place.</p>
+                                    </div>
+                                </div>
+                                <div class="panel-booking-create-step__body">
+                                    <div id="addressStepError" class="alert alert-danger py-2 px-3 small d-none" role="alert"></div>
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label" for="{{ form.address_line_1.id_for_label }}">Address line 1</label>
+                                            {{ form.address_line_1 }}
+                                            {% if form.address_line_1.errors %}<div class="text-danger small">{{ form.address_line_1.errors.0 }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" for="{{ form.address_line_2.id_for_label }}">Address line 2</label>
+                                            {{ form.address_line_2 }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="{{ form.city.id_for_label }}">City</label>
+                                            {{ form.city }}
+                                            {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="{{ form.postcode.id_for_label }}">Postcode</label>
+                                            {{ form.postcode }}
+                                            {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" for="{{ form.notes.id_for_label }}">Customer notes</label>
+                                            {{ form.notes }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <div class="panel-booking-create-actions">
+                                <a href="{% url 'panel:booking_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                                <div class="panel-booking-create-actions__nav">
+                                    <button type="button" class="btn btn-outline-secondary" id="createBookingBack" hidden>
+                                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+                                        Back
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="createBookingNext">
+                                        Next
+                                        <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" id="createBookingSubmit" hidden>
+                                        <i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>
+                                        Create booking
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-
-                    <div class="mt-4" id="guestDetailsSection">
-                        <h6 class="fw-bold mb-3">Guest details</h6>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label" for="{{ form.guest_first_name.id_for_label }}">First name</label>
-                                {{ form.guest_first_name }}
-                                {% if form.guest_first_name.errors %}<div class="text-danger small">{{ form.guest_first_name.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="{{ form.guest_last_name.id_for_label }}">Last name</label>
-                                {{ form.guest_last_name }}
-                                {% if form.guest_last_name.errors %}<div class="text-danger small">{{ form.guest_last_name.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="{{ form.guest_email.id_for_label }}">Email</label>
-                                {{ form.guest_email }}
-                                {% if form.guest_email.errors %}<div class="text-danger small">{{ form.guest_email.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="{{ form.guest_phone.id_for_label }}">Phone</label>
-                                {{ form.guest_phone }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <label class="form-label d-block">Services</label>
-                        {% if form.services.errors %}
-                        <div class="text-danger small mb-2">{{ form.services.errors.0 }}</div>
-                        {% endif %}
-
-                        <p class="text-muted small mb-2">Oven type (select one)</p>
-                        <div class="d-flex flex-wrap gap-3 mb-3">
-                            {% for service in oven_services %}
-                            <div class="form-check">
-                                <input class="form-check-input admin-service-oven" type="checkbox"
-                                       name="services" value="{{ service.pk }}" id="svc-{{ service.pk }}"
-                                       {% if service.pk in selected_service_ids %}checked{% endif %}>
-                                <label class="form-check-label" for="svc-{{ service.pk }}">
-                                    {{ service.name }} (&pound;{{ service.price }})
-                                </label>
-                            </div>
-                            {% endfor %}
-                        </div>
-
-                        <p class="text-muted small mb-2">Add-ons (optional)</p>
-                        <div class="d-flex flex-wrap gap-3">
-                            {% for service in addon_services %}
-                            <div class="form-check">
-                                <input class="form-check-input admin-service-addon" type="checkbox"
-                                       name="services" value="{{ service.pk }}" id="svc-{{ service.pk }}"
-                                       {% if service.pk in selected_service_ids %}checked{% endif %}>
-                                <label class="form-check-label" for="svc-{{ service.pk }}">
-                                    {{ service.name }} (&pound;{{ service.price }})
-                                </label>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mt-2">
-                        <div class="col-md-6">
-                            <label class="form-label" for="{{ form.date.id_for_label }}">Date</label>
-                            {{ form.date }}
-                            {% if form.date.errors %}<div class="text-danger small">{{ form.date.errors.0 }}</div>{% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="{{ form.time_slot.id_for_label }}">Time slot</label>
-                            {{ form.time_slot }}
-                            {% if form.time_slot.errors %}<div class="text-danger small">{{ form.time_slot.errors.0 }}</div>{% endif %}
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <h6 class="fw-bold mb-3">Address</h6>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label" for="{{ form.address_line_1.id_for_label }}">Address line 1</label>
-                                {{ form.address_line_1 }}
-                                {% if form.address_line_1.errors %}<div class="text-danger small">{{ form.address_line_1.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="{{ form.address_line_2.id_for_label }}">Address line 2</label>
-                                {{ form.address_line_2 }}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="{{ form.city.id_for_label }}">City</label>
-                                {{ form.city }}
-                                {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="{{ form.postcode.id_for_label }}">Postcode</label>
-                                {{ form.postcode }}
-                                {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="{{ form.notes.id_for_label }}">Customer notes</label>
-                                {{ form.notes }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary">Create booking</button>
-                        <a href="{% url 'panel:booking_list' %}" class="btn btn-outline-secondary">Cancel</a>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
@@ -146,27 +322,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.querySelectorAll('.admin-service-oven').forEach(function (checkbox) {
-    checkbox.addEventListener('change', function () {
-        if (!checkbox.checked) return;
-        document.querySelectorAll('.admin-service-oven').forEach(function (other) {
-            if (other !== checkbox) other.checked = false;
-        });
-    });
-});
-
-(function () {
-    var userSelect = document.getElementById('{{ form.user.id_for_label }}');
-    var guestSection = document.getElementById('guestDetailsSection');
-    if (!userSelect || !guestSection) return;
-
-    function toggleGuestSection() {
-        guestSection.style.display = userSelect.value ? 'none' : '';
-    }
-
-    userSelect.addEventListener('change', toggleGuestSection);
-    toggleGuestSection();
-})();
-</script>
+<script src="{% static_v 'js/panel-booking-create.js' %}" defer></script>
 {% endblock %}

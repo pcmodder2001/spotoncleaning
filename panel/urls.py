@@ -11,6 +11,7 @@ urlpatterns = [
     path('users/<int:pk>/delete/', views.user_delete_view, name='user_delete'),
     path('schedule/', schedule_views.schedule_view, name='schedule'),
     path('api/schedule/', schedule_views.schedule_api_view, name='schedule_api'),
+    path('api/bookings/schedule-check/', booking_api.booking_schedule_check_api, name='booking_schedule_check'),
     path('api/bookings/catalog/', booking_api.booking_services_catalog_api, name='booking_services_catalog'),
     path('api/bookings/<int:pk>/', booking_api.booking_detail_api, name='booking_detail_api'),
     path('api/bookings/<int:pk>/quote/', booking_api.booking_quote_api, name='booking_quote_api'),

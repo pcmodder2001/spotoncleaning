@@ -295,6 +295,61 @@ def get_feasible_slots(date, service_ids=None, postcode='', city='', exclude_boo
     return TimeSlot.objects.filter(pk__in=feasible).order_by('time')
 
 
+def get_admin_schedule_warnings(date, slot_time, service_ids, postcode, city='', exclude_booking_pk=None):
+    """Collect schedule issues for admin bookings that ignore availability rules."""
+    warnings = []
+
+    if BlockedDate.objects.filter(date=date).exists():
+        warnings.append('This date is blocked on the calendar.')
+
+    weekly = WeeklySchedule.objects.filter(day_of_week=date.weekday()).first()
+    if weekly and not weekly.is_available:
+        warnings.append(f'{weekly.get_day_of_week_display()} is marked unavailable in the weekly schedule.')
+
+    duration = get_service_duration_minutes(service_ids or [])
+    start = _slot_start(date, slot_time)
+    end = start + timedelta(minutes=duration)
+
+    if date == timezone.localdate() and start <= timezone.localtime():
+        warnings.append('This time slot is in the past.')
+
+    if Availability.objects.filter(date=date, time_slot__time=slot_time, available=False).exists():
+        warnings.append(f'The {slot_time.strftime("%H:%M")} slot is marked unavailable for this date.')
+
+    jobs = get_day_jobs(date, exclude_booking_pk=exclude_booking_pk)
+
+    for job in jobs:
+        if start < job.end and end > job.start:
+            warnings.append(
+                f'On-site work would overlap booking #{job.booking.pk} '
+                f'({_format_time(job.start)}–{_format_time(job.end)}, {job.duration} min on site)'
+            )
+
+    coords = coords_for_address(postcode, city) if postcode else None
+    if coords:
+        prev_job, next_job = _find_prev_next_jobs(jobs, start)
+        if prev_job:
+            gap, gap_source = _travel_gap(prev_job.coords, coords)
+            earliest = prev_job.end + timedelta(minutes=gap)
+            if start < earliest:
+                warnings.append(
+                    f'After previous job #{prev_job.booking.pk} (busy until {_format_time(prev_job.end)}), '
+                    f'drive {gap} min ({gap_source}) to this address. Earliest start: {_format_time(earliest)}.'
+                )
+        if next_job:
+            gap, gap_source = _travel_gap(coords, next_job.coords)
+            must_finish_by = next_job.start - timedelta(minutes=gap)
+            if end > must_finish_by:
+                warnings.append(
+                    f'Next job #{next_job.booking.pk} starts {_format_time(next_job.start)}. '
+                    f'Must finish on site by {_format_time(must_finish_by)} ({gap} min drive, {gap_source}).'
+                )
+    elif postcode:
+        warnings.append('Could not geocode postcode — travel time conflicts may not be detected.')
+
+    return warnings
+
+
 def validate_booking_schedule(date, slot_time, service_ids, postcode, city='', exclude_booking_pk=None):
     duration = get_service_duration_minutes(service_ids)
     coords = coords_for_address(postcode, city)

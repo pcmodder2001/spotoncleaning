@@ -1,12 +1,14 @@
 from decimal import Decimal, InvalidOperation
+from datetime import datetime
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from bookings.models import Booking, BookingPhoto, BookingStatus
+from bookings.models import Booking, BookingPhoto, BookingStatus, TimeSlot
 from bookings.notifications import send_booking_status_email, send_booking_updated_email
+from bookings.scheduling import get_admin_schedule_warnings
 from bookings.photo_access import booking_photo_url
 from audit.actions import (
     BOOKING_JOB_COMPLETED,
@@ -112,6 +114,55 @@ def booking_detail_payload(request, booking):
         'can_admin_edit': request.user.can_manage_site,
         'edit_url': f'/panel/bookings/{booking.pk}/edit/',
     }
+
+
+@admin_required
+@require_GET
+def booking_schedule_check_api(request):
+    date_str = request.GET.get('date', '').strip()
+    time_str = request.GET.get('time', '').strip()
+    time_slot_id = request.GET.get('time_slot', '').strip()
+    postcode = request.GET.get('postcode', '').strip()
+    city = request.GET.get('city', '').strip()
+    service_ids = [int(value) for value in request.GET.getlist('services') if value.isdigit()]
+
+    if not date_str:
+        return JsonResponse({'warnings': [], 'has_conflicts': False})
+
+    try:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date.'}, status=400)
+
+    slot_time = None
+    if time_str:
+        for fmt in ('%H:%M', '%H:%M:%S'):
+            try:
+                slot_time = datetime.strptime(time_str, fmt).time()
+                break
+            except ValueError:
+                continue
+        if slot_time is None:
+            return JsonResponse({'error': 'Invalid time.'}, status=400)
+    elif time_slot_id.isdigit():
+        time_slot = TimeSlot.objects.filter(pk=int(time_slot_id)).first()
+        if not time_slot:
+            return JsonResponse({'error': 'Invalid time slot.'}, status=400)
+        slot_time = time_slot.time
+    else:
+        return JsonResponse({'warnings': [], 'has_conflicts': False})
+
+    warnings = get_admin_schedule_warnings(
+        selected_date,
+        slot_time,
+        service_ids,
+        postcode,
+        city=city,
+    )
+    return JsonResponse({
+        'warnings': warnings,
+        'has_conflicts': bool(warnings),
+    })
 
 
 @panel_required

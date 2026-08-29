@@ -238,6 +238,12 @@ def booking_create_view(request):
         form = AdminCreateBookingForm(request.POST)
         if form.is_valid():
             booking = form.save()
+            metadata = {
+                'created_by_admin': True,
+                'services': booking.service_summary,
+            }
+            if form.schedule_warnings:
+                metadata['schedule_warnings'] = form.schedule_warnings
             log_action(
                 BOOKING_CREATED,
                 f'Admin created booking #{booking.pk} for {booking.contact_full_name} on {booking.date}.',
@@ -245,19 +251,26 @@ def booking_create_view(request):
                 target_type='booking',
                 target_id=booking.pk,
                 target_label=f'Booking #{booking.pk}',
-                metadata={'created_by_admin': True, 'services': booking.service_summary},
+                metadata=metadata,
             )
             if booking.status == BookingStatus.CONFIRMED:
                 email_sent = send_booking_status_email(booking)
             else:
                 email_sent = send_booking_created_email(booking)
             if email_sent:
-                messages.success(request, f'Booking #{booking.pk} created and the customer has been emailed.')
+                success_message = f'Booking #{booking.pk} created and the customer has been emailed.'
             else:
-                messages.success(
-                    request,
-                    f'Booking #{booking.pk} created, but the customer email could not be sent.',
+                success_message = (
+                    f'Booking #{booking.pk} created, but the customer email could not be sent.'
                 )
+            if form.schedule_warnings:
+                messages.warning(
+                    request,
+                    f'{success_message} Schedule conflicts were ignored: '
+                    + '; '.join(form.schedule_warnings),
+                )
+            else:
+                messages.success(request, success_message)
             return redirect('panel:booking_edit', pk=booking.pk)
     else:
         form = AdminCreateBookingForm()
@@ -272,6 +285,7 @@ def booking_create_view(request):
         'oven_services': services.filter(service_type=ServiceType.OVEN),
         'addon_services': services.filter(service_type=ServiceType.ADDON),
         'selected_service_ids': selected_service_ids,
+        'schedule_warnings': getattr(form, 'schedule_warnings', []),
     })
 
 

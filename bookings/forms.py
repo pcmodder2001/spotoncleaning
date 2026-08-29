@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 
 from django import forms
 from django.contrib.auth import get_user_model
@@ -6,12 +6,20 @@ from django.db.models import Q
 from django.utils import timezone
 
 from bookings.models import Booking, BookingStatus, TimeSlot
-from bookings.scheduling import validate_booking_schedule
+from bookings.scheduling import get_admin_schedule_warnings, validate_booking_schedule
 from bookings.utils import get_available_slots_for_date, get_time_slots_for_booking_edit
 from services.models import Service, ServiceType
 from website.legal import accept_terms_field
 
 User = get_user_model()
+
+
+def appointment_hour_choices():
+    return [('', 'Hour')] + [(f'{hour:02d}', f'{hour:02d}') for hour in range(24)]
+
+
+def appointment_minute_choices():
+    return [('', 'Min'), ('00', '00'), ('15', '15'), ('30', '30'), ('45', '45')]
 
 
 class BookingForm(forms.ModelForm):
@@ -279,6 +287,7 @@ class AdminBookingForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.ignore_availability = kwargs.pop('ignore_availability', False)
         super().__init__(*args, **kwargs)
         self.fields['date'].input_formats = ['%Y-%m-%d']
         self.fields['user'].queryset = User.objects.order_by('first_name', 'last_name', 'email')
@@ -304,20 +313,21 @@ class AdminBookingForm(forms.ModelForm):
             postcode = self.instance.postcode
             city = self.instance.city
 
-        if selected_date:
-            self.fields['time_slot'].queryset = get_time_slots_for_booking_edit(
-                selected_date,
-                booking_pk=self.instance.pk,
-                service_ids=service_ids,
-                postcode=postcode,
-                city=city,
-            )
-        elif self.instance.pk:
-            self.fields['time_slot'].queryset = TimeSlot.objects.filter(
-                Q(active=True) | Q(pk=self.instance.time_slot_id)
-            ).order_by('time')
-        else:
-            self.fields['time_slot'].queryset = TimeSlot.objects.filter(active=True).order_by('time')
+        if 'time_slot' in self.fields:
+            if selected_date and not self.ignore_availability:
+                self.fields['time_slot'].queryset = get_time_slots_for_booking_edit(
+                    selected_date,
+                    booking_pk=self.instance.pk,
+                    service_ids=service_ids,
+                    postcode=postcode,
+                    city=city,
+                )
+            elif self.instance.pk:
+                self.fields['time_slot'].queryset = TimeSlot.objects.filter(
+                    Q(active=True) | Q(pk=self.instance.time_slot_id)
+                ).order_by('time')
+            else:
+                self.fields['time_slot'].queryset = TimeSlot.objects.filter(active=True).order_by('time')
 
     def _resolve_date(self):
         if self.data.get('date'):
@@ -373,7 +383,14 @@ class AdminBookingForm(forms.ModelForm):
         city = cleaned_data.get('city', '')
         services = cleaned_data.get('services')
 
-        if date and time_slot and status != BookingStatus.CANCELLED and postcode and services:
+        if (
+            not self.ignore_availability
+            and date
+            and time_slot
+            and status != BookingStatus.CANCELLED
+            and postcode
+            and services
+        ):
             service_ids = [s.pk for s in services]
             ok, message = validate_booking_schedule(
                 date,
@@ -439,6 +456,16 @@ class AdminBookingStatusForm(forms.ModelForm):
 
 
 class AdminCreateBookingForm(AdminBookingForm):
+    appointment_hour = forms.ChoiceField(
+        choices=appointment_hour_choices(),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
+    appointment_minute = forms.ChoiceField(
+        choices=appointment_minute_choices(),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
     guest_first_name = forms.CharField(
         max_length=150,
         required=False,
@@ -459,8 +486,21 @@ class AdminCreateBookingForm(AdminBookingForm):
         widget=forms.TextInput(attrs={'class': 'form-control'}),
     )
 
+    class Meta(AdminBookingForm.Meta):
+        fields = [
+            'user', 'services', 'date', 'status',
+            'address_line_1', 'address_line_2', 'city', 'postcode', 'notes',
+        ]
+        widgets = {
+            key: widget
+            for key, widget in AdminBookingForm.Meta.widgets.items()
+            if key != 'time_slot'
+        }
+
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault('ignore_availability', True)
         super().__init__(*args, **kwargs)
+        self.schedule_warnings = []
         if not self.instance.pk:
             self.fields['status'].initial = BookingStatus.PENDING
 
@@ -475,10 +515,39 @@ class AdminCreateBookingForm(AdminBookingForm):
             ):
                 if not cleaned_data.get(field_name):
                     self.add_error(field_name, f'{label} is required when no customer account is selected.')
+
+        hour = cleaned_data.get('appointment_hour')
+        minute = cleaned_data.get('appointment_minute')
+        if hour and minute:
+            cleaned_data['appointment_time'] = time(int(hour), int(minute))
+
+        date = cleaned_data.get('date')
+        appointment_time = cleaned_data.get('appointment_time')
+        status = cleaned_data.get('status')
+        postcode = cleaned_data.get('postcode', '')
+        city = cleaned_data.get('city', '')
+        services = cleaned_data.get('services')
+
+        if date and appointment_time and status != BookingStatus.CANCELLED:
+            service_ids = [s.pk for s in services] if services else []
+            self.schedule_warnings = get_admin_schedule_warnings(
+                date,
+                appointment_time,
+                service_ids,
+                postcode,
+                city=city,
+            )
+
         return cleaned_data
 
     def save(self, commit=True):
-        booking = super().save(commit=False)
+        booking = super(AdminBookingForm, self).save(commit=False)
+        appointment_time = self.cleaned_data['appointment_time']
+        time_slot, _ = TimeSlot.objects.get_or_create(
+            time=appointment_time,
+            defaults={'active': False},
+        )
+        booking.time_slot = time_slot
         user = self.cleaned_data.get('user')
         if user:
             booking.guest_email = ''

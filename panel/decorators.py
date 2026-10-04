@@ -48,5 +48,20 @@ def sysadmin_required(view_func):
     return wrapper
 
 
+def ops_required(view_func):
+    """Engineer or system administrator — schedule / HR. Normal site admins excluded."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('accounts:login')
+        if not request.user.can_access_ops_tools:
+            messages.error(request, 'You do not have permission to access that page.')
+            return redirect('panel:dashboard')
+        return view_func(request, *args, **kwargs)
+
+    wrapper.__panel_role__ = 'ops'
+    return wrapper
+
+
 # Backwards compatibility for existing imports.
 staff_required = panel_required

@@ -22,10 +22,10 @@ from bookings.postcode_estimates import coverage_boundary_stats_summary
 from bookings.coverage_data import REGION_SLUGS
 from bookings.models import CoverageArea
 from bookings.service_area import service_area_enforced
-from panel.decorators import admin_required
+from panel.decorators import sysadmin_required
 
 
-@admin_required
+@sysadmin_required
 @require_GET
 def coverage_map_view(request):
     boundaries = get_editable_coverage_boundaries()
@@ -39,13 +39,13 @@ def coverage_map_view(request):
     })
 
 
-@admin_required
+@sysadmin_required
 @require_GET
 def coverage_map_api(request):
     return JsonResponse(coverage_areas_for_map())
 
 
-@admin_required
+@sysadmin_required
 @require_GET
 def coverage_search_api(request):
     query = request.GET.get('q', '').strip() or request.GET.get('postcode', '').strip()
@@ -57,7 +57,7 @@ def coverage_search_api(request):
     return JsonResponse(result)
 
 
-@admin_required
+@sysadmin_required
 @require_POST
 def coverage_toggle_api(request, slug):
     area = CoverageArea.objects.filter(slug=slug).first()
@@ -100,7 +100,7 @@ def coverage_toggle_api(request, slug):
     })
 
 
-@admin_required
+@sysadmin_required
 @require_POST
 def coverage_region_toggle_api(request, region_slug):
     region_group = REGION_SLUGS.get(region_slug)
@@ -132,7 +132,7 @@ def coverage_region_toggle_api(request, region_slug):
     })
 
 
-@admin_required
+@sysadmin_required
 @require_POST
 def coverage_boundary_save_api(request):
     try:
@@ -172,7 +172,7 @@ def coverage_boundary_save_api(request):
     })
 
 
-@admin_required
+@sysadmin_required
 @require_POST
 def coverage_boundary_create_api(request):
     try:
@@ -203,7 +203,7 @@ def coverage_boundary_create_api(request):
     })
 
 
-@admin_required
+@sysadmin_required
 @require_POST
 def coverage_boundary_delete_api(request, slug):
     boundary = next(
@@ -235,7 +235,7 @@ def coverage_boundary_delete_api(request, slug):
     })
 
 
-@admin_required
+@sysadmin_required
 @require_POST
 def coverage_boundary_reset_api(request):
     """Backward-compatible alias for creating a new square."""

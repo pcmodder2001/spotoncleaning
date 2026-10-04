@@ -44,7 +44,7 @@ from hr.services import (
     redirect_if_onboarding_required,
     staff_users_queryset,
 )
-from panel.decorators import admin_required, panel_required
+from panel.decorators import ops_required, sysadmin_required
 
 User = get_user_model()
 
@@ -112,7 +112,7 @@ def _onboarding_json_success(request, task, message='Task updated.'):
     })
 
 
-@panel_required
+@ops_required
 def hr_dashboard_view(request):
     denied = _require_hr_staff(request)
     if denied:
@@ -191,7 +191,7 @@ def hr_dashboard_view(request):
     })
 
 
-@admin_required
+@sysadmin_required
 def hr_employee_list_view(request):
     staff = staff_users_queryset().select_related('employee_profile')
     query = request.GET.get('q', '').strip()
@@ -208,7 +208,7 @@ def hr_employee_list_view(request):
     })
 
 
-@admin_required
+@sysadmin_required
 def hr_employee_edit_view(request, pk):
     user = get_object_or_404(User, pk=pk, role__in=(UserRole.ENGINEER, UserRole.ADMIN))
     profile = ensure_employee_profile(user)
@@ -245,7 +245,7 @@ def hr_employee_edit_view(request, pk):
     })
 
 
-@panel_required
+@ops_required
 @require_POST
 def hr_onboarding_toggle_view(request, task_pk):
     wants_json = _onboarding_wants_json(request)
@@ -281,7 +281,7 @@ def hr_onboarding_toggle_view(request, task_pk):
     return _onboarding_task_redirect(request, task)
 
 
-@panel_required
+@ops_required
 def hr_onboarding_view(request):
     denied = _require_hr_staff(request)
     if denied:
@@ -363,7 +363,7 @@ def hr_onboarding_view(request):
     })
 
 
-@admin_required
+@sysadmin_required
 def hr_vehicle_list_view(request):
     vehicles = Vehicle.objects.select_related('assigned_to').order_by('registration')
     if request.method == 'POST':
@@ -384,7 +384,7 @@ def hr_vehicle_list_view(request):
     })
 
 
-@admin_required
+@sysadmin_required
 def hr_vehicle_edit_view(request, pk):
     vehicle = get_object_or_404(Vehicle, pk=pk)
     if request.method == 'POST':
@@ -411,7 +411,7 @@ def hr_vehicle_edit_view(request, pk):
     })
 
 
-@panel_required
+@ops_required
 def hr_rota_view(request):
     denied = _require_hr_staff(request)
     if denied:
@@ -482,7 +482,7 @@ def hr_rota_view(request):
     })
 
 
-@panel_required
+@ops_required
 def hr_payslip_list_view(request):
     denied = _require_hr_staff(request)
     if denied:
@@ -507,7 +507,7 @@ def hr_payslip_list_view(request):
     })
 
 
-@admin_required
+@sysadmin_required
 def hr_payslip_create_view(request):
     if request.method == 'POST':
         employee = get_object_or_404(
@@ -540,7 +540,7 @@ def hr_payslip_create_view(request):
     })
 
 
-@panel_required
+@ops_required
 @require_GET
 def hr_payslip_download_view(request, pk):
     denied = _require_hr_staff(request)
@@ -564,7 +564,7 @@ def _task_accessible_by(request, task):
     return task.employee.user_id == request.user.pk
 
 
-@panel_required
+@ops_required
 def hr_onboarding_document_view(request, task_pk):
     denied = _require_hr_staff(request)
     if denied:
@@ -597,7 +597,7 @@ def hr_onboarding_document_view(request, task_pk):
     return render(request, meta['template'], ctx)
 
 
-@panel_required
+@ops_required
 @require_POST
 def hr_onboarding_acknowledge_view(request, task_pk):
     denied = _require_hr_staff(request)
@@ -633,7 +633,7 @@ def hr_onboarding_acknowledge_view(request, task_pk):
     return _onboarding_task_redirect(request, task)
 
 
-@panel_required
+@ops_required
 def hr_onboarding_emergency_view(request, task_pk):
     denied = _require_hr_staff(request)
     if denied:
@@ -691,7 +691,7 @@ def _vehicle_audit_detail_url(request, pk):
     return url
 
 
-@panel_required
+@ops_required
 def hr_vehicle_audit_list_view(request):
     denied = _require_hr_staff(request)
     if denied:
@@ -739,7 +739,7 @@ def hr_vehicle_audit_list_view(request):
     })
 
 
-@panel_required
+@ops_required
 def hr_vehicle_audit_submit_view(request):
     denied = _require_hr_staff(request)
     if denied:
@@ -797,7 +797,7 @@ def hr_vehicle_audit_submit_view(request):
     })
 
 
-@panel_required
+@ops_required
 def hr_vehicle_audit_detail_view(request, pk):
     denied = _require_hr_staff(request)
     if denied:
@@ -828,7 +828,7 @@ def hr_vehicle_audit_detail_view(request, pk):
     })
 
 
-@panel_required
+@ops_required
 @require_GET
 def hr_vehicle_audit_photo_view(request, audit_pk, photo_pk):
     import mimetypes

@@ -36,6 +36,9 @@ SERVICE_DELETED = 'admin.service_deleted'
 PROMO_CREATED = 'admin.promo_created'
 PROMO_UPDATED = 'admin.promo_updated'
 PROMO_DELETED = 'admin.promo_deleted'
+FOLLOWUP_CREATED = 'admin.followup_created'
+FOLLOWUP_UPDATED = 'admin.followup_updated'
+FOLLOWUP_DELETED = 'admin.followup_deleted'
 ENQUIRY_READ = 'admin.enquiry_read'
 ENQUIRY_DELETED = 'admin.enquiry_deleted'
 ENQUIRY_CREATED = 'admin.enquiry_created'
@@ -73,6 +76,9 @@ ACTION_LABELS = {
     PROMO_CREATED: 'Created promo code',
     PROMO_UPDATED: 'Updated promo code',
     PROMO_DELETED: 'Deleted promo code',
+    FOLLOWUP_CREATED: 'Created follow-up',
+    FOLLOWUP_UPDATED: 'Updated follow-up',
+    FOLLOWUP_DELETED: 'Deleted follow-up',
     ENQUIRY_READ: 'Marked enquiry read',
     ENQUIRY_DELETED: 'Deleted enquiry',
     ENQUIRY_CREATED: 'Submitted contact enquiry',
@@ -118,6 +124,9 @@ ACTION_CATEGORIES = {
     PROMO_CREATED: 'admin',
     PROMO_UPDATED: 'admin',
     PROMO_DELETED: 'admin',
+    FOLLOWUP_CREATED: 'admin',
+    FOLLOWUP_UPDATED: 'admin',
+    FOLLOWUP_DELETED: 'admin',
     ENQUIRY_READ: 'admin',
     ENQUIRY_DELETED: 'admin',
     ENQUIRY_CREATED: 'admin',

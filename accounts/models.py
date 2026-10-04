@@ -87,6 +87,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.role == UserRole.ADMIN
 
     @property
+    def can_access_ops_tools(self):
+        """Schedule and HR — engineers and system admins only (not normal site admins)."""
+        if self.is_sysadmin:
+            return True
+        return self.role == UserRole.ENGINEER
+
+    @property
     def role_display(self):
         if self.is_sysadmin:
             return 'System administrator'

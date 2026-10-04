@@ -6,10 +6,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from bookings.models import PromoCode
 from audit.actions import PROMO_CREATED, PROMO_DELETED, PROMO_UPDATED
 from audit.services import log_action
-from panel.decorators import admin_required
+from panel.decorators import sysadmin_required
 
 
-@admin_required
+@sysadmin_required
 def promo_list_view(request):
     promos = PromoCode.objects.all()
     if request.method == 'POST':

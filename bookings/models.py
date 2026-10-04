@@ -1,9 +1,19 @@
-from datetime import datetime, timedelta
+import calendar
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+
+def add_months(start_date, months):
+    """Add whole months, clamping day to the last day of the target month."""
+    month_index = start_date.month - 1 + months
+    year = start_date.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(start_date.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
 
 
 class BookingStatus(models.TextChoices):
@@ -605,6 +615,75 @@ class PromoCode(models.Model):
             if appliance_count < self.min_appliance_count:
                 return False
         return True
+
+
+class CustomerFollowUp(models.Model):
+    """Return-visit reminder for customers who want cleaning again later."""
+
+    class IntervalMonths(models.IntegerChoices):
+        THREE = 3, '3 months'
+        SIX = 6, '6 months'
+        NINE = 9, '9 months'
+        TWELVE = 12, '12 months'
+
+    class Status(models.TextChoices):
+        OPEN = 'open', 'Open'
+        DONE = 'done', 'Done'
+        CANCELLED = 'cancelled', 'Cancelled'
+
+    name = models.CharField(max_length=200)
+    phone = models.CharField(max_length=40, blank=True)
+    email = models.EmailField(blank=True)
+    interval_months = models.PositiveSmallIntegerField(choices=IntervalMonths.choices)
+    due_date = models.DateField()
+    notes = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+        db_index=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['due_date', 'name']
+        verbose_name = 'Customer follow-up'
+        verbose_name_plural = 'Customer follow-ups'
+
+    def __str__(self):
+        return f'{self.name} — due {self.due_date}'
+
+    @property
+    def is_overdue(self):
+        return self.status == self.Status.OPEN and self.due_date < timezone.localdate()
+
+    @property
+    def can_mark_done(self):
+        """Mark done only from the due date onwards."""
+        return self.status == self.Status.OPEN and self.due_date <= timezone.localdate()
+
+    @property
+    def is_due_soon(self):
+        if self.status != self.Status.OPEN:
+            return False
+        today = timezone.localdate()
+        return today <= self.due_date <= today + timedelta(days=14)
+
+    @property
+    def days_until_due(self):
+        return (self.due_date - timezone.localdate()).days
+
+    @property
+    def days_overdue(self):
+        days = self.days_until_due
+        return abs(days) if days < 0 else 0
+
+    @classmethod
+    def due_date_from_interval(cls, interval_months, from_date=None):
+        start = from_date or timezone.localdate()
+        return add_months(start, int(interval_months))
 
 
 class BookingPhoto(models.Model):

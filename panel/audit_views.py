@@ -4,10 +4,10 @@ from django.shortcuts import render
 
 from audit.actions import ACTION_LABELS, CATEGORY_CHOICES
 from audit.models import AuditLog
-from panel.decorators import admin_required
+from panel.decorators import sysadmin_required
 
 
-@admin_required
+@sysadmin_required
 def audit_log_view(request):
     logs = AuditLog.objects.select_related('user')
     query = request.GET.get('q', '').strip()

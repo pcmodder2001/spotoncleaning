@@ -21,7 +21,7 @@ from audit.actions import (
     AVAILABILITY_UPDATED,
 )
 from audit.services import log_action
-from panel.decorators import admin_required, panel_required
+from panel.decorators import admin_required, ops_required, sysadmin_required
 
 
 def _parse_date(value, default=None):
@@ -37,7 +37,7 @@ def _week_start(date):
     return date - timedelta(days=date.weekday())
 
 
-@panel_required
+@ops_required
 def schedule_view(request):
     today = timezone.localdate()
     selected_date = _parse_date(request.GET.get('date'), today)
@@ -60,7 +60,7 @@ def schedule_view(request):
     })
 
 
-@panel_required
+@ops_required
 @require_GET
 def schedule_api_view(request):
     selected_date = _parse_date(request.GET.get('date'), timezone.localdate())
@@ -181,7 +181,7 @@ def booking_photo_delete_view(request, pk, photo_pk):
     return redirect('panel:booking_edit', pk=pk)
 
 
-@admin_required
+@sysadmin_required
 @require_POST
 def availability_quick_action_view(request):
     action = request.POST.get('action')

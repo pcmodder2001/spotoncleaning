@@ -247,7 +247,7 @@
 <section id="services" class="section-padding">
     <div class="container">
         <div class="section-header">
-            <span class="section-eyebrow">Prices</span>
+            <span class="section-eyebrow">What we clean</span>
             <h2 class="section-title">Our services</h2>
             <p class="section-subtitle">Professional cleaning for every appliance — book online in minutes.</p>
         </div>
@@ -261,7 +261,6 @@
                     <div class="service-icon"><i class="bi bi-fire"></i></div>
                     <h4>{{ service.name }}</h4>
                     <p class="text-muted">{{ service.description }}</p>
-                    <p class="price-tag">&pound;{{ service.price }}</p>
                     <a href="{% url 'bookings:create' %}?service={{ service.pk }}" class="btn btn-primary w-100">Book now</a>
                 </div>
             </div>
@@ -278,7 +277,6 @@
                     <div class="service-icon"><i class="bi bi-plus-circle"></i></div>
                     <h4>{{ service.name }}</h4>
                     <p class="text-muted">{{ service.description }}</p>
-                    <p class="price-tag">&pound;{{ service.price }}</p>
                     <a href="{% url 'bookings:create' %}?service={{ service.pk }}" class="btn btn-outline-primary w-100">Add to booking</a>
                 </div>
             </div>
@@ -296,7 +294,6 @@
                     <div class="service-icon"><i class="bi bi-plus-circle"></i></div>
                     <h4>{{ service.name }}</h4>
                     <p class="text-muted">{{ service.description }}</p>
-                    <p class="price-tag">&pound;{{ service.price }}</p>
                     <a href="{% url 'bookings:create' %}?service={{ service.pk }}" class="btn btn-outline-primary w-100">Add to booking</a>
                 </div>
             </div>

@@ -27,15 +27,26 @@
             <a href="{% url 'panel:booking_list' %}" class="{% if 'booking' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-calendar-check me-2"></i>Bookings
             </a>
+            {% if user.can_access_ops_tools %}
             <a href="{% url 'panel:schedule' %}" class="{% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
                 <i class="bi bi-calendar3 me-2"></i>Schedule
             </a>
-            {% if user.role == 'engineer' or user.role == 'admin' or user.is_sysadmin %}
             <a href="{% url 'panel:hr_dashboard' %}" class="{% if 'hr_' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="bi bi-person-badge me-2"></i>{% if user.can_manage_site %}HR{% else %}My HR{% endif %}
+                <i class="bi bi-person-badge me-2"></i>{% if user.is_sysadmin %}HR{% else %}My HR{% endif %}
             </a>
             {% endif %}
             {% if user.can_manage_site %}
+            <a href="{% url 'panel:followup_list' %}" class="{% if 'followup' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-arrow-repeat me-2"></i>Follow-ups
+            </a>
+            <a href="{% url 'panel:service_list' %}" class="{% if 'service' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-tools me-2"></i>Services
+            </a>
+            <a href="{% url 'panel:enquiry_list' %}" class="{% if 'enquiry' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-envelope me-2"></i>Enquiries
+            </a>
+            {% endif %}
+            {% if user.is_sysadmin %}
             <a href="{% url 'panel:user_list' %}" class="{% if 'user' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-people me-2"></i>Users
             </a>
@@ -45,14 +56,8 @@
             <a href="{% url 'panel:coverage_map' %}" class="{% if 'coverage' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-map me-2"></i>Coverage map
             </a>
-            <a href="{% url 'panel:service_list' %}" class="{% if 'service' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="bi bi-tools me-2"></i>Services
-            </a>
             <a href="{% url 'panel:promo_list' %}" class="{% if request.resolver_match.url_name == 'promo_list' %}active{% endif %}">
                 <i class="bi bi-tag me-2"></i>Promo codes
-            </a>
-            <a href="{% url 'panel:enquiry_list' %}" class="{% if 'enquiry' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="bi bi-envelope me-2"></i>Enquiries
             </a>
             <a href="{% url 'panel:marketing' %}" class="{% if request.resolver_match.url_name == 'marketing' %}active{% endif %}">
                 <i class="bi bi-megaphone me-2"></i>Marketing
@@ -60,8 +65,6 @@
             <a href="{% url 'panel:audit_log' %}" class="{% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}">
                 <i class="bi bi-journal-text me-2"></i>Audit log
             </a>
-            {% endif %}
-            {% if user.is_sysadmin %}
             <a href="{% url 'panel:debug' %}" class="{% if request.resolver_match.url_name == 'debug' or request.resolver_match.url_name == 'debug_send_email' %}active{% endif %}">
                 <i class="bi bi-bug me-2"></i>Debug
             </a>

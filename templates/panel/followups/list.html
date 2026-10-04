@@ -1,0 +1,122 @@
+{% extends 'panel/base_panel.html' %}
+{% load static static_version %}
+
+{% block panel_title %}Follow-ups{% endblock %}
+
+{% block panel_content %}
+<div class="followup-panel" id="followupPanel" data-csrf="{{ csrf_token }}">
+    <div class="followup-panel-toolbar">
+        <div>
+            <p class="followup-panel-kicker mb-1">Return visits</p>
+            <p class="followup-panel-summary text-muted mb-0">
+                {{ open_count }} open
+                {% if overdue_count %} · <span class="text-danger">{{ overdue_count }} overdue</span>{% endif %}
+                {% if due_soon_count %} · {{ due_soon_count }} due in 14 days{% endif %}
+            </p>
+        </div>
+        <button type="button" class="btn btn-primary" id="followupCreateBtn">
+            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add follow-up
+        </button>
+    </div>
+
+    <div class="followup-panel-filters">
+        <a href="?show=open" class="btn btn-sm {% if show == 'open' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Open</a>
+        <a href="?show=done" class="btn btn-sm {% if show == 'done' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Done</a>
+        <a href="?show=all" class="btn btn-sm {% if show == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+    </div>
+
+    <div class="followup-panel-list">
+        {% for item in followups %}
+        <article class="followup-row{% if item.is_overdue %} followup-row--overdue{% elif item.is_due_soon %} followup-row--soon{% endif %}{% if item.status != 'open' %} followup-row--done{% endif %}">
+            <div class="followup-row-main">
+                <div class="followup-row-title">
+                    <h2 class="followup-row-name">{{ item.name }}</h2>
+                    {% if item.status == 'open' %}
+                        {% if item.is_overdue %}
+                        <span class="followup-status followup-status--overdue">Overdue</span>
+                        {% elif item.is_due_soon %}
+                        <span class="followup-status followup-status--soon">Due soon</span>
+                        {% else %}
+                        <span class="followup-status followup-status--open">Open</span>
+                        {% endif %}
+                    {% elif item.status == 'done' %}
+                    <span class="followup-status followup-status--done">Done</span>
+                    {% else %}
+                    <span class="followup-status followup-status--done">{{ item.get_status_display }}</span>
+                    {% endif %}
+                </div>
+                <div class="followup-row-meta">
+                    <span class="followup-chip followup-chip--due">
+                        <i class="bi bi-calendar-event" aria-hidden="true"></i>
+                        Due {{ item.due_date|date:"d M Y" }}
+                        {% if item.status == 'open' %}
+                            {% if item.is_overdue %}
+                                · {{ item.days_overdue }} day{{ item.days_overdue|pluralize }} late
+                            {% elif item.days_until_due == 0 %}
+                                · today
+                            {% else %}
+                                · in {{ item.days_until_due }} day{{ item.days_until_due|pluralize }}
+                            {% endif %}
+                        {% endif %}
+                    </span>
+                    <span class="followup-chip">{{ item.get_interval_months_display }}</span>
+                    {% if item.phone %}
+                    <a class="followup-chip followup-chip--link" href="tel:{{ item.phone }}">
+                        <i class="bi bi-telephone" aria-hidden="true"></i>{{ item.phone }}
+                    </a>
+                    {% endif %}
+                    {% if item.email %}
+                    <a class="followup-chip followup-chip--link" href="mailto:{{ item.email }}">
+                        <i class="bi bi-envelope" aria-hidden="true"></i>{{ item.email }}
+                    </a>
+                    {% endif %}
+                </div>
+                {% if item.notes %}
+                <p class="followup-row-notes">{{ item.notes }}</p>
+                {% endif %}
+            </div>
+            <div class="followup-row-actions">
+                {% if item.can_mark_done %}
+                <button type="button"
+                        class="btn btn-sm btn-primary followup-mark-done-btn"
+                        data-followup-id="{{ item.pk }}"
+                        data-name="{{ item.name }}">
+                    Mark done
+                </button>
+                {% elif item.status == 'done' %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reopen">
+                    <input type="hidden" name="followup_id" value="{{ item.pk }}">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Reopen</button>
+                </form>
+                {% endif %}
+                <form method="post"
+                      data-confirm="Delete follow-up for {{ item.name }}?"
+                      data-confirm-title="Delete follow-up?"
+                      data-confirm-yes="Delete"
+                      data-confirm-danger="true">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="followup_id" value="{{ item.pk }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </div>
+        </article>
+        {% empty %}
+        <div class="followup-empty">
+            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+            <p class="mb-1 fw-semibold">No follow-ups yet</p>
+            <p class="text-muted small mb-3">
+                Quickly add a customer and when to come back — they&rsquo;ll show here sorted by who is due first.
+            </p>
+            <button type="button" class="btn btn-primary btn-sm" id="followupCreateEmptyBtn">Add first follow-up</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static_v 'js/panel-followups.js' %}" defer></script>
+{% endblock %}

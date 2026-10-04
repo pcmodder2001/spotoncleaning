@@ -10,30 +10,26 @@
                 <form method="post">
                     {% csrf_token %}
                     <div class="row g-3">
-                        <div class="col-md-8">
+                        <div class="col-12">
                             <label class="form-label">Name</label>
                             <input type="text" name="name" value="{{ edit_service.name }}" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Price (&pound;)</label>
-                            <input type="number" name="price" value="{{ edit_service.price }}" step="0.01" min="0" class="form-control" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Description</label>
                             <textarea name="description" class="form-control" rows="3" required>{{ edit_service.description }}</textarea>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Type</label>
                             <select name="service_type" class="form-select">
                                 <option value="oven" {% if edit_service.service_type == 'oven' %}selected{% endif %}>Oven (pick one per booking)</option>
                                 <option value="addon" {% if edit_service.service_type == 'addon' %}selected{% endif %}>Add-on (can combine)</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Duration (minutes on site)</label>
                             <input type="number" name="duration_minutes" value="{{ edit_service.duration_minutes }}" class="form-control" min="15" step="15" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Sort order</label>
                             <input type="number" name="sort_order" value="{{ edit_service.sort_order }}" class="form-control" min="0">
                         </div>

@@ -51,7 +51,9 @@
             </div>
             <div class="panel-bookings-filters__actions">
                 <button type="submit" class="btn btn-primary d-lg-none">Apply filters</button>
+                {% if user.can_access_ops_tools %}
                 <a href="{% url 'panel:schedule' %}{% if date_filter %}?date={{ date_filter }}{% endif %}" class="btn btn-outline-primary">Schedule view</a>
+                {% endif %}
                 {% if query or status_filter or date_filter or partner_filter %}
                 <a href="{% url 'panel:booking_list' %}" class="btn btn-link">Clear</a>
                 {% endif %}

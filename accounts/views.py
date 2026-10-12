@@ -184,7 +184,9 @@ def login_view(request):
                 target_id=user.pk,
                 target_label=user.email,
             )
-            if not form.cleaned_data.get('remember_me'):
+            if form.cleaned_data.get('remember_me'):
+                request.session.set_expiry(settings.SESSION_COOKIE_AGE)
+            else:
                 request.session.set_expiry(0)
             messages.success(request, f'Welcome back, {user.first_name}!')
             next_url = request.GET.get('next') or request.POST.get('next')

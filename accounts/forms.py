@@ -155,6 +155,7 @@ class LoginForm(AuthenticationForm):
     )
     remember_me = forms.BooleanField(
         required=False,
+        initial=True,
         label='Remember me',
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
     )

@@ -170,6 +170,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'accounts:dashboard'
+
+# Keep customers signed in for 30 days (unless they leave "Remember me" unchecked).
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 LOGOUT_REDIRECT_URL = 'website:home'
 
 EMAIL_BACKEND = os.environ.get(

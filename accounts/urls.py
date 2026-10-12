@@ -10,6 +10,11 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('complete-account/', views.complete_account_from_booking_view, name='complete_account'),
+    path(
+        'complete-account/follow-up/',
+        views.complete_account_from_followup_view,
+        name='complete_account_followup',
+    ),
     # Legacy email links placed the raw signed token (with colons) in the path.
     re_path(
         r'^complete-account/(?P<token>[^/]+)/$',

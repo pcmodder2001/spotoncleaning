@@ -57,11 +57,21 @@ def followup_list_view(request):
                         'due_date': followup.due_date.isoformat(),
                     },
                 )
-                messages.success(
-                    request,
+                success_msg = (
                     f'{followup.name} added — come back {followup.get_interval_months_display()} '
-                    f'(due {followup.due_date.strftime("%d %b %Y")}).',
+                    f'(due {followup.due_date.strftime("%d %b %Y")}).'
                 )
+                if followup.email:
+                    from bookings.notifications import send_followup_registered_email
+
+                    if send_followup_registered_email(followup):
+                        success_msg += ' Confirmation email sent.'
+                    else:
+                        messages.warning(
+                            request,
+                            'Follow-up saved, but the confirmation email could not be sent.',
+                        )
+                messages.success(request, success_msg)
         elif action == 'done':
             followup = get_object_or_404(CustomerFollowUp, pk=request.POST.get('followup_id'))
             is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'

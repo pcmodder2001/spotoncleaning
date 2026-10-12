@@ -263,6 +263,12 @@ EMAIL_TEST_TYPES = [
         'description': 'Sent when a user requests a password reset link.',
         'template': 'emails/password_reset.html',
     },
+    {
+        'id': 'followup_registered',
+        'name': 'Follow-up registered',
+        'description': 'Sent when staff add a next-clean follow-up for a customer.',
+        'template': 'emails/followup_registered.html',
+    },
 ]
 
 EMAIL_TEST_TYPES_BY_ID = {item['id']: item for item in EMAIL_TEST_TYPES}
@@ -364,6 +370,24 @@ def send_test_email(email_type_id, recipients=None):
             except Exception:
                 logger.exception('Failed to send password reset test email to %s', recipient)
                 results.append((recipient, False))
+        return email_type, results
+
+    if email_type_id == 'followup_registered':
+        from bookings.notifications import get_followup_email_context
+
+        sample_followup = type('SampleFollowUp', (), {
+            'name': 'Jane Customer',
+            'email': 'jane@example.com',
+            'phone': '07700900123',
+            'interval_months': 6,
+            'get_interval_months_display': lambda self: '6 months',
+        })()
+        results = send_test_emails(
+            f'Thank you for registering your next clean — {settings.SITE_NAME}',
+            email_type['template'],
+            get_followup_email_context(sample_followup),
+            recipients,
+        )
         return email_type, results
 
     status_map = {

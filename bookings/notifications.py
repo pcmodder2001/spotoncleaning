@@ -209,6 +209,72 @@ def send_enquiry_received_email(enquiry):
     )
 
 
+def _split_customer_name(name):
+    parts = (name or '').strip().split(None, 1)
+    if not parts:
+        return '', ''
+    if len(parts) == 1:
+        return parts[0], ''
+    return parts[0], parts[1]
+
+
+def get_followup_email_context(followup):
+    from django.contrib.auth import get_user_model
+
+    from bookings.tokens import make_followup_account_token
+
+    first_name, last_name = _split_customer_name(followup.name)
+    site_url = settings.SITE_URL.rstrip('/')
+    context = {
+        'followup': followup,
+        'first_name': first_name or followup.name or 'there',
+        'interval_label': followup.get_interval_months_display(),
+        'account_url': '',
+        'login_url': '',
+    }
+
+    email = (followup.email or '').strip()
+    if not email:
+        return context
+
+    User = get_user_model()
+    if User.objects.filter(email__iexact=email).exists():
+        context['login_url'] = f'{site_url}{reverse("accounts:login")}'
+        return context
+
+    if getattr(followup, 'pk', None):
+        token = make_followup_account_token(followup)
+        context['account_url'] = (
+            f'{site_url}{reverse("accounts:complete_account_followup")}'
+            f'?{urlencode({"token": token})}'
+        )
+    else:
+        # Unsaved / sample objects (e.g. email debug) — fall back to register prefill
+        params = {'email': email}
+        if first_name:
+            params['first_name'] = first_name
+        if last_name:
+            params['last_name'] = last_name
+        if followup.phone:
+            params['phone'] = followup.phone
+        context['account_url'] = (
+            f'{site_url}{reverse("accounts:register")}?{urlencode(params)}'
+        )
+    return context
+
+
+def send_followup_registered_email(followup):
+    email = (followup.email or '').strip()
+    if not email:
+        return False
+    return send_notification_email(
+        subject=f'Thank you for registering your next clean — {settings.SITE_NAME}',
+        template_name='emails/followup_registered.html',
+        context=get_followup_email_context(followup),
+        recipient=email,
+    )
+
+
 def send_booking_reminder_email(booking):
     from bookings.reminders import get_booking_reminder_context
 

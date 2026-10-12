@@ -22,7 +22,7 @@ import logging
 from bookings.guest import attach_guest_bookings_to_user
 from bookings.models import Booking, BookingStatus
 from bookings.notifications import send_branded_email, send_registration_email
-from bookings.tokens import booking_from_account_token
+from bookings.tokens import booking_from_account_token, followup_from_account_token
 from audit.actions import (
     AUTH_ACCOUNT_FROM_BOOKING,
     AUTH_LOGIN,
@@ -60,6 +60,19 @@ def register_view(request):
     next_url = request.GET.get('next')
     is_business = request.GET.get('type') == 'business'
     initial = {'account_type': AccountType.BUSINESS} if is_business else {}
+    for field, param in (
+        ('email', 'email'),
+        ('first_name', 'first_name'),
+        ('last_name', 'last_name'),
+        ('phone_number', 'phone'),
+    ):
+        value = (request.GET.get(param) or '').strip()
+        if value:
+            initial[field] = value
+    # Allow phone_number as well as phone in the query string
+    phone_alt = (request.GET.get('phone_number') or '').strip()
+    if phone_alt and 'phone_number' not in initial:
+        initial['phone_number'] = phone_alt
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
@@ -298,6 +311,79 @@ def complete_account_from_booking_view(request, token=None):
     return render(request, 'accounts/complete_booking_account.html', {
         'form': form,
         'booking': booking,
+    })
+
+
+def complete_account_from_followup_view(request):
+    token = (request.GET.get('token') or request.POST.get('token') or '').strip()
+    if not token:
+        messages.error(
+            request,
+            'This account setup link is invalid or has expired. Please contact us if you need help.',
+        )
+        return redirect('accounts:login')
+
+    followup = followup_from_account_token(token)
+    if not followup:
+        messages.error(
+            request,
+            'This account setup link is invalid or has expired. Please contact us if you need help.',
+        )
+        return redirect('accounts:login')
+
+    if request.user.is_authenticated:
+        return redirect('accounts:dashboard')
+
+    if User.objects.filter(email__iexact=followup.email).exists():
+        messages.info(
+            request,
+            'An account already exists for this email. Log in to continue.',
+        )
+        return redirect('accounts:login')
+
+    name_parts = followup.name.strip().split(None, 1)
+    first_name = name_parts[0] if name_parts else ''
+    last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+    if request.method == 'POST':
+        form = CompleteAccountFromBookingForm(request.POST)
+        if form.is_valid():
+            user = User.objects.create_user(
+                email=followup.email.strip().lower(),
+                password=form.cleaned_data['password1'],
+                first_name=first_name,
+                last_name=last_name,
+                phone_number=(followup.phone or '')[:20],
+            )
+            if not send_registration_email(user):
+                messages.warning(
+                    request,
+                    'Your account was created, but we could not send the welcome email. '
+                    'You can still use your account.',
+                )
+            login(request, user)
+            log_action(
+                AUTH_REGISTER,
+                f'Created account from follow-up link ({user.email}).',
+                request=request,
+                user=user,
+                target_type='user',
+                target_id=user.pk,
+                target_label=user.email,
+                metadata={'followup_id': followup.pk},
+            )
+            messages.success(
+                request,
+                'Your account is ready. You can book and manage cleans online anytime.',
+            )
+            return redirect('accounts:dashboard')
+    else:
+        form = CompleteAccountFromBookingForm()
+
+    return render(request, 'accounts/complete_followup_account.html', {
+        'form': form,
+        'followup': followup,
+        'token': token,
     })
 
 

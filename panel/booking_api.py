@@ -13,6 +13,7 @@ from bookings.photo_access import booking_photo_url
 from audit.actions import (
     BOOKING_JOB_COMPLETED,
     BOOKING_JOB_STARTED,
+    BOOKING_PHOTO_REPLACED,
     BOOKING_SERVICES_UPDATED,
     BOOKING_UPDATED,
 )
@@ -112,6 +113,10 @@ def booking_detail_payload(request, booking):
             and booking.status not in (BookingStatus.CANCELLED, BookingStatus.COMPLETED)
         ),
         'can_admin_edit': request.user.can_manage_site,
+        'can_replace_photos': booking.status in (
+            BookingStatus.IN_PROGRESS,
+            BookingStatus.COMPLETED,
+        ),
         'edit_url': f'/panel/bookings/{booking.pk}/edit/',
     }
 
@@ -391,6 +396,75 @@ def booking_complete_job_api(request, pk):
         metadata={
             'signed_by_name': signed_by_name,
             'services': [s.name for s in services],
+        },
+    )
+
+    return JsonResponse({
+        'success': True,
+        'booking': booking_detail_payload(request, booking),
+    })
+
+
+@panel_required
+@require_POST
+def booking_replace_photo_api(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    if booking.status not in (BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED):
+        return JsonResponse(
+            {'error': 'Photos can only be changed after the job has started.'},
+            status=400,
+        )
+
+    photo_type = (request.POST.get('photo_type') or '').strip().lower()
+    if photo_type not in (BookingPhoto.PhotoType.BEFORE, BookingPhoto.PhotoType.AFTER):
+        return JsonResponse({'error': 'Choose a before or after photo.'}, status=400)
+
+    service_id = request.POST.get('service_id', '').strip()
+    if not service_id.isdigit():
+        return JsonResponse({'error': 'Invalid service.'}, status=400)
+
+    service = next(
+        (item for item in booking.get_services() if item.pk == int(service_id)),
+        None,
+    )
+    if not service:
+        return JsonResponse({'error': 'That service is not on this booking.'}, status=400)
+
+    upload = request.FILES.get('photo')
+    if not upload:
+        return JsonResponse({'error': 'Choose a photo to upload.'}, status=400)
+    content_type = (getattr(upload, 'content_type', '') or '').lower()
+    if content_type and not content_type.startswith('image/'):
+        return JsonResponse({'error': 'Please choose an image file.'}, status=400)
+
+    existing = BookingPhoto.objects.filter(
+        booking=booking,
+        service=service,
+        photo_type=photo_type,
+    )
+    for photo in existing:
+        photo.image.delete(save=False)
+    existing.delete()
+
+    BookingPhoto.objects.create(
+        booking=booking,
+        service=service,
+        image=upload,
+        photo_type=photo_type,
+        caption=f'{photo_type.title()} — {service.name}',
+    )
+
+    log_action(
+        BOOKING_PHOTO_REPLACED,
+        f'Replaced {photo_type} photo for {service.name} on booking #{booking.pk}.',
+        request=request,
+        target_type='booking',
+        target_id=booking.pk,
+        target_label=f'Booking #{booking.pk}',
+        metadata={
+            'service_id': service.pk,
+            'service_name': service.name,
+            'photo_type': photo_type,
         },
     )
 

@@ -86,43 +86,56 @@
     }).join('')}</ul>`;
   }
 
-  function jobPhotosHtml(services) {
+  function photoReplaceControls(booking, service, photoType, hasPhoto) {
+    if (!booking.can_replace_photos) return '';
+    const label = hasPhoto ? 'Change photo' : 'Add photo';
+    const inputId = `replacePhoto_${service.id}_${photoType}`;
+    return `
+      <div class="booking-photo-replace">
+        <input type="file" id="${inputId}" class="booking-replace-photo-input"
+               accept="image/*" data-booking-id="${booking.id}"
+               data-service-id="${service.id}" data-photo-type="${photoType}">
+        <label for="${inputId}" class="btn btn-sm btn-outline-secondary booking-replace-photo-btn">
+          <i class="bi bi-image me-1" aria-hidden="true"></i>${label}
+        </label>
+      </div>`;
+  }
+
+  function photoFigureHtml(booking, service, photoType, photoUrl) {
+    const label = photoType === 'before' ? 'Before' : 'After';
+    const hasPhoto = Boolean(photoUrl);
+    const image = hasPhoto
+      ? `<a href="${escapeHtml(photoUrl)}" target="_blank" rel="noopener">
+           <img src="${escapeHtml(photoUrl)}" alt="${label} — ${escapeHtml(service.name)}">
+         </a>`
+      : `<div class="booking-photo-placeholder">No ${label.toLowerCase()} photo</div>`;
+    return `
+      <figure class="booking-photo-figure${hasPhoto ? '' : ' booking-photo-missing'}">
+        ${image}
+        <figcaption>${label}</figcaption>
+        ${photoReplaceControls(booking, service, photoType, hasPhoto)}
+      </figure>`;
+  }
+
+  function jobPhotosHtml(booking) {
+    const services = booking.services || [];
     const withPhotos = services.filter(function (service) {
       return service.before_photo_url || service.after_photo_url;
     });
-    if (!withPhotos.length) return '';
+    const rows = booking.can_replace_photos ? services : withPhotos;
+    if (!rows.length) return '';
 
     return `
       <div class="booking-view-section">
         <h6>Job photos</h6>
         <div class="booking-job-photos">
-          ${withPhotos.map(function (service) {
+          ${rows.map(function (service) {
             return `
               <div class="booking-job-service-photos">
                 <p class="booking-job-service-name mb-2">${escapeHtml(service.name)}</p>
                 <div class="booking-photo-pair">
-                  ${service.before_photo_url ? `
-                    <figure class="booking-photo-figure">
-                      <a href="${escapeHtml(service.before_photo_url)}" target="_blank" rel="noopener">
-                        <img src="${escapeHtml(service.before_photo_url)}" alt="Before — ${escapeHtml(service.name)}">
-                      </a>
-                      <figcaption>Before</figcaption>
-                    </figure>` : `
-                    <figure class="booking-photo-figure booking-photo-missing">
-                      <div class="booking-photo-placeholder">No before photo</div>
-                      <figcaption>Before</figcaption>
-                    </figure>`}
-                  ${service.after_photo_url ? `
-                    <figure class="booking-photo-figure">
-                      <a href="${escapeHtml(service.after_photo_url)}" target="_blank" rel="noopener">
-                        <img src="${escapeHtml(service.after_photo_url)}" alt="After — ${escapeHtml(service.name)}">
-                      </a>
-                      <figcaption>After</figcaption>
-                    </figure>` : `
-                    <figure class="booking-photo-figure booking-photo-missing">
-                      <div class="booking-photo-placeholder">No after photo</div>
-                      <figcaption>After</figcaption>
-                    </figure>`}
+                  ${photoFigureHtml(booking, service, 'before', service.before_photo_url)}
+                  ${photoFigureHtml(booking, service, 'after', service.after_photo_url)}
                 </div>
               </div>`;
           }).join('')}
@@ -248,7 +261,7 @@
         ${data.started_at ? `<div class="booking-view-section"><h6>Job started</h6><p class="mb-0 small text-muted">${escapeHtml(new Date(data.started_at).toLocaleString())}</p></div>` : ''}
         ${data.completed_at ? `<div class="booking-view-section"><h6>Job completed</h6><p class="mb-0 small text-muted">${escapeHtml(new Date(data.completed_at).toLocaleString())}</p></div>` : ''}
 
-        ${jobPhotosHtml(data.services)}
+        ${jobPhotosHtml(data)}
         ${signOffHtml(data)}
 
         ${data.status === 'pending' && data.can_admin_edit ? `<p class="text-muted small mb-2">Confirm this booking before the job can be started.</p>` : ''}
@@ -813,6 +826,44 @@
     document.getElementById('bookingSaveDiscountBtn')?.addEventListener('click', function () {
       saveBookingDiscount(booking);
     });
+    document.querySelectorAll('.booking-replace-photo-input').forEach(function (input) {
+      input.addEventListener('change', function () {
+        replaceBookingPhoto(booking, input);
+      });
+    });
+  }
+
+  function replaceBookingPhoto(booking, input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    const body = new FormData();
+    body.append('photo', file);
+    body.append('service_id', input.dataset.serviceId);
+    body.append('photo_type', input.dataset.photoType);
+
+    input.disabled = true;
+
+    fetch(apiUrl(`/${booking.id}/photo/`), {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfHeader() },
+      body: body,
+    })
+      .then(function (response) {
+        return response.json().then(function (data) {
+          return { ok: response.ok, data: data };
+        });
+      })
+      .then(function ({ ok, data }) {
+        if (!ok) throw new Error(data.error || 'Could not update photo');
+        window.showAppToast('Photo updated', 'success');
+        openBookingView(booking.id);
+      })
+      .catch(function (error) {
+        input.disabled = false;
+        input.value = '';
+        window.showAppToast(error.message, 'error');
+      });
   }
 
   function saveBookingDiscount(booking) {

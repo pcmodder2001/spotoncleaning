@@ -76,6 +76,12 @@
                     <option value="export">Export CSV</option>
                 </select>
                 <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                {% if is_sysadmin %}
+                <button type="submit" name="bulk_action" value="send_followup_emails"
+                        class="btn btn-sm btn-outline-success" formnovalidate>
+                    Send follow-up emails
+                </button>
+                {% endif %}
             </div>
             <span class="text-muted small panel-bookings-bulk__hint d-none d-lg-inline">Select bookings below, then choose an action.</span>
         </div>

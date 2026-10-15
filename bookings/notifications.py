@@ -275,6 +275,42 @@ def send_followup_registered_email(followup):
     )
 
 
+def send_followup_registered_email_for_booking(booking, interval_months=6):
+    """Send the follow-up confirmation email to one booking customer."""
+    from types import SimpleNamespace
+
+    from bookings.models import CustomerFollowUp
+
+    email = (booking.contact_email or '').strip()
+    if not email:
+        return False
+
+    followup = (
+        CustomerFollowUp.objects.filter(
+            email__iexact=email,
+            status=CustomerFollowUp.Status.OPEN,
+        )
+        .order_by('due_date', 'pk')
+        .first()
+    )
+    if followup:
+        return send_followup_registered_email(followup)
+
+    try:
+        interval_label = CustomerFollowUp.IntervalMonths(int(interval_months)).label
+    except ValueError:
+        interval_label = f'{interval_months} months'
+
+    followup = SimpleNamespace(
+        name=booking.contact_full_name or 'there',
+        email=email,
+        phone=booking.contact_phone or '',
+        pk=None,
+        get_interval_months_display=lambda: interval_label,
+    )
+    return send_followup_registered_email(followup)
+
+
 def send_booking_reminder_email(booking):
     from bookings.reminders import get_booking_reminder_context
 

@@ -21,7 +21,9 @@ BOOKING_REMINDER_SENT = 'booking.reminder_sent'
 BOOKING_BULK_CONFIRM = 'booking.bulk_confirm'
 BOOKING_BULK_CANCEL = 'booking.bulk_cancel'
 BOOKING_BULK_EXPORT = 'booking.bulk_export'
+BOOKING_BULK_FOLLOWUP_EMAIL = 'booking.bulk_followup_email'
 BOOKING_PHOTO_DELETED = 'booking.photo_deleted'
+BOOKING_PHOTO_REPLACED = 'booking.photo_replaced'
 BOOKING_DELETED = 'booking.deleted'
 
 # Users
@@ -65,7 +67,9 @@ ACTION_LABELS = {
     BOOKING_BULK_CONFIRM: 'Bulk confirmed bookings',
     BOOKING_BULK_CANCEL: 'Bulk cancelled bookings',
     BOOKING_BULK_EXPORT: 'Exported bookings',
+    BOOKING_BULK_FOLLOWUP_EMAIL: 'Sent follow-up confirmation emails',
     BOOKING_PHOTO_DELETED: 'Deleted job photo',
+    BOOKING_PHOTO_REPLACED: 'Replaced job photo',
     BOOKING_DELETED: 'Deleted booking',
     USER_UPDATED: 'Updated user',
     USER_DELETED: 'Deleted user',
@@ -113,7 +117,9 @@ ACTION_CATEGORIES = {
     BOOKING_BULK_CONFIRM: 'booking',
     BOOKING_BULK_CANCEL: 'booking',
     BOOKING_BULK_EXPORT: 'booking',
+    BOOKING_BULK_FOLLOWUP_EMAIL: 'booking',
     BOOKING_PHOTO_DELETED: 'booking',
+    BOOKING_PHOTO_REPLACED: 'booking',
     BOOKING_DELETED: 'booking',
     USER_UPDATED: 'user',
     USER_DELETED: 'user',

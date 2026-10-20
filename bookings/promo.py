@@ -12,6 +12,10 @@ class PromoError(Exception):
     pass
 
 
+class PromoEligibilityError(PromoError):
+    pass
+
+
 def normalize_promo_code(code):
     return (code or '').strip().upper()
 
@@ -31,7 +35,7 @@ def count_appliances(services, *, include_addons=False):
     return total
 
 
-def get_valid_promo(code):
+def get_valid_promo(code, **customer):
     normalized = normalize_promo_code(code)
     if not normalized:
         return None
@@ -51,10 +55,84 @@ def get_valid_promo(code):
         raise PromoError('That promo code is not valid yet.')
     if promo.valid_until and today > promo.valid_until:
         raise PromoError('That promo code has expired.')
+    assert_promo_customer_eligible(promo, **customer)
     return promo
 
 
-def get_qualifying_auto_promos(services):
+def _authenticated_user(user):
+    return bool(user is not None and getattr(user, 'is_authenticated', False) and getattr(user, 'pk', None))
+
+
+def customer_non_cancelled_booking_count(user, *, exclude_booking_id=None):
+    from bookings.models import Booking, BookingStatus
+
+    if not _authenticated_user(user):
+        return 0
+    queryset = Booking.objects.filter(user=user).exclude(status=BookingStatus.CANCELLED)
+    if exclude_booking_id:
+        queryset = queryset.exclude(pk=exclude_booking_id)
+    return queryset.count()
+
+
+def assert_promo_customer_eligible(
+    promo,
+    *,
+    user=None,
+    email='',
+    join_mailing_list=False,
+    exclude_booking_id=None,
+):
+    """Raise PromoEligibilityError if this customer cannot use the promo."""
+    from website.mailing import is_on_mailing_list
+
+    logged_in = _authenticated_user(user)
+    email = (email or getattr(user, 'email', '') or '').strip()
+
+    if promo.requires_account or promo.first_order_only:
+        if not logged_in:
+            raise PromoEligibilityError(
+                'Log in or create an account to use this code.'
+            )
+    if promo.first_order_only and logged_in:
+        if customer_non_cancelled_booking_count(user, exclude_booking_id=exclude_booking_id) > 0:
+            raise PromoEligibilityError('This code is for your first booking only.')
+
+    if promo.requires_signup_or_mailing_list:
+        has_account = logged_in
+        on_list = is_on_mailing_list(email) or bool(getattr(user, 'marketing_opt_in', False))
+        joining_now = bool(join_mailing_list)
+        if not (has_account or on_list or joining_now):
+            raise PromoEligibilityError(
+                'Create an account or join our mailing list to use this code.'
+            )
+    return True
+
+
+def customer_qualifies_for_promo(promo, **customer):
+    try:
+        assert_promo_customer_eligible(promo, **customer)
+        return True
+    except PromoEligibilityError:
+        return False
+
+
+def bookings_using_promo(promo):
+    from django.db.models import Q
+
+    from bookings.models import Booking
+
+    return (
+        Booking.objects.filter(
+            Q(promo_code=promo) | Q(applied_promos__contains=[{'id': promo.pk}])
+        )
+        .select_related('user', 'time_slot')
+        .prefetch_related('services')
+        .order_by('-date', '-pk')
+        .distinct()
+    )
+
+
+def get_qualifying_auto_promos(services, **customer):
     """All active auto promos that qualify for the selected services."""
     if not services:
         return []
@@ -65,23 +143,26 @@ def get_qualifying_auto_promos(services):
         min_appliance_count__isnull=False,
     ).order_by('-min_appliance_count', '-discount_value')
 
-    return [promo for promo in candidates if promo.qualifies_for_services(services)]
+    return [
+        promo for promo in candidates
+        if promo.qualifies_for_services(services) and customer_qualifies_for_promo(promo, **customer)
+    ]
 
 
-def get_auto_promo_for_services(services):
+def get_auto_promo_for_services(services, **customer):
     """Best matching active auto promo for the selected services, if any."""
-    promos = select_auto_promos(services)
+    promos = select_auto_promos(services, **customer)
     return promos[0] if promos else None
 
 
-def select_auto_promos(services):
+def select_auto_promos(services, **customer):
     """
     Choose which auto promos to apply.
 
     Stackable autos can all apply together. Non-stackable autos are exclusive —
     only the best one is used, and it cannot mix with stackables.
     """
-    qualifying = get_qualifying_auto_promos(services)
+    qualifying = get_qualifying_auto_promos(services, **customer)
     if not qualifying:
         return []
 
@@ -196,7 +277,7 @@ def combined_promo_message(rows, discount):
     return f'{codes} combined — save £{discount:.2f}'
 
 
-def resolve_promos_for_services(services, *, booking=None, manual_code=None):
+def resolve_promos_for_services(services, *, booking=None, manual_code=None, **customer):
     """
     Resolve which promos apply and the combined discount.
 
@@ -205,35 +286,40 @@ def resolve_promos_for_services(services, *, booking=None, manual_code=None):
     - Multiple stackable autos can combine with each other.
     - Non-stackable promos are exclusive.
     """
+    if booking is not None:
+        customer.setdefault('user', getattr(booking, 'user', None))
+        customer.setdefault('email', getattr(booking, 'contact_email', '') or '')
+        customer.setdefault('exclude_booking_id', getattr(booking, 'pk', None))
+
     subtotal = _services_subtotal(services)
     selected = []
 
     if manual_code:
-        manual = get_valid_promo(manual_code)
+        manual = get_valid_promo(manual_code, **customer)
         if not manual.qualifies_for_services(services):
             raise PromoError('This promo does not apply to the selected services.')
         calculate_promo_discount(manual, subtotal)
         # Stackable auto offers (e.g. multi-appliance) stay applied with a typed code.
         autos = [
-            auto for auto in select_auto_promos(services)
+            auto for auto in select_auto_promos(services, **customer)
             if auto.stackable and auto.pk != manual.pk
         ]
         selected = autos + [manual]
     elif booking and booking.promo_code_id and not booking.promo_code.auto_apply:
         manual = booking.promo_code
         autos = [
-            auto for auto in select_auto_promos(services)
+            auto for auto in select_auto_promos(services, **customer)
             if auto.stackable and auto.pk != manual.pk
         ]
         selected = autos + [manual]
         rows, discount = _discount_rows_for_promos(selected, subtotal)
         if discount <= 0:
-            selected = select_auto_promos(services)
+            selected = select_auto_promos(services, **customer)
     elif booking and booking.discount_amount and not booking.promo_code_id and not booking.applied_promos:
         discount = min(booking.discount_amount, subtotal)
         return build_pricing_payload(subtotal=subtotal, discount=discount, promo=None, promos=[], rows=[])
     else:
-        selected = select_auto_promos(services)
+        selected = select_auto_promos(services, **customer)
 
     rows, discount = _discount_rows_for_promos(selected, subtotal)
     # Drop zero-discount promos from selection
@@ -248,9 +334,11 @@ def resolve_promos_for_services(services, *, booking=None, manual_code=None):
     )
 
 
-def resolve_promo_for_services(services, *, booking=None, manual_code=None):
+def resolve_promo_for_services(services, *, booking=None, manual_code=None, **customer):
     """Backward-compatible alias."""
-    return resolve_promos_for_services(services, booking=booking, manual_code=manual_code)
+    return resolve_promos_for_services(
+        services, booking=booking, manual_code=manual_code, **customer
+    )
 
 
 def _apply_pricing_to_booking(booking, pricing, promos):
@@ -293,7 +381,11 @@ def refresh_booking_promo(booking, services=None, *, manual_code=None):
     if manual_code is not None:
         return apply_promo_to_booking(booking, manual_code)
 
-    pricing = resolve_promos_for_services(services, booking=booking)
+    pricing = resolve_promos_for_services(services, booking=booking, **{
+        'user': getattr(booking, 'user', None),
+        'email': getattr(booking, 'contact_email', '') or '',
+        'exclude_booking_id': getattr(booking, 'pk', None),
+    })
     promos = _promos_from_pricing(pricing)
 
     if booking.discount_amount and not booking.promo_code_id and not booking.applied_promos and not pricing['has_promo']:
@@ -312,16 +404,16 @@ def apply_promo_to_booking(booking, code):
         services = list(Service.objects.filter(pk__in=booking._pending_service_ids))
 
     if not code:
-        pricing = resolve_promos_for_services(services)
+        pricing = resolve_promos_for_services(services, booking=booking)
         return _apply_pricing_to_booking(booking, pricing, _promos_from_pricing(pricing))
 
-    pricing = resolve_promos_for_services(services, manual_code=code)
+    pricing = resolve_promos_for_services(services, booking=booking, manual_code=code)
     return _apply_pricing_to_booking(booking, pricing, _promos_from_pricing(pricing))
 
 
 def apply_auto_promo_to_booking(booking, services):
     """Apply matching auto promo(s) for services (does not save)."""
-    pricing = resolve_promos_for_services(services)
+    pricing = resolve_promos_for_services(services, booking=booking)
     return _apply_pricing_to_booking(booking, pricing, _promos_from_pricing(pricing))
 
 

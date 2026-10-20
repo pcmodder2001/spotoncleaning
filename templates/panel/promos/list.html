@@ -24,7 +24,9 @@
         <article class="promo-row{% if not promo.active %} promo-row--off{% endif %}">
             <div class="promo-row-main">
                 <div class="promo-row-title">
-                    <h2 class="promo-row-code">{{ promo.code }}</h2>
+                    <h2 class="promo-row-code">
+                        <a href="{% url 'panel:promo_detail' promo.pk %}" class="promo-row-code-link">{{ promo.code }}</a>
+                    </h2>
                     {% if promo.active %}
                     <span class="promo-status promo-status--on">Active</span>
                     {% else %}
@@ -43,6 +45,14 @@
                     {% endif %}
                     {% if promo.stackable %}
                     <span class="promo-chip">Combinable</span>
+                    {% endif %}
+                    {% if promo.first_order_only %}
+                    <span class="promo-chip">First order + account</span>
+                    {% elif promo.requires_account %}
+                    <span class="promo-chip">Account required</span>
+                    {% endif %}
+                    {% if promo.requires_signup_or_mailing_list %}
+                    <span class="promo-chip">Account or mailing list</span>
                     {% endif %}
                     {% if promo.count_addons %}
                     <span class="promo-chip">Add-ons count</span>

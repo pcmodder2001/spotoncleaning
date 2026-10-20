@@ -1,6 +1,24 @@
 from django.db import models
 
 
+class MailingListSubscriber(models.Model):
+    email = models.EmailField(unique=True)
+    source = models.CharField(max_length=40, blank=True, default='booking')
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.email
+
+    def save(self, *args, **kwargs):
+        self.email = (self.email or '').strip().lower()
+        super().save(*args, **kwargs)
+
+
 class HomepageOffer(models.Model):
     """Singleton settings for the homepage top-bar promo text."""
 

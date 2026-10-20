@@ -568,6 +568,18 @@ class PromoCode(models.Model):
         default=False,
         help_text='When set, add-on services also count toward the minimum appliance total.',
     )
+    requires_account = models.BooleanField(
+        default=False,
+        help_text='Customer must be logged in with an account.',
+    )
+    first_order_only = models.BooleanField(
+        default=False,
+        help_text='Only for a customer’s first booking. Requires an account.',
+    )
+    requires_signup_or_mailing_list = models.BooleanField(
+        default=False,
+        help_text='Customer must have an account or be on the mailing list.',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -578,6 +590,8 @@ class PromoCode(models.Model):
 
     def save(self, *args, **kwargs):
         self.code = self.code.upper().strip()
+        if self.first_order_only:
+            self.requires_account = True
         super().save(*args, **kwargs)
 
     def is_valid_today(self):

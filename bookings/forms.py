@@ -56,7 +56,14 @@ class BookingForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
-    def __init__(self, *args, **kwargs):
+    join_mailing_list = forms.BooleanField(
+        required=False,
+        label='Join our mailing list for offers',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user if getattr(user, 'is_authenticated', False) else None
         super().__init__(*args, **kwargs)
         selected_date = None
         if self.data.get('date'):
@@ -147,16 +154,21 @@ class BookingForm(forms.ModelForm):
             if not ok:
                 raise forms.ValidationError(message)
 
+        customer = self._promo_customer_kwargs(cleaned_data)
         if promo_code and services:
-            from bookings.promo import PromoError, resolve_promos_for_services
+            from bookings.promo import PromoEligibilityError, PromoError, resolve_promos_for_services
             try:
-                pricing = resolve_promos_for_services(services, manual_code=promo_code)
+                pricing = resolve_promos_for_services(
+                    services, manual_code=promo_code, **customer
+                )
                 if not pricing['has_promo']:
                     raise PromoError('This promo code could not be applied to your booking.')
                 self._apply_promo_pricing(cleaned_data, pricing)
+            except PromoEligibilityError as exc:
+                self.add_error('promo_code', str(exc))
             except PromoError:
                 # Invalid typed code — keep any automatic offers instead of blocking.
-                pricing = resolve_promos_for_services(services)
+                pricing = resolve_promos_for_services(services, **customer)
                 if pricing['has_promo']:
                     self._apply_promo_pricing(cleaned_data, pricing)
                     cleaned_data['promo_code'] = ''
@@ -164,10 +176,23 @@ class BookingForm(forms.ModelForm):
                     cleaned_data['promo_code'] = ''
         elif services:
             from bookings.promo import resolve_promos_for_services
-            pricing = resolve_promos_for_services(services)
+            pricing = resolve_promos_for_services(services, **customer)
             if pricing['has_promo']:
                 self._apply_promo_pricing(cleaned_data, pricing)
         return cleaned_data
+
+    def _promo_customer_kwargs(self, cleaned_data=None):
+        data = cleaned_data or {}
+        email = ''
+        if self.user:
+            email = self.user.email
+        else:
+            email = (data.get('guest_email') or self.data.get('guest_email') or '').strip()
+        return {
+            'user': self.user,
+            'email': email,
+            'join_mailing_list': bool(data.get('join_mailing_list')),
+        }
 
     def _apply_promo_pricing(self, cleaned_data, pricing):
         from bookings.models import PromoCode

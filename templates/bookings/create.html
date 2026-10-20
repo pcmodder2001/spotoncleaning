@@ -327,7 +327,17 @@
                                 <div class="col-12">
                                     <label class="form-label" for="id_promo_code">Promo code <span class="text-muted fw-normal">(optional)</span></label>
                                     {{ form.promo_code }}
+                                    {% if form.promo_code.errors %}<div class="text-danger small">{{ form.promo_code.errors.0 }}</div>{% endif %}
                                     <div id="promoFeedback" class="small mt-1" aria-live="polite"></div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        {{ form.join_mailing_list }}
+                                        <label class="form-check-label" for="{{ form.join_mailing_list.id_for_label }}">
+                                            Join our mailing list for offers
+                                            <span class="text-muted fw-normal">(needed for some promo codes if you don’t have an account)</span>
+                                        </label>
+                                    </div>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Additional Notes <span class="text-muted fw-normal">(optional)</span></label>

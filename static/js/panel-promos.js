@@ -62,6 +62,24 @@
                             <label class="form-check-label" for="swalPromoStackable">Can be used with other offers</label>
                         </div>
                     </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="first_order_only" value="1" id="swalPromoFirstOrder">
+                            <label class="form-check-label" for="swalPromoFirstOrder">First booking only (customer must have an account)</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="requires_account" value="1" id="swalPromoAccount">
+                            <label class="form-check-label" for="swalPromoAccount">Customer must have an account</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="requires_signup_or_mailing_list" value="1" id="swalPromoMailing">
+                            <label class="form-check-label" for="swalPromoMailing">Customer must sign up or be on the mailing list</label>
+                        </div>
+                    </div>
                 </div>
             </form>
         `;
@@ -90,6 +108,18 @@
             didOpen: function () {
                 const code = document.getElementById('swalPromoCode');
                 if (code) code.focus();
+                const firstOrder = document.getElementById('swalPromoFirstOrder');
+                const account = document.getElementById('swalPromoAccount');
+                if (firstOrder && account) {
+                    firstOrder.addEventListener('change', function () {
+                        if (firstOrder.checked) {
+                            account.checked = true;
+                            account.disabled = true;
+                        } else {
+                            account.disabled = false;
+                        }
+                    });
+                }
             },
             preConfirm: function () {
                 const code = (document.getElementById('swalPromoCode').value || '').trim();
@@ -121,6 +151,9 @@
                     auto_apply: autoApply,
                     count_addons: document.getElementById('swalPromoAddons').checked,
                     stackable: document.getElementById('swalPromoStackable').checked,
+                    first_order_only: document.getElementById('swalPromoFirstOrder').checked,
+                    requires_account: document.getElementById('swalPromoAccount').checked,
+                    requires_signup_or_mailing_list: document.getElementById('swalPromoMailing').checked,
                 };
             },
         }).then(function (result) {
@@ -152,6 +185,9 @@
             if (data.auto_apply) addField('auto_apply', '1');
             if (data.count_addons) addField('count_addons', '1');
             if (data.stackable) addField('stackable', '1');
+            if (data.first_order_only) addField('first_order_only', '1');
+            if (data.requires_account) addField('requires_account', '1');
+            if (data.requires_signup_or_mailing_list) addField('requires_signup_or_mailing_list', '1');
 
             document.body.appendChild(form);
             form.submit();

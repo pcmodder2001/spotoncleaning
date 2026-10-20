@@ -138,8 +138,9 @@ def _attach_booking_property(booking, request):
 
 def create_booking_view(request):
     form_class = BookingForm if request.user.is_authenticated else GuestBookingForm
+    form_kwargs = {'user': request.user if request.user.is_authenticated else None}
     if request.method == 'POST':
-        form = form_class(request.POST)
+        form = form_class(request.POST, **form_kwargs)
         if form.is_valid():
             from bookings.promo import PromoError, record_promos_use
 
@@ -172,6 +173,14 @@ def create_booking_view(request):
                         promos = [form.cleaned_data['_promo']]
                     if promos:
                         record_promos_use(promos)
+                    if form.cleaned_data.get('join_mailing_list'):
+                        from website.mailing import subscribe_email
+
+                        subscribe_email(
+                            booking.contact_email,
+                            source='booking',
+                            user=booking.user,
+                        )
             except PromoError as exc:
                 messages.error(request, str(exc))
                 return render(
@@ -231,7 +240,7 @@ def create_booking_view(request):
             initial.setdefault('address_line_1', prefill['address_line_1'])
             initial.setdefault('address_line_2', prefill['address_line_2'])
             initial.setdefault('city', prefill['city'])
-        form = form_class(initial=initial)
+        form = form_class(initial=initial, **form_kwargs)
         queue_meta_pixel_event(
             request,
             'ViewContent',
@@ -592,7 +601,17 @@ def validate_promo_api(request):
 
     try:
         services = list(Service.objects.filter(pk__in=service_ids, active=True))
-        pricing = resolve_promos_for_services(services, manual_code=code)
+        pricing = resolve_promos_for_services(
+            services,
+            manual_code=code,
+            user=request.user if request.user.is_authenticated else None,
+            email=(
+                request.user.email
+                if request.user.is_authenticated
+                else request.GET.get('email', '')
+            ),
+            join_mailing_list=request.GET.get('join_mailing_list') in ('1', 'true', 'on'),
+        )
         if not pricing['has_promo']:
             return JsonResponse({
                 'valid': False,
@@ -622,7 +641,16 @@ def auto_promo_api(request):
     from services.models import Service
 
     services = list(Service.objects.filter(pk__in=service_ids, active=True))
-    pricing = resolve_promos_for_services(services)
+    pricing = resolve_promos_for_services(
+        services,
+        user=request.user if request.user.is_authenticated else None,
+        email=(
+            request.user.email
+            if request.user.is_authenticated
+            else request.GET.get('email', '')
+        ),
+        join_mailing_list=request.GET.get('join_mailing_list') in ('1', 'true', 'on'),
+    )
     if not pricing['has_promo']:
         return JsonResponse({'applies': False})
 

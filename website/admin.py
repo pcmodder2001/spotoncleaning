@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ContactMessage, HomepageOffer, Testimonial
+from .models import ContactMessage, HomepageOffer, MailingListSubscriber, Testimonial
 
 
 @admin.register(HomepageOffer)
@@ -16,3 +16,4 @@ class HomepageOfferAdmin(admin.ModelAdmin):
 
 admin.site.register(Testimonial)
 admin.site.register(ContactMessage)
+admin.site.register(MailingListSubscriber)

@@ -30,7 +30,7 @@ class PromoUsageTests(TestCase):
     def _booking_form_data(self, **extra):
         data = {
             'services': [str(self.service.pk)],
-            'date': '2026-09-01',
+            'date': '2026-12-15',
             'time_slot': str(self.slot.pk),
             'address_line_1': '1 Test Street',
             'city': 'Wakefield',
@@ -159,7 +159,7 @@ class AutoPromoTests(TestCase):
     def test_booking_form_applies_auto_promo_without_code(self):
         form = BookingForm(data={
             'services': [str(self.oven_a.pk), str(self.oven_b.pk)],
-            'date': '2026-09-01',
+            'date': '2026-12-15',
             'time_slot': str(self.slot.pk),
             'address_line_1': '1 Test Street',
             'city': 'Wakefield',
@@ -249,7 +249,7 @@ class StackablePromoTests(TestCase):
     def test_booking_form_stacks_promos(self):
         form = BookingForm(data={
             'services': [str(self.oven_a.pk), str(self.oven_b.pk)],
-            'date': '2026-09-01',
+            'date': '2026-12-15',
             'time_slot': str(self.slot.pk),
             'address_line_1': '1 Test Street',
             'city': 'Wakefield',
@@ -262,3 +262,155 @@ class StackablePromoTests(TestCase):
         self.assertEqual(booking.promo_code_id, self.manual.pk)
         self.assertEqual(booking.discount_amount, Decimal('19.00'))
         self.assertEqual(len(booking.applied_promos), 2)
+
+
+@override_settings(SERVICE_AREA_ENFORCED=False)
+class PromoEligibilityTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        self.slot = TimeSlot.objects.create(time='10:00:00')
+        self.service = Service.objects.create(
+            name='Single oven',
+            description='Test',
+            price=Decimal('60.00'),
+            service_type=ServiceType.OVEN,
+            duration_minutes=60,
+        )
+        self.user = User.objects.create_user(
+            email='first@example.com',
+            password='test-pass-123',
+            first_name='First',
+            last_name='Customer',
+        )
+        self.first_order = PromoCode.objects.create(
+            code='WELCOME10',
+            discount_type=PromoCode.DiscountType.FIXED,
+            discount_value=Decimal('10.00'),
+            first_order_only=True,
+        )
+        self.mailing = PromoCode.objects.create(
+            code='LIST5',
+            discount_type=PromoCode.DiscountType.FIXED,
+            discount_value=Decimal('5.00'),
+            requires_signup_or_mailing_list=True,
+        )
+
+    def test_first_order_forces_account_flag(self):
+        self.first_order.refresh_from_db()
+        self.assertTrue(self.first_order.requires_account)
+
+    def test_first_order_rejected_for_guest(self):
+        from bookings.promo import PromoEligibilityError, get_valid_promo
+
+        with self.assertRaises(PromoEligibilityError):
+            get_valid_promo('WELCOME10')
+
+    def test_first_order_ok_for_new_account(self):
+        from bookings.promo import get_valid_promo
+
+        promo = get_valid_promo('WELCOME10', user=self.user)
+        self.assertEqual(promo.pk, self.first_order.pk)
+
+    def test_first_order_rejected_after_existing_booking(self):
+        from bookings.promo import PromoEligibilityError, get_valid_promo
+
+        Booking.objects.create(
+            user=self.user,
+            date='2026-08-01',
+            time_slot=self.slot,
+            status=BookingStatus.CONFIRMED,
+            address_line_1='1 Test Street',
+            city='Wakefield',
+            postcode='WF1 1AA',
+        )
+        with self.assertRaises(PromoEligibilityError):
+            get_valid_promo('WELCOME10', user=self.user)
+
+    def test_mailing_list_rejected_for_guest_without_opt_in(self):
+        from bookings.promo import PromoEligibilityError, get_valid_promo
+
+        with self.assertRaises(PromoEligibilityError):
+            get_valid_promo('LIST5', email='guest@example.com')
+
+    def test_mailing_list_ok_when_joining_now(self):
+        from bookings.promo import get_valid_promo
+
+        promo = get_valid_promo(
+            'LIST5',
+            email='guest@example.com',
+            join_mailing_list=True,
+        )
+        self.assertEqual(promo.pk, self.mailing.pk)
+
+    def test_mailing_list_ok_for_logged_in_user(self):
+        from bookings.promo import get_valid_promo
+
+        promo = get_valid_promo('LIST5', user=self.user)
+        self.assertEqual(promo.pk, self.mailing.pk)
+
+    def test_mailing_list_ok_for_subscriber(self):
+        from bookings.promo import get_valid_promo
+        from website.mailing import subscribe_email
+
+        subscribe_email('list@example.com', source='test')
+        promo = get_valid_promo('LIST5', email='list@example.com')
+        self.assertEqual(promo.pk, self.mailing.pk)
+
+    def test_guest_form_blocks_first_order_code(self):
+        form = GuestBookingForm(data={
+            'services': [str(self.service.pk)],
+            'date': '2026-12-15',
+            'time_slot': str(self.slot.pk),
+            'address_line_1': '1 Test Street',
+            'city': 'Wakefield',
+            'postcode': 'WF1 1AA',
+            'promo_code': 'WELCOME10',
+            'notes': '',
+            'guest_first_name': 'Guest',
+            'guest_last_name': 'User',
+            'guest_email': 'guest@example.com',
+            'accept_terms': True,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn('promo_code', form.errors)
+
+    def test_guest_form_allows_mailing_code_with_checkbox(self):
+        form = GuestBookingForm(data={
+            'services': [str(self.service.pk)],
+            'date': '2026-12-15',
+            'time_slot': str(self.slot.pk),
+            'address_line_1': '1 Test Street',
+            'city': 'Wakefield',
+            'postcode': 'WF1 1AA',
+            'promo_code': 'LIST5',
+            'join_mailing_list': True,
+            'notes': '',
+            'guest_first_name': 'Guest',
+            'guest_last_name': 'User',
+            'guest_email': 'guest@example.com',
+            'accept_terms': True,
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        booking = form.save()
+        self.assertEqual(booking.promo_code_id, self.mailing.pk)
+
+    def test_bookings_using_promo_lists_customer_and_order(self):
+        from bookings.promo import bookings_using_promo
+
+        booking = Booking.objects.create(
+            user=self.user,
+            date='2026-09-01',
+            time_slot=self.slot,
+            status=BookingStatus.CONFIRMED,
+            address_line_1='1 Test Street',
+            city='Wakefield',
+            postcode='WF1 1AA',
+            promo_code=self.first_order,
+            discount_amount=Decimal('10.00'),
+        )
+        usage = list(bookings_using_promo(self.first_order))
+        self.assertEqual(usage, [booking])
+        self.assertEqual(usage[0].contact_full_name, 'First Customer')
+

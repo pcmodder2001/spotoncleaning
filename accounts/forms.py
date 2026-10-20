@@ -39,6 +39,12 @@ class RegistrationForm(UserCreationForm):
     phone_number = forms.CharField(max_length=20, widget=forms.TextInput(attrs={'class': 'form-control'}))
     password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
     password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    marketing_opt_in = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='Email me offers and news',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
     accept_terms = accept_terms_field()
 
     class Meta:
@@ -69,8 +75,13 @@ class RegistrationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.account_type = self.cleaned_data.get('account_type', AccountType.PERSONAL)
+        user.marketing_opt_in = bool(self.cleaned_data.get('marketing_opt_in'))
         if commit:
             user.save()
+            if user.marketing_opt_in:
+                from website.mailing import subscribe_email
+
+                subscribe_email(user.email, source='register', user=user)
             if user.account_type == AccountType.BUSINESS:
                 BusinessProfile.objects.create(
                     user=user,

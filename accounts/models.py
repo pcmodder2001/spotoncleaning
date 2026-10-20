@@ -49,6 +49,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    marketing_opt_in = models.BooleanField(
+        default=False,
+        help_text='Customer agreed to receive offers and news by email.',
+    )
     date_joined = models.DateTimeField(default=timezone.now)
 
     objects = CustomUserManager()

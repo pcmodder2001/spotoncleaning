@@ -396,6 +396,14 @@
             const city = getCity();
             if (postcode) params.set('postcode', postcode);
             if (city) params.set('city', city);
+            const guestEmail = document.getElementById('id_guest_email');
+            if (guestEmail && guestEmail.value.trim()) {
+                params.set('email', guestEmail.value.trim());
+            }
+            const joinList = document.getElementById('id_join_mailing_list');
+            if (joinList && joinList.checked) {
+                params.set('join_mailing_list', '1');
+            }
             return params;
         }
 
@@ -633,6 +641,14 @@
                     validatePromoField();
                 }
             });
+            const joinList = document.getElementById('id_join_mailing_list');
+            if (joinList) {
+                joinList.addEventListener('change', validatePromoField);
+            }
+            const guestEmail = document.getElementById('id_guest_email');
+            if (guestEmail) {
+                guestEmail.addEventListener('blur', validatePromoField);
+            }
         }
 
         async function validatePromoField() {

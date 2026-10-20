@@ -56,7 +56,7 @@
             <a href="{% url 'panel:coverage_map' %}" class="{% if 'coverage' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-map me-2"></i>Coverage map
             </a>
-            <a href="{% url 'panel:promo_list' %}" class="{% if request.resolver_match.url_name == 'promo_list' %}active{% endif %}">
+            <a href="{% url 'panel:promo_list' %}" class="{% if request.resolver_match.url_name == 'promo_list' or request.resolver_match.url_name == 'promo_detail' %}active{% endif %}">
                 <i class="bi bi-tag me-2"></i>Promo codes
             </a>
             <a href="{% url 'panel:marketing' %}" class="{% if request.resolver_match.url_name == 'marketing' %}active{% endif %}">

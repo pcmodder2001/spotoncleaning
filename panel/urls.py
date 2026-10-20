@@ -44,6 +44,7 @@ urlpatterns = [
     path('api/coverage/boundary/<slug:slug>/delete/', coverage_views.coverage_boundary_delete_api, name='coverage_boundary_delete'),
     path('api/coverage/boundary/reset/', coverage_views.coverage_boundary_reset_api, name='coverage_boundary_reset'),
     path('promos/', promo_views.promo_list_view, name='promo_list'),
+    path('promos/<int:pk>/', promo_views.promo_detail_view, name='promo_detail'),
     path('follow-ups/', followup_views.followup_list_view, name='followup_list'),
     path('audit/', audit_views.audit_log_view, name='audit_log'),
     path('enquiries/', views.enquiry_list_view, name='enquiry_list'),

@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
 from bookings.models import PromoCode
+from bookings.promo import bookings_using_promo
 from audit.actions import PROMO_CREATED, PROMO_DELETED, PROMO_UPDATED
 from audit.services import log_action
 from panel.decorators import sysadmin_required
@@ -37,6 +38,11 @@ def promo_list_view(request):
                         auto_apply=request.POST.get('auto_apply') == '1',
                         stackable=request.POST.get('stackable') == '1',
                         count_addons=request.POST.get('count_addons') == '1',
+                        requires_account=request.POST.get('requires_account') == '1',
+                        first_order_only=request.POST.get('first_order_only') == '1',
+                        requires_signup_or_mailing_list=(
+                            request.POST.get('requires_signup_or_mailing_list') == '1'
+                        ),
                         min_appliance_count=(
                             int(request.POST.get('min_appliance_count'))
                             if request.POST.get('min_appliance_count')
@@ -111,4 +117,15 @@ def promo_list_view(request):
     return render(request, 'panel/promos/list.html', {
         'promos': promos,
         'can_delete_promos': request.user.is_sysadmin,
+    })
+
+
+@sysadmin_required
+def promo_detail_view(request, pk):
+    promo = get_object_or_404(PromoCode, pk=pk)
+    bookings = bookings_using_promo(promo)
+    return render(request, 'panel/promos/detail.html', {
+        'promo': promo,
+        'bookings': bookings,
+        'usage_count': bookings.count(),
     })

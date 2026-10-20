@@ -3345,6 +3345,16 @@ body.page-panel .site-footer {
     color: var(--text);
 }
 
+.promo-row-code-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.promo-row-code-link:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
 .promo-row-desc {
     margin: 0 0 0.65rem;
     color: var(--text-secondary);

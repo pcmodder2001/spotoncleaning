@@ -660,7 +660,7 @@ def service_list_view(request):
                 service = Service.objects.create(
                     name=name,
                     description=description,
-                    price=0,
+                    price=request.POST.get('price'),
                     sort_order=sort_order,
                     service_type=service_type,
                     exclusive_group=exclusive_group,
@@ -690,6 +690,22 @@ def service_list_view(request):
                 target_label=service.name,
             )
             messages.success(request, f'Service {service.name} updated.')
+        elif action == 'update_price':
+            service = get_object_or_404(Service, pk=request.POST.get('service_id'))
+            try:
+                service.price = request.POST.get('price')
+                service.save(update_fields=['price'])
+                log_action(
+                    SERVICE_UPDATED,
+                    f'Updated price for {service.name} to £{service.price}.',
+                    request=request,
+                    target_type='service',
+                    target_id=service.pk,
+                    target_label=service.name,
+                )
+                messages.success(request, f'Price updated for {service.name}.')
+            except (ValueError, TypeError):
+                messages.error(request, 'Please enter a valid price.')
         elif action == 'bulk_delete_inactive':
             if not request.user.is_sysadmin:
                 messages.error(request, 'Only system admins can bulk-delete inactive services.')
@@ -774,6 +790,7 @@ def service_edit_view(request, pk):
         service.service_type = service_type
         service.exclusive_group = 'hob' if service.name.lower().startswith(('4 hob', '5 hob', '6-8 hob', '6–8 hob')) else ''
         try:
+            service.price = request.POST.get('price')
             service.duration_minutes = int(request.POST.get('duration_minutes', service.duration_minutes))
             service.save()
             log_action(
@@ -787,7 +804,7 @@ def service_edit_view(request, pk):
             messages.success(request, f'Service {service.name} updated.')
             return redirect('panel:service_list')
         except (ValueError, TypeError):
-            messages.error(request, 'Could not update service. Check the values and try again.')
+            messages.error(request, 'Please enter a valid price.')
     return render(request, 'panel/services/edit.html', {
         'edit_service': service,
         'can_delete_service': request.user.is_sysadmin,

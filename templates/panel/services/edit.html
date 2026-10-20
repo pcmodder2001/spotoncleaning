@@ -10,9 +10,13 @@
                 <form method="post">
                     {% csrf_token %}
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-md-8">
                             <label class="form-label">Name</label>
                             <input type="text" name="name" value="{{ edit_service.name }}" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Price (&pound;)</label>
+                            <input type="number" name="price" value="{{ edit_service.price }}" step="0.01" min="0" class="form-control" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Description</label>

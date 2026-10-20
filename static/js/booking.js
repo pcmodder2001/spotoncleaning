@@ -476,10 +476,20 @@
             return serviceAddonsSection && serviceAddonsSection.querySelectorAll('.service-pick').length > 0;
         }
 
+        function formatMoney(value) {
+            const amount = Number(value);
+            if (Number.isNaN(amount)) return '£0.00';
+            return '£' + amount.toFixed(2);
+        }
+
+        function formatServiceLabel(name, price) {
+            return name + ' (' + formatMoney(price) + ')';
+        }
+
         function getMainServiceNames() {
             const names = [];
             document.querySelectorAll('.service-picker-oven .service-pick.selected').forEach(function (el) {
-                names.push(el.dataset.serviceName);
+                names.push(formatServiceLabel(el.dataset.serviceName, el.dataset.servicePrice));
             });
             return names;
         }
@@ -1238,7 +1248,9 @@
             const reviewPromoRow = document.getElementById('reviewPromoRow');
             const reviewPromo = document.getElementById('reviewPromo');
 
-            const names = Object.values(selectedServices).map(function (s) { return s.name; });
+            const names = Object.values(selectedServices).map(function (s) {
+                return formatServiceLabel(s.name, s.price);
+            });
             if (reviewServices) reviewServices.textContent = names.length ? names.join(', ') : '—';
 
             let dateTime = '—';
@@ -1279,7 +1291,9 @@
             const summaryPromoRow = document.getElementById('summaryPromoRow');
             const summaryPromo = document.getElementById('summaryPromo');
 
-            const names = Object.values(selectedServices).map(function (s) { return s.name; });
+            const names = Object.values(selectedServices).map(function (s) {
+                return formatServiceLabel(s.name, s.price);
+            });
             const subtotal = getSubtotal();
             const total = getDisplayTotal();
             const duration = getEstimatedDuration();

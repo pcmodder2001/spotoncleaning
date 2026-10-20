@@ -6881,6 +6881,33 @@ body.site-home .hero-section {
     font-size: 0.9rem;
 }
 
+.followup-panel-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.followup-bulk-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.followup-bulk-select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.followup-row-select {
+    padding-top: 0.2rem;
+}
+
 .followup-panel-filters {
     display: flex;
     flex-wrap: wrap;

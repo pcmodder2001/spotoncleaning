@@ -10,14 +10,13 @@ from django.views.decorators.http import require_GET, require_POST
 
 from bookings.checklist import checklist_from_post, merge_checklist
 from bookings.models import Availability, BlockedDate, Booking, BookingPhoto, BookingStatus, TimeSlot
-from bookings.notifications import send_booking_status_email, send_followup_registered_email_for_booking
+from bookings.notifications import send_booking_status_email
 from bookings.scheduling import get_day_schedule_panel_data, get_week_schedule_summary
 from bookings.utils import cancel_booking
 from audit.actions import (
     BOOKING_BULK_CANCEL,
     BOOKING_BULK_CONFIRM,
     BOOKING_BULK_EXPORT,
-    BOOKING_BULK_FOLLOWUP_EMAIL,
     BOOKING_PHOTO_DELETED,
     AVAILABILITY_UPDATED,
 )
@@ -154,51 +153,6 @@ def booking_bulk_action_view(request):
                 booking.discount_amount,
             ])
         return response
-    elif action == 'send_followup_emails':
-        if not request.user.is_sysadmin:
-            messages.error(request, 'Only system administrators can send follow-up emails.')
-            return redirect(request.POST.get('next') or 'panel:booking_list')
-
-        sent = 0
-        skipped = 0
-        failed = 0
-        sent_ids = []
-        for booking in bookings.select_related('user'):
-            email = (booking.contact_email or '').strip()
-            if not email:
-                skipped += 1
-                continue
-            if send_followup_registered_email_for_booking(booking):
-                sent += 1
-                sent_ids.append(booking.pk)
-            else:
-                failed += 1
-        log_action(
-            BOOKING_BULK_FOLLOWUP_EMAIL,
-            f'Sent follow-up confirmation emails for {sent} booking(s).',
-            request=request,
-            target_type='booking',
-            target_label=f'{sent} bookings',
-            metadata={
-                'booking_ids': sent_ids,
-                'sent': sent,
-                'skipped': skipped,
-                'failed': failed,
-            },
-        )
-        parts = []
-        if sent:
-            parts.append(f'Sent {sent} follow-up email(s).')
-        if skipped:
-            parts.append(f'{skipped} had no email address.')
-        if failed:
-            parts.append(f'{failed} failed to send.')
-        if not parts:
-            messages.info(request, 'No follow-up emails were sent.')
-        elif failed:
-            messages.warning(request, ' '.join(parts))
-        else:
-            messages.success(request, ' '.join(parts))
     else:
         messages.error(request, 'Unknown bulk action.')
 

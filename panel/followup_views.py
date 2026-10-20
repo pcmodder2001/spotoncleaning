@@ -4,12 +4,22 @@ from django.contrib import messages
 from django.db.models import Case, IntegerField, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
-from audit.actions import FOLLOWUP_CREATED, FOLLOWUP_DELETED, FOLLOWUP_UPDATED
+from audit.actions import FOLLOWUP_BULK_EMAIL, FOLLOWUP_CREATED, FOLLOWUP_DELETED, FOLLOWUP_UPDATED
 from audit.services import log_action
 from bookings.models import CustomerFollowUp
+from bookings.notifications import send_followup_registered_email
 from panel.decorators import admin_required
+
+
+def _followup_list_redirect(request):
+    show = request.POST.get('show') or request.GET.get('show') or 'open'
+    url = reverse('panel:followup_list')
+    if show in ('done', 'all'):
+        return redirect(f'{url}?show={show}')
+    return redirect(url)
 
 
 @admin_required
@@ -62,8 +72,6 @@ def followup_list_view(request):
                     f'(due {followup.due_date.strftime("%d %b %Y")}).'
                 )
                 if followup.email:
-                    from bookings.notifications import send_followup_registered_email
-
                     if send_followup_registered_email(followup):
                         success_msg += ' Confirmation email sent.'
                     else:
@@ -133,7 +141,57 @@ def followup_list_view(request):
                 target_label=name,
             )
             messages.success(request, f'Follow-up for {name} deleted.')
-        return redirect('panel:followup_list')
+        elif action == 'send_emails':
+            if not request.user.is_sysadmin:
+                messages.error(request, 'Only system administrators can send follow-up emails.')
+                return _followup_list_redirect(request)
+
+            followup_ids = request.POST.getlist('followup_ids')
+            if not followup_ids:
+                messages.error(request, 'Select at least one follow-up.')
+                return _followup_list_redirect(request)
+
+            selected = CustomerFollowUp.objects.filter(pk__in=followup_ids)
+            sent = 0
+            skipped = 0
+            failed = 0
+            sent_ids = []
+            for followup in selected:
+                if not (followup.email or '').strip():
+                    skipped += 1
+                    continue
+                if send_followup_registered_email(followup):
+                    sent += 1
+                    sent_ids.append(followup.pk)
+                else:
+                    failed += 1
+            log_action(
+                FOLLOWUP_BULK_EMAIL,
+                f'Sent follow-up confirmation emails for {sent} follow-up(s).',
+                request=request,
+                target_type='followup',
+                target_label=f'{sent} follow-ups',
+                metadata={
+                    'followup_ids': sent_ids,
+                    'sent': sent,
+                    'skipped': skipped,
+                    'failed': failed,
+                },
+            )
+            parts = []
+            if sent:
+                parts.append(f'Sent {sent} follow-up email(s).')
+            if skipped:
+                parts.append(f'{skipped} had no email address.')
+            if failed:
+                parts.append(f'{failed} failed to send.')
+            if not parts:
+                messages.info(request, 'No follow-up emails were sent.')
+            elif failed:
+                messages.warning(request, ' '.join(parts))
+            else:
+                messages.success(request, ' '.join(parts))
+        return _followup_list_redirect(request)
 
     show = request.GET.get('show', 'open')
     today = timezone.localdate()

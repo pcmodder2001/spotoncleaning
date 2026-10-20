@@ -14,9 +14,25 @@
                 {% if due_soon_count %} · {{ due_soon_count }} due in 14 days{% endif %}
             </p>
         </div>
-        <button type="button" class="btn btn-primary" id="followupCreateBtn">
-            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add follow-up
-        </button>
+        <div class="followup-panel-toolbar-actions">
+            {% if user.is_sysadmin and followups %}
+            <form method="post" id="followupBulkForm" class="followup-bulk-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="send_emails">
+                <input type="hidden" name="show" value="{{ show }}">
+                <label class="followup-bulk-select-all">
+                    <input type="checkbox" class="form-check-input" id="selectAllFollowups" aria-label="Select all follow-ups">
+                    <span>Select all</span>
+                </label>
+                <button type="submit" class="btn btn-outline-success" id="followupSendEmailsBtn">
+                    Send follow-up emails
+                </button>
+            </form>
+            {% endif %}
+            <button type="button" class="btn btn-primary" id="followupCreateBtn">
+                <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add follow-up
+            </button>
+        </div>
     </div>
 
     <div class="followup-panel-filters">
@@ -28,6 +44,13 @@
     <div class="followup-panel-list">
         {% for item in followups %}
         <article class="followup-row{% if item.is_overdue %} followup-row--overdue{% elif item.is_due_soon %} followup-row--soon{% endif %}{% if item.status != 'open' %} followup-row--done{% endif %}">
+            {% if user.is_sysadmin %}
+            <div class="followup-row-select">
+                <input type="checkbox" name="followup_ids" value="{{ item.pk }}"
+                       class="form-check-input followup-select" form="followupBulkForm"
+                       aria-label="Select {{ item.name }}">
+            </div>
+            {% endif %}
             <div class="followup-row-main">
                 <div class="followup-row-title">
                     <h2 class="followup-row-name">{{ item.name }}</h2>

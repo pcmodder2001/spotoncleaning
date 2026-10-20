@@ -21,7 +21,6 @@ BOOKING_REMINDER_SENT = 'booking.reminder_sent'
 BOOKING_BULK_CONFIRM = 'booking.bulk_confirm'
 BOOKING_BULK_CANCEL = 'booking.bulk_cancel'
 BOOKING_BULK_EXPORT = 'booking.bulk_export'
-BOOKING_BULK_FOLLOWUP_EMAIL = 'booking.bulk_followup_email'
 BOOKING_PHOTO_DELETED = 'booking.photo_deleted'
 BOOKING_PHOTO_REPLACED = 'booking.photo_replaced'
 BOOKING_DELETED = 'booking.deleted'
@@ -41,6 +40,7 @@ PROMO_DELETED = 'admin.promo_deleted'
 FOLLOWUP_CREATED = 'admin.followup_created'
 FOLLOWUP_UPDATED = 'admin.followup_updated'
 FOLLOWUP_DELETED = 'admin.followup_deleted'
+FOLLOWUP_BULK_EMAIL = 'admin.followup_bulk_email'
 ENQUIRY_READ = 'admin.enquiry_read'
 ENQUIRY_DELETED = 'admin.enquiry_deleted'
 ENQUIRY_CREATED = 'admin.enquiry_created'
@@ -67,7 +67,6 @@ ACTION_LABELS = {
     BOOKING_BULK_CONFIRM: 'Bulk confirmed bookings',
     BOOKING_BULK_CANCEL: 'Bulk cancelled bookings',
     BOOKING_BULK_EXPORT: 'Exported bookings',
-    BOOKING_BULK_FOLLOWUP_EMAIL: 'Sent follow-up confirmation emails',
     BOOKING_PHOTO_DELETED: 'Deleted job photo',
     BOOKING_PHOTO_REPLACED: 'Replaced job photo',
     BOOKING_DELETED: 'Deleted booking',
@@ -83,6 +82,7 @@ ACTION_LABELS = {
     FOLLOWUP_CREATED: 'Created follow-up',
     FOLLOWUP_UPDATED: 'Updated follow-up',
     FOLLOWUP_DELETED: 'Deleted follow-up',
+    FOLLOWUP_BULK_EMAIL: 'Sent follow-up confirmation emails',
     ENQUIRY_READ: 'Marked enquiry read',
     ENQUIRY_DELETED: 'Deleted enquiry',
     ENQUIRY_CREATED: 'Submitted contact enquiry',
@@ -117,7 +117,6 @@ ACTION_CATEGORIES = {
     BOOKING_BULK_CONFIRM: 'booking',
     BOOKING_BULK_CANCEL: 'booking',
     BOOKING_BULK_EXPORT: 'booking',
-    BOOKING_BULK_FOLLOWUP_EMAIL: 'booking',
     BOOKING_PHOTO_DELETED: 'booking',
     BOOKING_PHOTO_REPLACED: 'booking',
     BOOKING_DELETED: 'booking',
@@ -133,6 +132,7 @@ ACTION_CATEGORIES = {
     FOLLOWUP_CREATED: 'admin',
     FOLLOWUP_UPDATED: 'admin',
     FOLLOWUP_DELETED: 'admin',
+    FOLLOWUP_BULK_EMAIL: 'admin',
     ENQUIRY_READ: 'admin',
     ENQUIRY_DELETED: 'admin',
     ENQUIRY_CREATED: 'admin',

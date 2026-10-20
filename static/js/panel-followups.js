@@ -245,5 +245,44 @@
                 markDone(btn);
             });
         });
+
+        const selectAll = document.getElementById('selectAllFollowups');
+        const boxes = document.querySelectorAll('.followup-select');
+        if (selectAll && boxes.length) {
+            selectAll.addEventListener('change', function () {
+                boxes.forEach(function (box) {
+                    box.checked = selectAll.checked;
+                });
+            });
+            boxes.forEach(function (box) {
+                box.addEventListener('change', function () {
+                    selectAll.checked = Array.from(boxes).every(function (item) {
+                        return item.checked;
+                    });
+                });
+            });
+        }
+
+        const bulkForm = document.getElementById('followupBulkForm');
+        if (bulkForm) {
+            bulkForm.addEventListener('submit', function (event) {
+                const selected = Array.from(boxes).filter(function (box) {
+                    return box.checked;
+                });
+                if (!selected.length) {
+                    event.preventDefault();
+                    if (typeof showAppToast === 'function') {
+                        showAppToast('Select at least one follow-up.', 'error');
+                    } else {
+                        window.alert('Select at least one follow-up.');
+                    }
+                    return;
+                }
+                const ok = window.confirm(
+                    'Send a separate follow-up confirmation email to each selected customer?'
+                );
+                if (!ok) event.preventDefault();
+            });
+        }
     });
 })();

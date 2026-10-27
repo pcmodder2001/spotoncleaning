@@ -1,67 +1,67 @@
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 20px 0; border: 1px solid #d4d4d4; border-radius: 8px; overflow: hidden;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 20px 0; border: 1px solid #ddd5c8; border-radius: 8px; overflow: hidden;">
     <tr>
-        <td colspan="2" style="background-color: #111111; padding: 12px 16px; font-size: 13px; font-weight: 600; color: #ffffff; text-transform: uppercase; letter-spacing: 0.06em;">
+        <td colspan="2" style="background-color: #354f3f; padding: 12px 16px; font-size: 13px; font-weight: 600; color: #ffffff; text-transform: uppercase; letter-spacing: 0.06em;">
             {{ table_title|default:"Booking Details" }}
         </td>
     </tr>
-    <tr style="background-color: #ffffff;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; width: 35%; border-top: 1px solid #e8e8e8;">Services</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; font-weight: 600; border-top: 1px solid #e8e8e8;">{{ booking.service_summary }}</td>
+    <tr style="background-color: #fffcf7;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; width: 35%; border-top: 1px solid #ebe4d8;">Services</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e2421; font-weight: 600; border-top: 1px solid #ebe4d8;">{{ booking.service_summary }}</td>
     </tr>
-    <tr style="background-color: #f5f5f5;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8;">Date</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; border-top: 1px solid #e8e8e8;">{{ booking.date|date:"l, d F Y" }}</td>
+    <tr style="background-color: #f5f1e8;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8;">Date</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e2421; border-top: 1px solid #ebe4d8;">{{ booking.date|date:"l, d F Y" }}</td>
     </tr>
-    <tr style="background-color: #ffffff;">
+    <tr style="background-color: #fffcf7;">
         {% if time_window %}
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8;">Time window</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; border-top: 1px solid #e8e8e8;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8;">Time window</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e2421; border-top: 1px solid #ebe4d8;">
             {{ time_window }}
             {% if duration_minutes %}
-            <span style="display: block; font-size: 13px; color: #6b6b6b; margin-top: 4px;">Approx. {{ duration_minutes }} minutes on site</span>
+            <span style="display: block; font-size: 13px; color: #6b7368; margin-top: 4px;">Approx. {{ duration_minutes }} minutes on site</span>
             {% endif %}
         </td>
         {% else %}
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8;">Time</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; border-top: 1px solid #e8e8e8;">{{ booking.time_slot.time|time:"H:i" }}</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8;">Time</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e2421; border-top: 1px solid #ebe4d8;">{{ booking.time_slot.time|time:"H:i" }}</td>
         {% endif %}
     </tr>
-    <tr style="background-color: #f5f5f5;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8;">Address</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; border-top: 1px solid #e8e8e8;">{{ booking.full_address }}</td>
+    <tr style="background-color: #f5f1e8;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8;">Address</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e2421; border-top: 1px solid #ebe4d8;">{{ booking.full_address }}</td>
     </tr>
     {% if access_notes %}
-    <tr style="background-color: #ffffff;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8; vertical-align: top;">Access notes</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; border-top: 1px solid #e8e8e8; white-space: pre-line;">{{ access_notes }}</td>
+    <tr style="background-color: #fffcf7;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8; vertical-align: top;">Access notes</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e2421; border-top: 1px solid #ebe4d8; white-space: pre-line;">{{ access_notes }}</td>
     </tr>
     {% endif %}
     {% if show_pricing %}
-    <tr style="background-color: #f5f5f5;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8;">Subtotal</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; border-top: 1px solid #e8e8e8;">&pound;{{ booking.total_price }}</td>
+    <tr style="background-color: #f5f1e8;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8;">Subtotal</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #1e2421; border-top: 1px solid #ebe4d8;">&pound;{{ booking.total_price }}</td>
     </tr>
     {% if booking.discount_amount %}
-    <tr style="background-color: #ffffff;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8;">Discount</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; font-weight: 600; border-top: 1px solid #e8e8e8;">&minus;&pound;{{ booking.discount_amount }}</td>
+    <tr style="background-color: #fffcf7;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8;">Discount</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #3d6b4f; font-weight: 600; border-top: 1px solid #ebe4d8;">&minus;&pound;{{ booking.discount_amount }}</td>
     </tr>
     {% endif %}
-    <tr style="background-color: #f5f5f5;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8;">Total</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; font-weight: 700; border-top: 1px solid #e8e8e8;">&pound;{{ booking.discounted_total }}</td>
+    <tr style="background-color: #f5f1e8;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8;">Total</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #354f3f; font-weight: 700; border-top: 1px solid #ebe4d8;">&pound;{{ booking.discounted_total }}</td>
     </tr>
     {% elif not hide_total %}
-    <tr style="background-color: #f5f5f5;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8;">Total</td>
-        <td style="padding: 12px 16px; font-size: 14px; color: #111111; font-weight: 700; border-top: 1px solid #e8e8e8;">&pound;{{ booking.total_price }}</td>
+    <tr style="background-color: #f5f1e8;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8;">Total</td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #354f3f; font-weight: 700; border-top: 1px solid #ebe4d8;">&pound;{{ booking.total_price }}</td>
     </tr>
     {% endif %}
     {% if show_status %}
-    <tr style="background-color: #ffffff;">
-        <td style="padding: 12px 16px; font-size: 14px; color: #6b6b6b; border-top: 1px solid #e8e8e8;">Status</td>
-        <td style="padding: 12px 16px; font-size: 14px; border-top: 1px solid #e8e8e8;">
-            <span style="display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background-color: {{ status_bg|default:'#f0f0f0' }}; color: {{ status_color|default:'#333333' }};">
+    <tr style="background-color: #fffcf7;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #6b7368; border-top: 1px solid #ebe4d8;">Status</td>
+        <td style="padding: 12px 16px; font-size: 14px; border-top: 1px solid #ebe4d8;">
+            <span style="display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background-color: {{ status_bg|default:'#f0e6d4' }}; color: {{ status_color|default:'#a68548' }};">
                 {{ booking.get_status_display }}
             </span>
         </td>

@@ -3,23 +3,23 @@
 {% block email_title %}Booking Confirmation — {{ site_name }}{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #111111;">Booking Received</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #6b6b6b;">We've got your appointment request.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">Booking Received</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">We've got your appointment request.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">Hi {{ booking.contact_first_name }},</p>
-<p style="margin: 0 0 8px; font-size: 15px; color: #111111;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ booking.contact_first_name }},</p>
+<p style="margin: 0 0 8px; font-size: 15px; color: #1e2421;">
     Thank you for booking with {{ site_name }}. Here is a summary of your appointment:
 </p>
 
-{% include 'emails/includes/booking_details.html' with show_status=True status_bg='#f0f0f0' status_color='#333333' %}
+{% include 'emails/includes/booking_details.html' with show_status=True status_bg='#f0e6d4' status_color='#a68548' %}
 
-<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
     We'll review your booking and send a confirmation email once your appointment is confirmed.
 </p>
 {% if account_setup_url %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
     Want to view or manage this booking online? Create your account — we already have your details, so you only need to choose a password.
 </p>
 {% include 'emails/includes/email_button.html' with url=account_setup_url label='Create your account' margin='8px 0 0' %}

@@ -3,26 +3,26 @@
 {% block email_title %}Next clean registered — {{ site_name }}{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #111111;">Thank You</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #6b6b6b;">Your next clean is on our list.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">Thank You</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">Your next clean is on our list.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">Hi {{ first_name }},</p>
-<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ first_name }},</p>
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
     Thank you for registering your next clean with {{ site_name }}.
 </p>
-<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
     We've noted that you're due for another clean in about {{ interval_label }}.
     We'll remind you around one month before so you can book a time that suits you.
 </p>
 {% if account_url %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
     Want to manage bookings online? Create an account — we already have your name, email and phone, so you only need to choose a password.
 </p>
 {% include 'emails/includes/email_button.html' with url=account_url label='Create your account' margin='8px 0 0' %}
 {% elif login_url %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
     You already have an account with us. Log in anytime to book your next clean.
 </p>
 {% include 'emails/includes/email_button.html' with url=login_url label='Log in' margin='8px 0 0' %}

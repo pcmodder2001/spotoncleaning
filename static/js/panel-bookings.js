@@ -524,7 +524,7 @@
       width: isMobileViewport() ? '100%' : 560,
       showCancelButton: true,
       confirmButtonText: 'Start job',
-      confirmButtonColor: '#0e7490',
+      confirmButtonColor: '#111111',
       focusConfirm: false,
       customClass: swalMobileClasses(),
       didOpen: function () {
@@ -589,11 +589,29 @@
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="clearSignaturePreviewBtn" hidden>Clear signature</button>
           </div>
+          <div class="mt-3 p-3 border rounded-3 bg-light">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="createFollowupCheck" name="create_followup" value="1" checked>
+              <label class="form-check-label fw-semibold" for="createFollowupCheck">
+                Create a follow-up reminder
+              </label>
+            </div>
+            <p class="small text-muted mb-2 mt-1">Adds this customer to the follow-ups list for a return clean.</p>
+            <div id="followupIntervalWrap">
+              <label class="form-label small mb-1" for="followupInterval">Come back in</label>
+              <select class="form-select" id="followupInterval" name="followup_interval_months">
+                <option value="3">3 months</option>
+                <option value="6" selected>6 months</option>
+                <option value="9">9 months</option>
+                <option value="12">12 months</option>
+              </select>
+            </div>
+          </div>
         </form>`,
       width: isMobileViewport() ? '100%' : 560,
       showCancelButton: true,
       confirmButtonText: 'Complete job',
-      confirmButtonColor: '#059669',
+      confirmButtonColor: '#111111',
       focusConfirm: false,
       customClass: swalMobileClasses(),
       didOpen: function () {
@@ -603,6 +621,18 @@
         const clearBtn = document.getElementById('clearSignaturePreviewBtn');
         const placeholder = document.getElementById('signaturePlaceholder');
         const previewImg = document.getElementById('signaturePreviewImg');
+        const followupCheck = document.getElementById('createFollowupCheck');
+        const followupWrap = document.getElementById('followupIntervalWrap');
+
+        function refreshFollowupUi() {
+          if (!followupWrap || !followupCheck) return;
+          followupWrap.hidden = !followupCheck.checked;
+        }
+
+        if (followupCheck) {
+          followupCheck.addEventListener('change', refreshFollowupUi);
+          refreshFollowupUi();
+        }
 
         function refreshSignatureUi() {
           const hasSig = Boolean(signatureDataUrl);
@@ -640,6 +670,12 @@
         const formData = new FormData();
         formData.append('signed_by_name', signedByName);
         formData.append('signature', signatureDataUrl);
+        const createFollowup = form.querySelector('#createFollowupCheck');
+        if (createFollowup && createFollowup.checked) {
+          formData.append('create_followup', '1');
+          const interval = form.querySelector('#followupInterval');
+          formData.append('followup_interval_months', interval ? interval.value : '6');
+        }
         let missing = false;
         booking.services.forEach(function (service) {
           const input = form.querySelector(`[name="after_${service.id}"]`);
@@ -662,7 +698,13 @@
         .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
         .then(function ({ ok, data }) {
           if (!ok) throw new Error(data.error || 'Could not complete job');
-          window.showAppToast('Job completed', 'success');
+          let toast = 'Job completed';
+          if (data.followup_created) {
+            toast = 'Job completed — follow-up created';
+          } else if (data.followup_error) {
+            toast = 'Job completed — ' + data.followup_error;
+          }
+          window.showAppToast(toast, data.followup_error && !data.followup_created ? 'warning' : 'success');
           openBookingView(booking.id);
         })
         .catch(function (error) {
@@ -730,7 +772,7 @@
           width: isMobileViewport() ? '100%' : 620,
           showCancelButton: true,
           confirmButtonText: 'Save services',
-          confirmButtonColor: '#0e7490',
+          confirmButtonColor: '#111111',
           focusConfirm: false,
           customClass: swalMobileClasses({
             popup: 'panel-booking-popup panel-service-popup',

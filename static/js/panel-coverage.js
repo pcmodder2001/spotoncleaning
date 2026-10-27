@@ -225,7 +225,7 @@
 
             const props = feature.properties || {};
             const slug = props.slug;
-            const color = props.color || '#dc2626';
+            const color = props.color || '#111111';
             let ring = (feature.geometry.coordinates[0] || []).map(function (coord) {
                 return [coord[1], coord[0]];
             });
@@ -300,7 +300,7 @@
             listEl.innerHTML = items.map(function (item) {
                 return (
                     '<div class="coverage-boundary-list-item" data-slug="' + escapeHtml(item.slug) + '">' +
-                    '<span class="coverage-boundary-swatch" style="background:' + escapeHtml(item.color || '#dc2626') + ';"></span>' +
+                    '<span class="coverage-boundary-swatch" style="background:' + escapeHtml(item.color || '#111111') + ';"></span>' +
                     '<div class="coverage-boundary-copy">' +
                     '<span class="coverage-boundary-name">' + escapeHtml(item.name || item.slug) + '</span>' +
                     '<span class="coverage-boundary-meta text-muted small">' + escapeHtml(formatBoundaryMeta(item)) + '</span>' +

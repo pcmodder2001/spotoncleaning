@@ -98,8 +98,8 @@
             showCancelButton: true,
             confirmButtonText: 'Create code',
             cancelButtonText: 'Cancel',
-            confirmButtonColor: '#354f3f',
-            cancelButtonColor: '#6b7368',
+            confirmButtonColor: '#111111',
+            cancelButtonColor: '#6b6b6b',
             focusConfirm: false,
             customClass: {
                 popup: 'promo-create-popup',

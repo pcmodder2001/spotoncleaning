@@ -193,7 +193,7 @@ class Booking(models.Model):
     )
 
     class Meta:
-        ordering = ['-date', '-time_slot__time']
+        ordering = ['date', 'time_slot__time']
 
     def __str__(self):
         return f'Booking #{self.pk} - {self.contact_email} - {self.date}'

@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -217,7 +217,17 @@ def booking_list_view(request):
         bookings = bookings.filter(date=date_filter)
     if partner_filter == '1':
         bookings = bookings.filter(user__account_type=AccountType.BUSINESS)
-    bookings = bookings.order_by('-date', '-time_slot__time', '-pk')
+    # Upcoming jobs first (date order), completed/cancelled at the bottom.
+    bookings = bookings.annotate(
+        _done=Case(
+            When(
+                status__in=[BookingStatus.COMPLETED, BookingStatus.CANCELLED],
+                then=Value(1),
+            ),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
+    ).order_by('_done', 'date', 'time_slot__time', 'pk')
     paginator = Paginator(bookings, 50)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'panel/bookings/list.html', {

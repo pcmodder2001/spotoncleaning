@@ -58,7 +58,7 @@
                 confirmButtonText: 'Book a clean',
                 showCancelButton: true,
                 cancelButtonText: 'Close',
-                confirmButtonColor: '#0e7490',
+                confirmButtonColor: '#111111',
                 cancelButtonColor: '#64748b',
                 customClass: { popup: 'coverage-check-popup' },
             }).then(function (result) {
@@ -76,7 +76,7 @@
             confirmButtonText: 'Contact support',
             showCancelButton: true,
             cancelButtonText: 'Close',
-            confirmButtonColor: '#0e7490',
+            confirmButtonColor: '#111111',
             cancelButtonColor: '#64748b',
             customClass: { popup: 'coverage-check-popup' },
         }).then(function (result) {
@@ -100,7 +100,7 @@
             title: 'Could not check postcode',
             text: message,
             confirmButtonText: 'OK',
-            confirmButtonColor: '#0e7490',
+            confirmButtonColor: '#111111',
         });
     }
 

@@ -126,7 +126,7 @@
         const latLngs = leg.geometry.map(function (coord) {
           return window.L.latLng(coord[1], coord[0]);
         });
-        routeLayer.addLayer(window.L.polyline(latLngs, { color: '#0e7490', weight: 4, opacity: 0.85 }));
+        routeLayer.addLayer(window.L.polyline(latLngs, { color: '#111111', weight: 4, opacity: 0.85 }));
         latLngs.forEach(function (point) { bounds.push(point); });
       });
 

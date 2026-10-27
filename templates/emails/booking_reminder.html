@@ -3,22 +3,22 @@
 {% block email_title %}Appointment Reminder — {{ site_name }}{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">See You Tomorrow</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">A quick reminder about your upcoming appointment.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #111111;">See You Tomorrow</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b6b6b;">A quick reminder about your upcoming appointment.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ booking.contact_first_name }},</p>
-<p style="margin: 0 0 8px; font-size: 15px; color: #1e2421;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">Hi {{ booking.contact_first_name }},</p>
+<p style="margin: 0 0 8px; font-size: 15px; color: #111111;">
     This is a friendly reminder that {{ site_name }} is booked to visit you tomorrow.
     Please make sure someone is available during the time window below.
 </p>
 
 {% include 'emails/includes/booking_details.html' with table_title="Tomorrow's Visit" time_window=time_window duration_minutes=duration_minutes access_notes=access_notes hide_total=True %}
 
-<p style="margin: 0; font-size: 14px; color: #6b7368;">
+<p style="margin: 0; font-size: 14px; color: #6b6b6b;">
     Need to reschedule or update access details? Contact us at
-    <a href="mailto:{{ site_email }}" style="color: #354f3f; text-decoration: none; font-weight: 600;">{{ site_email }}</a>
-    {% if site_phone %} or call <a href="tel:{{ site_phone }}" style="color: #354f3f; text-decoration: none; font-weight: 600;">{{ site_phone }}</a>{% endif %}.
+    <a href="mailto:{{ site_email }}" style="color: #111111; text-decoration: none; font-weight: 600;">{{ site_email }}</a>
+    {% if site_phone %} or call <a href="tel:{{ site_phone }}" style="color: #111111; text-decoration: none; font-weight: 600;">{{ site_phone }}</a>{% endif %}.
 </p>
 {% endblock %}

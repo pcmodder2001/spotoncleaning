@@ -386,6 +386,57 @@ def booking_complete_job_api(request, pk):
     ])
     send_booking_status_email(booking)
 
+    followup_created = False
+    followup_error = ''
+    create_followup = request.POST.get('create_followup') in ('1', 'true', 'on')
+    if create_followup:
+        from audit.actions import FOLLOWUP_CREATED
+        from bookings.followups import (
+            create_followup_from_completed_booking,
+            followup_exists_for_booking,
+        )
+        from bookings.models import CustomerFollowUp
+        from bookings.notifications import send_followup_registered_email
+
+        interval_raw = request.POST.get('followup_interval_months', '').strip()
+        try:
+            interval_months = int(interval_raw)
+        except (TypeError, ValueError):
+            interval_months = CustomerFollowUp.IntervalMonths.SIX
+        valid_intervals = {choice.value for choice in CustomerFollowUp.IntervalMonths}
+        if interval_months not in valid_intervals:
+            interval_months = CustomerFollowUp.IntervalMonths.SIX
+
+        if followup_exists_for_booking(booking):
+            followup_error = 'follow-up already exists for this booking'
+        else:
+            followup = create_followup_from_completed_booking(
+                booking,
+                interval_months=interval_months,
+            )
+            if followup:
+                followup_created = True
+                log_action(
+                    FOLLOWUP_CREATED,
+                    (
+                        f'Added follow-up for {followup.name} due {followup.due_date} '
+                        f'from completed booking #{booking.pk}.'
+                    ),
+                    request=request,
+                    target_type='followup',
+                    target_id=followup.pk,
+                    target_label=followup.name,
+                    metadata={
+                        'interval_months': followup.interval_months,
+                        'due_date': followup.due_date.isoformat(),
+                        'booking_id': booking.pk,
+                    },
+                )
+                if followup.email:
+                    send_followup_registered_email(followup)
+            else:
+                followup_error = 'need a customer name plus email or phone for a follow-up'
+
     log_action(
         BOOKING_JOB_COMPLETED,
         f'Completed job for booking #{booking.pk} — signed by {signed_by_name}.',
@@ -396,12 +447,15 @@ def booking_complete_job_api(request, pk):
         metadata={
             'signed_by_name': signed_by_name,
             'services': [s.name for s in services],
+            'followup_created': followup_created,
         },
     )
 
     return JsonResponse({
         'success': True,
         'booking': booking_detail_payload(request, booking),
+        'followup_created': followup_created,
+        'followup_error': followup_error,
     })
 
 

@@ -1,23 +1,23 @@
 {% extends 'emails/base_email.html' %}
 
 {% block email_title %}Message Received — {{ site_name }}{% endblock %}
-{% block accent_color %}#3d6b4f{% endblock %}
+{% block accent_color %}#111111{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">Thanks for getting in touch</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">We've received your message.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #111111;">Thanks for getting in touch</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b6b6b;">We've received your message.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ enquiry.name }},</p>
-<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">Hi {{ enquiry.name }},</p>
+<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">
     Thank you for contacting {{ site_name }}. We've received your enquiry and a member of our team will get back to you as soon as possible — usually within one working day.
 </p>
-<p style="margin: 0 0 8px; font-size: 14px; color: #6b7368;"><strong>Your message:</strong></p>
-<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421; white-space: pre-wrap;">{{ enquiry.message }}</p>
-<p style="margin: 0; font-size: 14px; color: #6b7368;">
+<p style="margin: 0 0 8px; font-size: 14px; color: #6b6b6b;"><strong>Your message:</strong></p>
+<p style="margin: 0 0 16px; font-size: 15px; color: #111111; white-space: pre-wrap;">{{ enquiry.message }}</p>
+<p style="margin: 0; font-size: 14px; color: #6b6b6b;">
     Need to speak to us sooner? Call
-    {% if site_phone %}<a href="tel:{{ site_phone }}" style="color: #354f3f; text-decoration: none; font-weight: 600;">{{ site_phone }}</a>{% else %} us{% endif %}
-    or email <a href="mailto:{{ site_email }}" style="color: #354f3f; text-decoration: none; font-weight: 600;">{{ site_email }}</a>.
+    {% if site_phone %}<a href="tel:{{ site_phone }}" style="color: #111111; text-decoration: none; font-weight: 600;">{{ site_phone }}</a>{% else %} us{% endif %}
+    or email <a href="mailto:{{ site_email }}" style="color: #111111; text-decoration: none; font-weight: 600;">{{ site_email }}</a>.
 </p>
 {% endblock %}

@@ -51,7 +51,7 @@
             showCancelButton: true,
             confirmButtonText: opts.confirmText || 'Yes, continue',
             cancelButtonText: opts.cancelText || 'Cancel',
-            confirmButtonColor: opts.danger ? '#dc2626' : '#0e7490',
+            confirmButtonColor: opts.danger ? '#111111' : '#111111',
             cancelButtonColor: '#64748b',
             reverseButtons: true,
             focusCancel: !!opts.danger,

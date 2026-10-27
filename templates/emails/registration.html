@@ -3,18 +3,18 @@
 {% block email_title %}Welcome to {{ site_name }}{% endblock %}
 
 {% block email_heading %}
-<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #243528;">Welcome Aboard!</h1>
-<p style="margin: 0 0 24px; font-size: 15px; color: #6b7368;">Your account is ready to go.</p>
+<h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; color: #111111;">Welcome Aboard!</h1>
+<p style="margin: 0 0 24px; font-size: 15px; color: #6b6b6b;">Your account is ready to go.</p>
 {% endblock %}
 
 {% block email_content %}
-<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">Hi {{ user.first_name }},</p>
-<p style="margin: 0 0 16px; font-size: 15px; color: #1e2421;">
+<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">Hi {{ user.first_name }},</p>
+<p style="margin: 0 0 16px; font-size: 15px; color: #111111;">
     Thank you for registering with <strong>{{ site_name }}</strong>. You can now book professional oven and appliance cleaning online at a time that suits you.
 </p>
 {% include 'emails/includes/email_button.html' with url=site_url|add:'/bookings/book/' label='Book a clean' margin='28px 0' %}
-<p style="margin: 0; font-size: 15px; color: #1e2421;">
+<p style="margin: 0; font-size: 15px; color: #111111;">
     If you have any questions, reply to this email or contact us at
-    <a href="mailto:{{ site_email }}" style="color: #354f3f; text-decoration: none; font-weight: 600;">{{ site_email }}</a>.
+    <a href="mailto:{{ site_email }}" style="color: #111111; text-decoration: none; font-weight: 600;">{{ site_email }}</a>.
 </p>
 {% endblock %}

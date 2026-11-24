@@ -25,6 +25,7 @@
                         <label class="form-label" for="swalServiceType">Type</label>
                         <select id="swalServiceType" class="form-select">
                             <option value="oven">Oven / main appliance</option>
+                            <option value="package">Home package</option>
                             <option value="addon">Add-on</option>
                         </select>
                     </div>

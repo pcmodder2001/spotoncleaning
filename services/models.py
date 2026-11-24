@@ -4,6 +4,7 @@ from django.db import models
 class ServiceType(models.TextChoices):
     OVEN = 'oven', 'Oven'
     ADDON = 'addon', 'Add-on'
+    PACKAGE = 'package', 'Package'
 
 
 class Service(models.Model):
@@ -40,3 +41,21 @@ class Service(models.Model):
     @property
     def is_addon(self):
         return self.service_type == ServiceType.ADDON
+
+    @property
+    def is_package(self):
+        return self.service_type == ServiceType.PACKAGE
+
+    @property
+    def inclusion_lines(self):
+        """One checklist line per description line. Used on the homepage package cards."""
+        lines = []
+        for line in (self.description or '').splitlines():
+            cleaned = line.strip().lstrip('•').strip()
+            if cleaned.startswith('- '):
+                cleaned = cleaned[2:].strip()
+            elif cleaned.startswith('-'):
+                cleaned = cleaned[1:].strip()
+            if cleaned:
+                lines.append(cleaned)
+        return lines

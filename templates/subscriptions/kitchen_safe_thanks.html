@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ plan_name }} set up | {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-7 text-center">
+                <div class="mb-3">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 text-success" style="width: 4rem; height: 4rem;">
+                        <i class="bi bi-check-lg fs-3"></i>
+                    </span>
+                </div>
+                <h1 class="section-title">You're on the list</h1>
+                <p class="lead text-muted mb-4">
+                    Thanks for setting up {{ plan_name }}{% if subscription %} for {{ subscription.contact_name }}{% endif %}.
+                    We’ll be in touch with bank transfer details and to arrange the first visit.
+                </p>
+                {% if subscription %}
+                <div class="app-card card border-0 text-start mb-4">
+                    <div class="card-body p-4">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4 text-muted">Plan</dt>
+                            <dd class="col-sm-8">{{ plan_name }} — £{{ subscription.monthly_price }}/month</dd>
+                            <dt class="col-sm-4 text-muted">Address</dt>
+                            <dd class="col-sm-8">{{ subscription.full_address }}</dd>
+                            <dt class="col-sm-4 text-muted">Report emails</dt>
+                            <dd class="col-sm-8">{{ subscription.photo_emails|join:", " }}</dd>
+                            <dt class="col-sm-4 text-muted">Status</dt>
+                            <dd class="col-sm-8">{{ subscription.get_status_display }}</dd>
+                        </dl>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-primary">Go to dashboard</a>
+                    <a href="{% url 'website:home' %}" class="btn btn-outline-secondary">Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

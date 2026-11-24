@@ -159,7 +159,16 @@
                             <h2 class="booking-panel-title">What would you like cleaned?</h2>
 
                             <div id="serviceMainSection">
-                                <p class="booking-panel-desc" id="serviceMainDesc">Choose your oven cleaning service to get started.</p>
+                                <p class="booking-panel-desc" id="serviceMainDesc">{% if package_services %}Choose a home package, or an individual oven clean.{% else %}Choose your oven cleaning service to get started.{% endif %}</p>
+                                {% if package_services %}
+                                <h3 class="service-group-title">Home packages</h3>
+                                <div class="service-picker service-picker-oven mb-4">
+                                    {% for service in package_services %}
+                                    {% include 'bookings/includes/service_pick.html' with icon='bi-house-heart' extra_class='service-pick-oven' %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <h3 class="service-group-title">Oven cleaning</h3>
                                 <div class="service-picker service-picker-oven">
                                     {% for service in oven_services %}
                                     {% include 'bookings/includes/service_pick.html' with icon='bi-fire' extra_class='service-pick-oven' %}
@@ -188,6 +197,14 @@
                                 <h3 class="service-group-title mt-4">Additional add-ons <span class="text-muted fw-normal">(optional)</span></h3>
                                 <div class="service-picker service-picker-addon">
                                     {% for service in additional_addon_services %}
+                                    {% include 'bookings/includes/service_pick.html' %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if safety_addon_services %}
+                                <h3 class="service-group-title mt-4">Safety add-ons <span class="text-muted fw-normal">(optional)</span></h3>
+                                <div class="service-picker service-picker-addon">
+                                    {% for service in safety_addon_services %}
                                     {% include 'bookings/includes/service_pick.html' %}
                                     {% endfor %}
                                 </div>
@@ -393,7 +410,7 @@
                     </div>
                 </div>
                 <div class="summary-footer">
-                    <small class="text-muted"><i class="bi bi-shield-check me-1"></i> Fully insured &amp; DBS checked</small>
+                    <small class="text-muted"><i class="bi bi-shield-check me-1"></i> Safe to use straight after the clean</small>
                 </div>
             </div>
 

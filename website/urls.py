@@ -10,6 +10,8 @@ urlpatterns = [
     path('contact/', views.contact_submit_view, name='contact'),
     path('faq/', views.faq_view, name='faq'),
     path('property-partners/', views.property_partners_view, name='property_partners'),
+    path('kitchen-safe/', views.kitchen_safe_view, name='kitchen_safe'),
+
     path('areas/', views.areas_view, name='areas'),
     path('areas/<slug:slug>/', views.area_detail_view, name='area_detail'),
     path('privacy/', views.privacy_policy_view, name='privacy'),

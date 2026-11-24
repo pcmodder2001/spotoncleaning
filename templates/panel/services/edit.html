@@ -20,11 +20,13 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Description</label>
-                            <textarea name="description" class="form-control" rows="3" required>{{ edit_service.description }}</textarea>
+                            <textarea name="description" class="form-control" rows="6" required>{{ edit_service.description }}</textarea>
+                            <div class="form-text">For a homepage package, put each included item on its own line. Those lines are the checklist on the package card. The price here is what customers see.</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Type</label>
                             <select name="service_type" class="form-select">
+                                <option value="package" {% if edit_service.service_type == 'package' %}selected{% endif %}>Home package</option>
                                 <option value="oven" {% if edit_service.service_type == 'oven' %}selected{% endif %}>Oven (pick one per booking)</option>
                                 <option value="addon" {% if edit_service.service_type == 'addon' %}selected{% endif %}>Add-on (can combine)</option>
                             </select>

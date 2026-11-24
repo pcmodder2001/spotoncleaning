@@ -46,6 +46,7 @@
         </div>
         <div class="service-filter-group" role="group" aria-label="Type filter">
             <a href="?status={{ status_filter }}&amp;type=all&amp;q={{ query|urlencode }}" class="service-filter-chip{% if type_filter == 'all' %} is-active{% endif %}">All types</a>
+            <a href="?status={{ status_filter }}&amp;type=package&amp;q={{ query|urlencode }}" class="service-filter-chip{% if type_filter == 'package' %} is-active{% endif %}">Packages</a>
             <a href="?status={{ status_filter }}&amp;type=oven&amp;q={{ query|urlencode }}" class="service-filter-chip{% if type_filter == 'oven' %} is-active{% endif %}">Ovens</a>
             <a href="?status={{ status_filter }}&amp;type=addon&amp;q={{ query|urlencode }}" class="service-filter-chip{% if type_filter == 'addon' %} is-active{% endif %}">Add-ons</a>
         </div>

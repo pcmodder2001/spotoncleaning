@@ -51,6 +51,7 @@ from panel.email_debug import (
     send_all_test_emails,
     send_test_email,
 )
+from services.catalog import exclusive_group_for
 from services.models import Service, ServiceType
 from website.forms import HomepageOfferForm
 from website.models import ContactMessage, HomepageOffer
@@ -293,6 +294,7 @@ def booking_create_view(request):
     return render(request, 'panel/bookings/create.html', {
         'form': form,
         'oven_services': services.filter(service_type=ServiceType.OVEN),
+        'package_services': services.filter(service_type=ServiceType.PACKAGE),
         'addon_services': services.filter(service_type=ServiceType.ADDON),
         'selected_service_ids': selected_service_ids,
         'schedule_warnings': getattr(form, 'schedule_warnings', []),
@@ -354,6 +356,7 @@ def booking_edit_view(request, pk):
         'booking': booking,
         'business_insights': booking_business_payload(booking),
         'oven_services': services.filter(service_type=ServiceType.OVEN),
+        'package_services': services.filter(service_type=ServiceType.PACKAGE),
         'addon_services': services.filter(service_type=ServiceType.ADDON),
         'selected_service_ids': selected_service_ids,
         'checklist_items': merge_checklist(booking.checklist),
@@ -659,11 +662,7 @@ def service_list_view(request):
             name = request.POST.get('name', '').strip()
             description = request.POST.get('description', '').strip()
             service_type = request.POST.get('service_type', ServiceType.OVEN)
-            exclusive_group = (
-                'hob'
-                if name.lower().startswith(('4 hob', '5 hob', '6-8 hob', '6–8 hob'))
-                else ''
-            )
+            exclusive_group = exclusive_group_for(name, service_type)
             try:
                 duration = int(request.POST.get('duration_minutes') or 60)
                 sort_order = int(request.POST.get('sort_order') or 0)
@@ -767,7 +766,7 @@ def service_list_view(request):
     else:
         status_filter = 'all'
 
-    if type_filter in (ServiceType.OVEN, ServiceType.ADDON):
+    if type_filter in (ServiceType.OVEN, ServiceType.ADDON, ServiceType.PACKAGE):
         services = services.filter(service_type=type_filter)
     else:
         type_filter = 'all'
@@ -798,7 +797,7 @@ def service_edit_view(request, pk):
         service.active = request.POST.get('is_active') == 'on'
         service_type = request.POST.get('service_type', service.service_type)
         service.service_type = service_type
-        service.exclusive_group = 'hob' if service.name.lower().startswith(('4 hob', '5 hob', '6-8 hob', '6–8 hob')) else ''
+        service.exclusive_group = exclusive_group_for(service.name, service_type)
         try:
             service.price = request.POST.get('price')
             service.duration_minutes = int(request.POST.get('duration_minutes', service.duration_minutes))

@@ -25,5 +25,5 @@ def area_page_title(area):
 def area_meta_description(area, site_name, local_area):
     return (
         f'Book professional oven, hob and extractor cleaning in {area.name}, {local_area}. '
-        f'{site_name} — family-friendly products, online booking, fully insured technicians.'
+        f'{site_name} — safe to use straight after the clean, with online booking.'
     )

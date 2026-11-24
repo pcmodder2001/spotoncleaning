@@ -123,7 +123,7 @@
                                     <span class="panel-booking-create-section__icon"><i class="bi bi-tools"></i></span>
                                     <div>
                                         <h3 class="panel-booking-create-step__title" id="createStepTitle1">Services</h3>
-                                        <p class="panel-booking-create-step__hint">Choose the oven type and any add-ons for this job.</p>
+                                        <p class="panel-booking-create-step__hint">Choose a home package or an oven clean, then any add-ons.</p>
                                     </div>
                                 </div>
                                 <div class="panel-booking-create-step__body">
@@ -133,6 +133,31 @@
                                     {% endif %}
 
                                     <div class="panel-service-editor">
+                                        {% if package_services %}
+                                        <div class="panel-service-group">
+                                            <h4 class="service-group-title">Home packages <span class="text-muted fw-normal">(or an oven below)</span></h4>
+                                            <div class="service-picker">
+                                                {% for service in package_services %}
+                                                <label class="service-pick service-pick-exclusive panel-service-pick admin-create-service-pick{% if service.pk in selected_service_ids %} selected{% endif %}">
+                                                    <input class="visually-hidden admin-service-oven admin-create-service-input"
+                                                           type="checkbox" name="services" value="{{ service.pk }}"
+                                                           data-price="{{ service.price }}"
+                                                           {% if service.pk in selected_service_ids %}checked{% endif %}>
+                                                    <span class="service-pick-icon"><i class="bi bi-house-heart"></i></span>
+                                                    <span class="service-pick-info">
+                                                        <strong>{{ service.name }}</strong>
+                                                        {% if service.description %}
+                                                        <small>{{ service.description|truncatewords:14 }}</small>
+                                                        {% endif %}
+                                                    </span>
+                                                    <span class="service-pick-price">&pound;{{ service.price }}</span>
+                                                    <span class="panel-service-pick-tick" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
                                         {% if oven_services %}
                                         <div class="panel-service-group">
                                             <h4 class="service-group-title">Oven cleaning <span class="text-muted fw-normal">(select one)</span></h4>

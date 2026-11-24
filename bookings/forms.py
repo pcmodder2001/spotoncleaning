@@ -8,6 +8,7 @@ from django.utils import timezone
 from bookings.models import Booking, BookingStatus, TimeSlot
 from bookings.scheduling import get_admin_schedule_warnings, validate_booking_schedule
 from bookings.utils import get_available_slots_for_date, get_time_slots_for_booking_edit
+from services.catalog import booking_services_error
 from services.models import Service, ServiceType
 from website.legal import accept_terms_field
 
@@ -109,9 +110,9 @@ class BookingForm(forms.ModelForm):
         if not services:
             raise forms.ValidationError('Please select at least one service.')
 
-        hob_services = [s for s in services if s.exclusive_group == 'hob']
-        if len(hob_services) > 1:
-            raise forms.ValidationError('Please select only one hob size.')
+        error = booking_services_error(services)
+        if error:
+            raise forms.ValidationError(error)
 
         return services
 
@@ -381,9 +382,9 @@ class AdminBookingForm(forms.ModelForm):
         services = self.cleaned_data.get('services')
         if not services:
             raise forms.ValidationError('Select at least one service.')
-        hob_services = [s for s in services if s.exclusive_group == 'hob']
-        if len(hob_services) > 1:
-            raise forms.ValidationError('Only one hob size allowed per booking.')
+        error = booking_services_error(services)
+        if error:
+            raise forms.ValidationError(error)
         return services
 
     def clean_postcode(self):

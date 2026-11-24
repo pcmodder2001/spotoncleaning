@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 
-from services.catalog import split_addon_services
+from services.catalog import SAFETY_ADDON_ICONS, split_addon_services
 from services.models import Service, ServiceType
 from website.content import FAQ_ITEMS, HOW_WE_CLEAN_STEPS, PARTNER_BENEFITS
 from website.forms import ContactForm
@@ -23,17 +23,29 @@ from audit.actions import ENQUIRY_CREATED
 from audit.services import log_action
 
 
+def _safety_addons_for_cards(services):
+    cards = list(services)
+    for service in cards:
+        service.card_icon = SAFETY_ADDON_ICONS.get(service.name, 'bi-plus-circle')
+    return cards
+
+
 def home_view(request):
     services = Service.objects.filter(active=True)
     oven_services = services.filter(service_type=ServiceType.OVEN)
+    package_services = services.filter(service_type=ServiceType.PACKAGE)
     addon_services = services.filter(service_type=ServiceType.ADDON)
-    standard_addon_services, additional_addon_services = split_addon_services(addon_services)
+    standard_addon_services, additional_addon_services, safety_addon_services = split_addon_services(
+        addon_services,
+    )
     testimonials = Testimonial.objects.filter(active=True)
     contact_form = ContactForm()
     return render(request, 'website/home.html', {
         'oven_services': oven_services,
+        'package_services': package_services,
         'standard_addon_services': standard_addon_services,
         'additional_addon_services': additional_addon_services,
+        'safety_addon_services': _safety_addons_for_cards(safety_addon_services),
         'testimonials': testimonials,
         'contact_form': contact_form,
         'how_we_clean_steps': HOW_WE_CLEAN_STEPS,
@@ -51,6 +63,31 @@ def property_partners_view(request):
         'partner_benefits': PARTNER_BENEFITS,
         'how_we_clean_steps': HOW_WE_CLEAN_STEPS[:3],
     })
+
+
+def kitchen_safe_view(request):
+    from subscriptions.models import KitchenSafeSubscription
+    from subscriptions.services import get_user_kitchen_safe_subscription
+
+    # Signed-up customers go straight to manage their subscription.
+    if get_user_kitchen_safe_subscription(request.user):
+        return redirect('subscriptions:kitchen_safe_manage')
+
+    return render(request, 'website/kitchen_safe.html', {
+        'plan_name': KitchenSafeSubscription.PLAN_NAME,
+        'monthly_price': KitchenSafeSubscription.DEFAULT_MONTHLY_PRICE,
+        'included': [
+            'Oven, hob, microwave & air fryer',
+            'Dishwasher, sink, fridge & freezer',
+            'Worktops & cupboard debris clear-out',
+            'Expired food removed',
+            'Smoke & CO alarm test',
+            'Fridge temperature check',
+            'Kitchen safety advice',
+            'Same-day photo safety report',
+        ],
+    })
+
 
 
 def areas_view(request):

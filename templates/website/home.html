@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load static static_version %}
 
-{% block title %}Oven & Appliance Cleaning {{ SITE_LOCAL_AREA }} | {{ SITE_NAME }}{% endblock %}
-{% block meta_description %}Book professional oven, hob and extractor cleaning in {{ SITE_LOCAL_AREA }}. {{ SITE_TAGLINE }} Eco-friendly products, online booking, fully insured.{% endblock %}
-{% block meta_keywords %}oven cleaning {{ SITE_LOCAL_AREA|lower }}, appliance cleaning, oven cleaner near me, hob cleaning, book oven clean{% endblock %}
-{% block og_title %}Oven & Appliance Cleaning {{ SITE_LOCAL_AREA }} | {{ SITE_NAME }}{% endblock %}
-{% block og_description %}Book professional oven, hob and extractor cleaning in {{ SITE_LOCAL_AREA }}. {{ SITE_TAGLINE }}{% endblock %}
-{% block twitter_title %}Oven & Appliance Cleaning {{ SITE_LOCAL_AREA }} | {{ SITE_NAME }}{% endblock %}
-{% block twitter_description %}Book professional oven, hob and extractor cleaning in {{ SITE_LOCAL_AREA }}. {{ SITE_TAGLINE }}{% endblock %}
+{% block title %}Oven & Appliance Cleaning Yorkshire | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}Oven and appliance cleaning across Yorkshire. KITCHENSafe for elderly, vulnerable households and tenancy changeovers. Safe to use straight after the clean.{% endblock %}
+{% block meta_keywords %}oven cleaning yorkshire, appliance cleaning yorkshire, kitchenSAFE, elderly kitchen cleaning, tenancy changeover clean, oven cleaner near me{% endblock %}
+{% block og_title %}Oven & Appliance Cleaning Yorkshire | {{ SITE_NAME }}{% endblock %}
+{% block og_description %}Oven and appliance cleaning across Yorkshire. KITCHENSafe for elderly, vulnerable households and tenancy changeovers. Safe to use straight after the clean.{% endblock %}
+{% block twitter_title %}Oven & Appliance Cleaning Yorkshire | {{ SITE_NAME }}{% endblock %}
+{% block twitter_description %}Oven and appliance cleaning across Yorkshire. KITCHENSafe for elderly, vulnerable households and tenancy changeovers. Safe to use straight after the clean.{% endblock %}
 {% block body_class %}site-home{% endblock %}
 
 {% block site_topbar %}
@@ -42,7 +42,7 @@
             </p>
             {% endif %}
             <div class="site-topbar-meta d-none d-lg-flex">
-                <span><i class="bi bi-geo-alt"></i> {{ SITE_LOCAL_AREA }}</span>
+                <span><i class="bi bi-geo-alt"></i> Yorkshire</span>
             </div>
         </div>
     </div>
@@ -55,17 +55,17 @@
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "name": "{{ SITE_NAME|escapejs }}",
-  "description": "{{ SITE_DESCRIPTION|escapejs }}",
+  "description": "Oven and appliance cleaning across Yorkshire. KITCHENSafe for elderly, vulnerable households and tenancy changeovers. Safe to use straight after the clean.",
   "url": "{{ SITE_URL }}",
   "email": "{{ SITE_EMAIL }}",
   "telephone": "{{ SITE_PHONE }}",
   "image": "{{ SITE_URL }}{% static_v 'img/logo.png' %}",
   "priceRange": "££",
-  "areaServed": "{{ SITE_LOCAL_AREA|escapejs }}",
+  "areaServed": "Yorkshire",
   "address": {
     "@type": "PostalAddress",
     "addressCountry": "GB",
-    "addressRegion": "{{ SITE_LOCAL_AREA|escapejs }}"
+    "addressRegion": "Yorkshire"
   }
 }
 </script>
@@ -77,17 +77,22 @@
         <div class="row align-items-lg-center hero-row g-4 g-lg-5">
             <div class="col-lg-6 hero-content">
                 <div class="hero-badge">
-                    <i class="bi bi-house-door"></i> Domestic &amp; Commercial cleaning
+                    <i class="bi bi-geo-alt"></i> Appliance cleaning across Yorkshire
                 </div>
-                <h1>Appliance Shine. Every Time.</h1>
-                <p class="hero-tagline mb-3">Professional appliance cleaning for homes that deserve the very best.</p>
-                <p class="lead mb-4">
-                    From ovens and Agas to hobs, extractors and fridges — we bring every appliance back to showroom condition
-                    with family-friendly products and meticulous attention to detail.
+                <h1>Safe to use the moment we leave.</h1>
+                <p class="hero-tagline mb-3">{{ SITE_TAGLINE }}</p>
+                <p class="lead mb-3">
+                    A full kitchen clean for family homes, elderly and vulnerable households, and tenancy changeovers.
+                    KITCHENSafe when someone needs a regular check-in.
                 </p>
+                <ul class="hero-audiences" aria-label="Who we clean for">
+                    <li>Elderly &amp; vulnerable</li>
+                    <li>Tenancy changeovers</li>
+                    <li>KITCHENSafe</li>
+                </ul>
                 <div class="hero-cta-row">
-                    <a href="{% url 'bookings:create' %}" class="btn btn-primary btn-lg">BOOK A CLEAN IN 60 SECONDS</a>
-                    <a href="#contact" class="btn btn-outline-primary btn-lg">GET A QUOTE</a>
+                    <a href="#services" class="btn btn-primary btn-lg">View packages</a>
+                    <a href="{% url 'bookings:create' %}" class="btn btn-outline-primary btn-lg">Book a clean</a>
                 </div>
                 <form class="hero-coverage-check js-coverage-check-form" action="#" method="get">
                     <label class="hero-coverage-label" for="heroPostcode">Check we cover your area</label>
@@ -97,17 +102,17 @@
                     </div>
                 </form>
                 <ul class="hero-credentials" aria-label="Why customers trust us">
-                    <li><i class="bi bi-shield-check"></i> Family-friendly, non-caustic products</li>
+                    <li><i class="bi bi-shield-check"></i> Safe to use straight after the clean</li>
                     <li><i class="bi bi-flower1"></i> Attention to detail</li>
                     <li><i class="bi bi-hand-thumbs-up"></i> Friendly &amp; reliable service</li>
-                    <li><i class="bi bi-award"></i> Fully insured &amp; DBS checked</li>
+                    <li><i class="bi bi-house-heart"></i> Homes, changeovers &amp; KITCHENSafe</li>
                 </ul>
             </div>
             <div class="col-lg-6 hero-image mt-2 mt-lg-0">
                 <div class="hero-comparison rounded-4" id="heroComparison" data-split="50">
                     <div class="hero-domestic-badge" aria-hidden="true">
-                        <i class="bi bi-house-door"></i>
-                        Domestic &amp; commercial cleaning
+                        <i class="bi bi-shield-check"></i>
+                        Safe to use straight away
                     </div>
                     <img
                     class="hero-comparison-img"
@@ -142,26 +147,127 @@
     </div>
 </section>
 
-<section id="about" class="section-padding bg-soft why-spot-section">
+<section id="services" class="section-padding home-packages">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-eyebrow">Packages</span>
+            <h2 class="section-title">Two ways to reset a kitchen</h2>
+            <p class="section-subtitle">One visit. The appliances done properly. Safe to use as soon as we leave.</p>
+        </div>
+        <div class="row g-4 align-items-stretch">
+            {% for service in package_services %}
+            <div class="col-lg-6 d-flex{% if 'Safe Home' in service.name %} order-1 order-lg-2{% else %} order-2 order-lg-1{% endif %}">
+                <article class="home-package-card{% if 'Safe Home' in service.name %} home-package-card--featured{% endif %}">
+                    {% if 'Safe Home' in service.name %}
+                    <span class="home-package-ribbon">Most complete</span>
+                    {% endif %}
+                    <p class="home-package-kicker">{% if 'Safe Home' in service.name %}Alarms included{% else %}The full kitchen{% endif %}</p>
+                    <h3>{{ service.name }}</h3>
+                    {% if service.price > 0 %}
+                    <p class="home-package-price">&pound;{{ service.price|floatformat:"-2" }}</p>
+                    {% else %}
+                    <p class="home-package-price home-package-price--pending">Price coming soon</p>
+                    {% endif %}
+                    <ul class="home-package-list">
+                        {% for line in service.inclusion_lines %}
+                        <li class="{% if line|slice:':4' == 'PLUS' %}home-package-plus{% endif %}">
+                            <i class="bi {% if line|slice:':4' == 'PLUS' %}bi-plus-circle{% else %}bi-check2{% endif %}" aria-hidden="true"></i>
+                            <span>{{ line }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% if service.price > 0 %}
+                    <a href="{% url 'bookings:create' %}?service={{ service.pk }}" class="btn {% if 'Safe Home' in service.name %}btn-light{% else %}btn-primary{% endif %} btn-lg w-100">Book this package</a>
+                    {% else %}
+                    <a href="#contact" class="btn {% if 'Safe Home' in service.name %}btn-outline-light{% else %}btn-outline-primary{% endif %} btn-lg w-100">Request a quote</a>
+                    {% endif %}
+                </article>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center text-muted">Packages will appear here once they are added in Admin.</div>
+            {% endfor %}
+        </div>
+
+        {% if safety_addon_services %}
+        <div class="home-addons">
+            <div class="home-addons-head">
+                <h3>Add-ons</h3>
+                <p>Book alongside a package, or with any other clean.</p>
+            </div>
+            <div class="home-addon-grid">
+                {% for service in safety_addon_services %}
+                <article class="home-addon-card">
+                    <span class="home-addon-icon" aria-hidden="true"><i class="bi {{ service.card_icon }}"></i></span>
+                    <h4>{{ service.name }}</h4>
+                    <p>{{ service.description }}</p>
+                    {% if service.price > 0 %}
+                    <p class="home-addon-price">&pound;{{ service.price|floatformat:"-2" }}</p>
+                    <a href="{% url 'bookings:create' %}?service={{ service.pk }}" class="btn btn-outline-primary btn-sm w-100">Add to booking</a>
+                    {% else %}
+                    <p class="home-addon-price home-addon-price--pending">Price coming soon</p>
+                    <a href="#contact" class="btn btn-outline-primary btn-sm w-100">Ask for a price</a>
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="section-padding bg-soft home-audiences" id="kitchen-safe">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-eyebrow">Who it’s for</span>
+            <h2 class="section-title">Kitchens that need to be safe, not just shiny</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <article class="home-audience-card">
+                    <span class="home-audience-icon" aria-hidden="true"><i class="bi bi-heart-pulse"></i></span>
+                    <h3>Elderly &amp; vulnerable</h3>
+                    <p>A calmer kitchen, appliances safe to use straight away, and alarm checks with new batteries on The Safe Home Package.</p>
+                </article>
+            </div>
+            <div class="col-md-4">
+                <article class="home-audience-card">
+                    <span class="home-audience-icon" aria-hidden="true"><i class="bi bi-key"></i></span>
+                    <h3>Tenancy changeovers</h3>
+                    <p>Oven through to dishwasher, ready for the next move-in. One package instead of booking each appliance on its own.</p>
+                </article>
+            </div>
+            <div class="col-md-4">
+                <article class="home-audience-card">
+                    <span class="home-audience-icon" aria-hidden="true"><i class="bi bi-calendar2-heart"></i></span>
+                    <h3>KITCHENSafe</h3>
+                    <p>Monthly kitchen care for family who want a same-day safety report, not a one-off visit.</p>
+                    <a href="{% url 'website:kitchen_safe' %}" class="home-audience-link">See KITCHENSafe <i class="bi bi-arrow-right"></i></a>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="about" class="section-padding why-spot-section">
     <div class="container">
         <div class="row g-4 g-lg-5 align-items-start">
             <div class="col-lg-5">
                 <span class="section-eyebrow">Why choose us</span>
                 <h2 class="section-title text-lg-start">Why Choose Spot On?</h2>
                 <div class="why-spot-intro text-lg-start mx-lg-0 mb-4">
-                    <p>At {{ SITE_NAME }}, we take a spot-on approach — delivering a thorough, efficient clean with zero hassle.</p>
-                    <p>We turn up on time, treat your home with respect, and get the job done properly. No shortcuts, no mess — just results.</p>
-                    <p>It&rsquo;s why so many of our customers come back and recommend us — because we leave every appliance looking spot on.</p>
+                    <p>At {{ SITE_NAME }}, we take a spot-on approach — a thorough clean, then a kitchen you can use straight away.</p>
+                    <p>We turn up on time, treat the home with respect, and leave every appliance ready. No waiting for fumes to clear.</p>
+                    <p>That is why customers book us again for family homes, relatives who need a safer kitchen, and changeovers between tenants.</p>
                 </div>
-                <a href="{% url 'bookings:create' %}" class="btn btn-primary">View our prices &amp; book</a>
+                <a href="#services" class="btn btn-primary">View packages</a>
             </div>
             <div class="col-lg-7">
                 <ul class="why-spot-checklist">
-                    <li><i class="bi bi-shield-check"></i> Fully insured &amp; DBS checked for your peace of mind</li>
+                    <li><i class="bi bi-shield-check"></i> Safe to use straight after the clean</li>
                     <li><i class="bi bi-person-badge"></i> Uniformed, courteous technicians</li>
-                    <li><i class="bi bi-flower1"></i> Family-friendly, eco-conscious cleaning products</li>
                     <li><i class="bi bi-award"></i> Fully trained oven &amp; appliance specialists</li>
                     <li><i class="bi bi-clock"></i> Punctual appointments — we value your time</li>
+                    <li><i class="bi bi-house-heart"></i> For families, elderly and vulnerable households, and tenancy changeovers</li>
                 </ul>
                 <div class="row g-3 mt-2">
                     <div class="col-sm-6">
@@ -173,9 +279,9 @@
                     </div>
                     <div class="col-sm-6">
                         <div class="feature-tile">
-                            <div class="feature-tile-icon"><i class="bi bi-shield-check"></i></div>
-                            <h3>Reliable &amp; trusted</h3>
-                            <p>Fully insured, DBS checked, and consistently on time.</p>
+                            <div class="feature-tile-icon"><i class="bi bi-clock-history"></i></div>
+                            <h3>Ready when we leave</h3>
+                            <p>Safe to use straight after the clean, and consistently on time.</p>
                         </div>
                     </div>
                     <div class="col-sm-6">
@@ -198,43 +304,12 @@
     </div>
 </section>
 
-<section class="section-padding promo-tiles-section">
-    <div class="container">
-        <div class="row g-4">
-            <div class="col-md-4">
-                <a href="#services" class="promo-tile promo-tile--prices">
-                    <span class="promo-tile-label">View prices</span>
-                    <h3>Professional Appliance Cleaning</h3>
-                    <p>Including hobs, racks, doors and grill pans.</p>
-                    <span class="promo-tile-link">See services <i class="bi bi-arrow-right"></i></span>
-                </a>
-            </div>
-            <div class="col-md-4">
-                <a href="{% url 'bookings:create' %}" class="promo-tile promo-tile--book">
-                    <span class="promo-tile-label">Book online</span>
-                    <h3>Book A Clean In 60 Seconds</h3>
-                    <p>Pick your services and choose a slot that suits you.</p>
-                    <span class="promo-tile-link">Book now <i class="bi bi-arrow-right"></i></span>
-                </a>
-            </div>
-            <div class="col-md-4">
-                <a href="#how-we-clean" class="promo-tile promo-tile--process">
-                    <span class="promo-tile-label">Our service</span>
-                    <h3>The Spot On Clean</h3>
-                    <p>See exactly how we restore your appliances.</p>
-                    <span class="promo-tile-link">How we do it <i class="bi bi-arrow-right"></i></span>
-                </a>
-            </div>
-        </div>
-    </div>
-</section>
-
 <section id="how-we-clean" class="section-padding bg-soft">
     <div class="container">
         <div class="section-header">
             <span class="section-eyebrow">Our process</span>
             <h2 class="section-title">How we clean</h2>
-            <p class="section-subtitle">The Spot On clean — thorough, tidy, and done properly every time.</p>
+            <p class="section-subtitle">The Spot On clean — thorough, tidy, and safe to use when we leave.</p>
         </div>
         {% include 'includes/how_we_clean_steps.html' with how_we_clean_steps=how_we_clean_steps %}
         <div class="text-center mt-5">
@@ -244,12 +319,12 @@
     </div>
 </section>
 
-<section id="services" class="section-padding">
+<section id="individual-services" class="section-padding">
     <div class="container">
         <div class="section-header">
-            <span class="section-eyebrow">Prices</span>
-            <h2 class="section-title">Our services</h2>
-            <p class="section-subtitle">Professional cleaning for every appliance — book online in minutes.</p>
+            <span class="section-eyebrow">Single appliances</span>
+            <h2 class="section-title">Prefer one appliance?</h2>
+            <p class="section-subtitle">Book an oven, hob or extra on its own. The packages above cover the whole kitchen.</p>
         </div>
         <div class="row g-4 mb-2">
             <div class="col-12">
@@ -330,7 +405,7 @@
         <div class="section-header">
             <span class="section-eyebrow">Reviews</span>
             <h2 class="section-title">What our customers say</h2>
-            <p class="section-subtitle">Real feedback from homeowners across {{ SITE_LOCAL_AREA }}.</p>
+            <p class="section-subtitle">Real feedback from homeowners across Yorkshire.</p>
         </div>
         <div class="testimonial-slider testimonial-slider--wide">
             <div class="testimonial-track">
@@ -375,7 +450,7 @@
                     <span class="section-eyebrow section-eyebrow--light">Get in touch today</span>
                     <h2 class="section-title text-lg-start quote-band-title">Request a quote</h2>
                     <p class="quote-band-lead">
-                        Ready for appliances that shine? Send us a message and we&rsquo;ll get back to you as soon as we can.
+                        Ready for a kitchen you can use straight away? Send us a message and we&rsquo;ll get back to you as soon as we can.
                     </p>
                     <div class="quote-band-contact">
                         <a href="tel:{{ SITE_PHONE }}" class="quote-contact-item">
@@ -388,7 +463,7 @@
                         </a>
                         <div class="quote-contact-item quote-contact-item--static">
                             <i class="bi bi-geo-alt-fill"></i>
-                            <span>Serving {{ SITE_LOCAL_AREA }}</span>
+                            <span>Serving Yorkshire</span>
                         </div>
                     </div>
                 </div>

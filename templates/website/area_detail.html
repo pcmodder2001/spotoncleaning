@@ -20,7 +20,7 @@
                 <h1 class="section-title text-lg-start">Oven cleaning in {{ area.name }}</h1>
                 <p class="lead text-muted mb-4">
                     {{ SITE_NAME }} provides professional oven, hob and extractor cleaning in {{ area.name }} and surrounding postcodes.
-                    Family-friendly products, fully insured technicians, and online booking in minutes.
+                    Safe to use straight after the clean, with online booking in minutes.
                 </p>
                 <div class="d-flex flex-wrap gap-2">
                     <a href="{% url 'bookings:create' %}{% if area.postcode_districts %}?postcode={{ area.postcode_districts.0 }}{% endif %}" class="btn btn-primary btn-lg">Book in {{ area.name }}</a>
@@ -35,7 +35,7 @@
                             <li><i class="bi bi-fire"></i> Single &amp; double ovens, Agas &amp; ranges</li>
                             <li><i class="bi bi-plus-circle"></i> Hobs, extractors &amp; add-ons</li>
                             <li><i class="bi bi-building"></i> Domestic &amp; void cleans for landlords</li>
-                            <li><i class="bi bi-shield-check"></i> Fully insured &amp; DBS checked</li>
+                            <li><i class="bi bi-shield-check"></i> Safe to use straight after the clean</li>
                         </ul>
                         {% if area.postcode_label %}
                         <p class="text-muted small mt-3 mb-0"><strong>Postcodes include:</strong> {{ area.postcode_label }}</p>
@@ -60,7 +60,7 @@
                 <ul class="why-spot-checklist">
                     <li><i class="bi bi-clock"></i> Punctual appointments</li>
                     <li><i class="bi bi-camera"></i> Before &amp; after photos</li>
-                    <li><i class="bi bi-flower1"></i> Eco-conscious, family-friendly products</li>
+                    <li><i class="bi bi-shield-check"></i> Safe to use straight after the clean</li>
                 </ul>
             </div>
             <div class="col-lg-6">

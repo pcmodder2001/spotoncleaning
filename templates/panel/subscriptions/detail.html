@@ -1,0 +1,154 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block panel_title %}{{ plan_name }} #{{ subscription.pk }}{% endblock %}
+
+{% block panel_content %}
+<p class="mb-3">
+    <a href="{% url 'panel:subscription_list' %}" class="text-decoration-none">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>All subscriptions
+    </a>
+</p>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="panel-card card border-0 mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                    <div>
+                        <h2 class="h4 fw-bold mb-1">{{ subscription.contact_name }}</h2>
+                        <p class="text-muted mb-0">{{ plan_name }} · £{{ subscription.monthly_price }}/month</p>
+                    </div>
+                    <span class="badge {% if subscription.status == 'active' %}bg-success{% elif subscription.status == 'pending' %}bg-warning text-dark{% elif subscription.status == 'cancelled' %}bg-secondary{% else %}bg-primary{% endif %}">
+                        {{ subscription.get_status_display }}
+                    </span>
+                </div>
+
+                <h3 class="h6 text-muted text-uppercase mb-2">Visit details</h3>
+                <dl class="row mb-4">
+                    <dt class="col-sm-4 text-muted">Phone</dt>
+                    <dd class="col-sm-8"><a href="tel:{{ subscription.contact_phone }}">{{ subscription.contact_phone }}</a></dd>
+                    <dt class="col-sm-4 text-muted">Email at property</dt>
+                    <dd class="col-sm-8">
+                        {% if subscription.contact_email %}
+                        <a href="mailto:{{ subscription.contact_email }}">{{ subscription.contact_email }}</a>
+                        {% else %}—{% endif %}
+                    </dd>
+                    <dt class="col-sm-4 text-muted">Address</dt>
+                    <dd class="col-sm-8">{{ subscription.full_address }}</dd>
+                </dl>
+
+                <h3 class="h6 text-muted text-uppercase mb-2">Photo report emails</h3>
+                <ul class="mb-4">
+                    {% for email in subscription.photo_emails %}
+                    <li><a href="mailto:{{ email }}">{{ email }}</a></li>
+                    {% empty %}
+                    <li class="text-muted">None</li>
+                    {% endfor %}
+                </ul>
+
+                {% if subscription.customer_notes %}
+                <h3 class="h6 text-muted text-uppercase mb-2">Customer notes</h3>
+                <div class="bg-light rounded-3 p-3 mb-4">{{ subscription.customer_notes|linebreaksbr }}</div>
+                {% endif %}
+
+                <h3 class="h6 text-muted text-uppercase mb-2">Account holder</h3>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Name</dt>
+                    <dd class="col-sm-8">{{ subscription.user.full_name }}</dd>
+                    <dt class="col-sm-4 text-muted">Email</dt>
+                    <dd class="col-sm-8"><a href="mailto:{{ subscription.user.email }}">{{ subscription.user.email }}</a></dd>
+                    <dt class="col-sm-4 text-muted">Signed up</dt>
+                    <dd class="col-sm-8">{{ subscription.created_at|date:"d M Y H:i" }}</dd>
+                    {% if subscription.started_at %}
+                    <dt class="col-sm-4 text-muted">Started</dt>
+                    <dd class="col-sm-8">{{ subscription.started_at|date:"d M Y" }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <div class="panel-card card border-0">
+            <div class="card-body p-4">
+                <h3 class="h5 fw-bold mb-3">Payments</h3>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Notes</th>
+                                <th>Recorded by</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                                <td>£{{ payment.amount }}</td>
+                                <td>{{ payment.get_method_display }}</td>
+                                <td>{{ payment.notes|default:"—" }}</td>
+                                <td class="small text-muted">{{ payment.recorded_by.email|default:"—" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-muted text-center py-3">No payments recorded yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4 class="h6 fw-bold mb-2">Record a payment</h4>
+                <p class="small text-muted mb-3">Mark bank transfers here. Recording the first payment will activate a pending subscription.</p>
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_payment">
+                    <div class="col-md-3">
+                        <label class="form-label" for="{{ payment_form.amount.id_for_label }}">Amount (£)</label>
+                        {{ payment_form.amount }}
+                        {% if payment_form.amount.errors %}<div class="text-danger small">{{ payment_form.amount.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="{{ payment_form.payment_date.id_for_label }}">Payment date</label>
+                        {{ payment_form.payment_date }}
+                        {% if payment_form.payment_date.errors %}<div class="text-danger small">{{ payment_form.payment_date.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="{{ payment_form.method.id_for_label }}">Method</label>
+                        {{ payment_form.method }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="{{ payment_form.notes.id_for_label }}">Reference</label>
+                        {{ payment_form.notes }}
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Save payment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel-card card border-0">
+            <div class="card-body p-4">
+                <h3 class="h5 fw-bold mb-3">Update status</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_status">
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ status_form.status.id_for_label }}">Status</label>
+                        {{ status_form.status }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ status_form.notes.id_for_label }}">Internal notes</label>
+                        {{ status_form.notes }}
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">Save changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

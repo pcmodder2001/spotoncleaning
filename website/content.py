@@ -9,7 +9,7 @@ HOW_WE_CLEAN_STEPS = [
     {
         'icon': 'bi-house-door',
         'title': 'We arrive prepared',
-        'text': 'Our uniformed technician arrives on time with specialist tools and family-friendly, non-caustic products.',
+        'text': 'Our uniformed technician arrives on time with specialist tools and products that are safe to use straight after the clean.',
     },
     {
         'icon': 'bi-droplet-half',
@@ -46,7 +46,7 @@ FAQ_ITEMS = [
     {
         'question': 'What areas do you cover?',
         'answer': (
-            'We cover towns across West Yorkshire and surrounding areas including Leeds, Wakefield, Bradford, '
+            'We cover towns across Yorkshire, including Leeds, Wakefield, Bradford, '
             'Huddersfield, Halifax, York and more. Enter your postcode when booking — if we cover your area, '
             'you can book straight away.'
         ),
@@ -54,8 +54,8 @@ FAQ_ITEMS = [
     {
         'question': 'What products do you use?',
         'answer': (
-            'We use professional-grade, family-friendly products — no harsh caustic fumes. '
-            'Safe for homes with children and pets once the appliance has cooled and ventilated.'
+            'Appliances are safe to use straight after the clean — no waiting for fumes to clear. '
+            'Suitable for family homes, elderly and vulnerable households, and tenancy changeovers.'
         ),
     },
     {

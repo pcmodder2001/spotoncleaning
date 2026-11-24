@@ -100,7 +100,9 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="{% url 'bookings:create' %}" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>{% if user.is_business_account %}Book void clean{% else %}New Booking{% endif %}</a>
+                        <a href="{% url 'website:kitchen_safe' %}" class="btn btn-outline-primary"><i class="bi bi-shield-check me-2"></i>KITCHENSafe{% if kitchen_safe_subscription %} — manage{% endif %}</a>
                         <a href="{% url 'accounts:my_bookings' %}" class="btn btn-outline-primary"><i class="bi bi-list me-2"></i>My Bookings</a>
+
                         {% if user.is_business_account %}
                         <a href="{% url 'accounts:properties' %}" class="btn btn-outline-primary"><i class="bi bi-building me-2"></i>Properties{% if property_count %} ({{ property_count }}){% endif %}</a>
                         {% else %}

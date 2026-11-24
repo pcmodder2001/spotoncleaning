@@ -40,6 +40,22 @@
                         <div class="text-danger small mb-2">{{ form.services.errors.0 }}</div>
                         {% endif %}
 
+                        {% if package_services %}
+                        <p class="text-muted small mb-2">Home package (or an oven below — select one)</p>
+                        <div class="d-flex flex-wrap gap-3 mb-3">
+                            {% for service in package_services %}
+                            <div class="form-check">
+                                <input class="form-check-input admin-service-oven" type="checkbox"
+                                       name="services" value="{{ service.pk }}" id="svc-{{ service.pk }}"
+                                       {% if service.pk in selected_service_ids %}checked{% endif %}>
+                                <label class="form-check-label" for="svc-{{ service.pk }}">
+                                    {{ service.name }} (&pound;{{ service.price }})
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
                         <p class="text-muted small mb-2">Oven type (select one)</p>
                         <div class="d-flex flex-wrap gap-3 mb-3">
                             {% for service in oven_services %}

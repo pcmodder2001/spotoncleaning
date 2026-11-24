@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ plan_name }} — £{{ monthly_price }}/month kitchen safety | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{{ plan_name }}: monthly kitchen deep clean and safety check for elderly parents at home in Leeds. Same-day photo report to family. £{{ monthly_price }}/month.{% endblock %}
+
+{% block content %}
+<section class="page-hero section-padding-sm bg-soft">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="section-eyebrow">Monthly subscription</span>
+                <h1 class="section-title text-lg-start">{{ plan_name }} — £{{ monthly_price }}/month</h1>
+                <p class="lead text-muted mb-4">
+                    Monthly kitchen deep clean and safety check for elderly parents at home in Leeds.
+                    Same-day photo report to family.
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'subscriptions:kitchen_safe_signup' %}" class="btn btn-primary btn-lg">Set up {{ plan_name }}</a>
+                    {% else %}
+                    <a href="{% url 'accounts:login' %}?next={% url 'subscriptions:kitchen_safe_signup' %}" class="btn btn-primary btn-lg">Log in to set up</a>
+                    <a href="{% url 'accounts:register' %}?next={% url 'subscriptions:kitchen_safe_signup' %}" class="btn btn-outline-primary btn-lg">Create an account</a>
+                    {% endif %}
+                </div>
+                <p class="small text-muted mt-3 mb-0">An account is required to set up {{ plan_name }}.</p>
+            </div>
+            <div class="col-lg-5">
+                <div class="partner-hero-card panel-card card border-0">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold mb-3">What’s included every month</h2>
+                        <ul class="partner-checklist mb-0">
+                            {% for item in included %}
+                            <li><i class="bi bi-check2"></i> {{ item }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <span class="section-eyebrow">Who it’s for</span>
+                <h2 class="section-title text-lg-start">Peace of mind for families</h2>
+                <p class="lead text-muted">
+                    A monthly kitchen reset for elderly and vulnerable people living at home in Leeds.
+                </p>
+                <p>
+                    We deep clean the oven, hob, microwave, air fryer, dishwasher, sink, fridge, freezer and worktops,
+                    clear out expired food and cupboard debris, test smoke and CO alarms, and check the fridge temperature.
+                </p>
+                <p>
+                    We also provide advice on any safety measures that can be taken in the kitchen.
+                    You’ll receive a kitchen safety report the same day, so you know the kitchen is clean, safe and spot-on —
+                    even when a carer or cleaner can’t be there.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section-padding bg-soft">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-eyebrow">How signup works</span>
+            <h2 class="section-title">Simple to set up</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-tile h-100">
+                    <div class="feature-tile-icon"><i class="bi bi-person-check"></i></div>
+                    <h3>1. Create an account</h3>
+                    <p class="mb-0">You must be logged in to start a {{ plan_name }} subscription.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-tile h-100">
+                    <div class="feature-tile-icon"><i class="bi bi-geo-alt"></i></div>
+                    <h3>2. Add visit details</h3>
+                    <p class="mb-0">Address, contact number, and up to 3 emails for the photo report (at least one).</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-tile h-100">
+                    <div class="feature-tile-icon"><i class="bi bi-bank"></i></div>
+                    <h3>3. Pay by bank transfer</h3>
+                    <p class="mb-0">£{{ monthly_price }}/month. We’ll send transfer details after you sign up.</p>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            {% if user.is_authenticated %}
+            <a href="{% url 'subscriptions:kitchen_safe_signup' %}" class="btn btn-primary btn-lg">Set up {{ plan_name }}</a>
+            {% else %}
+            <a href="{% url 'accounts:login' %}?next={% url 'subscriptions:kitchen_safe_signup' %}" class="btn btn-primary btn-lg">Log in to set up</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

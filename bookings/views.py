@@ -102,15 +102,21 @@ def _booking_create_context(request, form):
 
     services = Service.objects.filter(active=True)
     oven_services = services.filter(service_type=ServiceType.OVEN)
+    package_services = services.filter(service_type=ServiceType.PACKAGE, price__gt=0)
     addon_services = services.filter(service_type=ServiceType.ADDON)
-    standard_addon_services, additional_addon_services = split_addon_services(addon_services)
+    standard_addon_services, additional_addon_services, safety_addon_services = split_addon_services(
+        addon_services,
+    )
+    safety_addon_services = safety_addon_services.filter(price__gt=0)
     prefill_address = _booking_prefill_address(request.user)
     return {
         'form': form,
         'selected_service': selected_service,
         'oven_services': oven_services,
+        'package_services': package_services,
         'standard_addon_services': standard_addon_services,
         'additional_addon_services': additional_addon_services,
+        'safety_addon_services': safety_addon_services,
         'schedule_debug': settings.SCHEDULE_DEBUG,
         'is_guest_booking': not request.user.is_authenticated,
         'is_business_account': request.user.is_authenticated and request.user.is_business_account,

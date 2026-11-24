@@ -433,6 +433,7 @@
                             applyServiceSelection(el, false);
                         }
                     }
+                    enforceHomePackageRules(el);
                     void onServicesChanged();
                 });
                 el.addEventListener('keydown', function (ev) {
@@ -561,6 +562,25 @@
             if (!hasMainServiceSelected()) return false;
             if (hasAddonServices() && servicesPhase === 'main') return false;
             return true;
+        }
+
+        function clearServiceSelection(el) {
+            el.classList.remove('selected');
+            delete selectedServices[el.dataset.serviceId];
+        }
+
+        function enforceHomePackageRules(clicked) {
+            const type = clicked.dataset.serviceType;
+            if (!clicked.classList.contains('selected')) return;
+            if (type === 'package') {
+                document.querySelectorAll('.service-picker-oven .service-pick.selected').forEach(function (item) {
+                    if (item !== clicked) clearServiceSelection(item);
+                });
+            } else if (type === 'oven') {
+                document.querySelectorAll('.service-pick[data-service-type="package"].selected').forEach(function (item) {
+                    clearServiceSelection(item);
+                });
+            }
         }
 
         function applyServiceSelection(el, update) {

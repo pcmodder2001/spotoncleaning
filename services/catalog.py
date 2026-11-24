@@ -3,6 +3,93 @@
 from services.models import Service, ServiceType
 
 ADDITIONAL_ADDON_SORT_ORDER = 20
+SAFETY_ADDON_SORT_ORDER = 40
+
+# Created once and then left alone, so a price saved in Admin → Services is not overwritten.
+HOMEPAGE_OFFERS = [
+    {
+        'name': 'The Kitchen Reset',
+        'description': (
+            'Oven, Hob, Extractor + Splashback\n'
+            'Fridge + Freezer\n'
+            'Air Fryer\n'
+            'Washing Machine\n'
+            'Dryer\n'
+            'Dishwasher'
+        ),
+        'price': '0.00',
+        'duration_minutes': 180,
+        'sort_order': 1,
+        'service_type': ServiceType.PACKAGE,
+        'exclusive_group': 'home_package',
+    },
+    {
+        'name': 'The Safe Home Package',
+        'description': (
+            'Everything in The Kitchen Reset\n'
+            'PLUS Fire Alarm Check + New Batteries\n'
+            'PLUS Carbon Monoxide Alarm Check + New Batteries'
+        ),
+        'price': '0.00',
+        'duration_minutes': 210,
+        'sort_order': 2,
+        'service_type': ServiceType.PACKAGE,
+        'exclusive_group': 'home_package',
+    },
+    {
+        'name': 'Fire alarm installation',
+        'description': 'Supply and fit a new fire alarm.',
+        'price': '0.00',
+        'duration_minutes': 30,
+        'sort_order': 41,
+        'service_type': ServiceType.ADDON,
+        'exclusive_group': '',
+    },
+    {
+        'name': 'Carbon monoxide installation',
+        'description': 'Supply and fit a new carbon monoxide alarm.',
+        'price': '0.00',
+        'duration_minutes': 30,
+        'sort_order': 42,
+        'service_type': ServiceType.ADDON,
+        'exclusive_group': '',
+    },
+    {
+        'name': 'Fridge thermometer installation',
+        'description': 'Supply and fit a fridge thermometer.',
+        'price': '0.00',
+        'duration_minutes': 20,
+        'sort_order': 43,
+        'service_type': ServiceType.ADDON,
+        'exclusive_group': '',
+    },
+    {
+        'name': 'Oven door lock installation',
+        'description': 'Supply and fit an oven door lock.',
+        'price': '0.00',
+        'duration_minutes': 30,
+        'sort_order': 44,
+        'service_type': ServiceType.ADDON,
+        'exclusive_group': '',
+    },
+    {
+        'name': 'Non-slip mat',
+        'description': 'Supply and fit a non-slip mat.',
+        'price': '0.00',
+        'duration_minutes': 20,
+        'sort_order': 45,
+        'service_type': ServiceType.ADDON,
+        'exclusive_group': '',
+    },
+]
+
+SAFETY_ADDON_ICONS = {
+    'Fire alarm installation': 'bi-bell',
+    'Carbon monoxide installation': 'bi-cloud',
+    'Fridge thermometer installation': 'bi-thermometer-half',
+    'Oven door lock installation': 'bi-lock',
+    'Non-slip mat': 'bi-grid',
+}
 
 SERVICE_CATALOG = [
     {
@@ -176,5 +263,46 @@ def sync_service_catalog():
 def split_addon_services(addon_queryset):
     return (
         addon_queryset.filter(sort_order__lt=ADDITIONAL_ADDON_SORT_ORDER),
-        addon_queryset.filter(sort_order__gte=ADDITIONAL_ADDON_SORT_ORDER),
+        addon_queryset.filter(
+            sort_order__gte=ADDITIONAL_ADDON_SORT_ORDER,
+            sort_order__lt=SAFETY_ADDON_SORT_ORDER,
+        ),
+        addon_queryset.filter(sort_order__gte=SAFETY_ADDON_SORT_ORDER),
     )
+
+
+def ensure_homepage_offers():
+    """Add homepage packages and safety add-ons if they are missing.
+
+    Existing rows are left unchanged so admin price edits stick.
+    """
+    for service_data in HOMEPAGE_OFFERS:
+        Service.objects.get_or_create(
+            name=service_data['name'],
+            defaults={**service_data, 'active': True},
+        )
+
+
+def exclusive_group_for(name, service_type):
+    lowered = (name or '').lower()
+    if lowered.startswith(('4 hob', '5 hob', '6-8 hob', '6–8 hob')):
+        return 'hob'
+    if service_type == ServiceType.PACKAGE:
+        return 'home_package'
+    return ''
+
+
+def booking_services_error(services):
+    """Return a validation message, or None when the selection is allowed."""
+    hob_services = [service for service in services if service.exclusive_group == 'hob']
+    if len(hob_services) > 1:
+        return 'Please select only one hob size.'
+    packages = [service for service in services if service.service_type == ServiceType.PACKAGE]
+    if len(packages) > 1:
+        return 'Please select only one home package.'
+    if packages and any(service.service_type == ServiceType.OVEN for service in services):
+        return (
+            'A home package already includes the appliance clean. '
+            'Remove individual oven services, or book without a package.'
+        )
+    return None

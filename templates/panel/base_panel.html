@@ -39,6 +39,9 @@
             <a href="{% url 'panel:followup_list' %}" class="{% if 'followup' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-arrow-repeat me-2"></i>Follow-ups
             </a>
+            <a href="{% url 'panel:subscription_list' %}" class="{% if 'subscription' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-shield-check me-2"></i>Subscriptions
+            </a>
             <a href="{% url 'panel:service_list' %}" class="{% if 'service' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-tools me-2"></i>Services
             </a>

@@ -3,7 +3,7 @@ from datetime import time
 from django.core.management.base import BaseCommand
 
 from bookings.models import TimeSlot, WeeklySchedule
-from services.catalog import sync_service_catalog
+from services.catalog import ensure_homepage_offers, sync_service_catalog
 from website.models import Testimonial
 
 
@@ -29,6 +29,7 @@ class Command(BaseCommand):
             TimeSlot.objects.get_or_create(time=time(h, m))
 
         sync_service_catalog()
+        ensure_homepage_offers()
 
         testimonials = [
             {

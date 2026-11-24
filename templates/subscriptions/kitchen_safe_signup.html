@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Set up {{ plan_name }} — £{{ monthly_price }}/month | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}Set up a {{ plan_name }} monthly kitchen deep clean and safety check for elderly parents at home. Account required.{% endblock %}
+
+{% block content %}
+<section class="page-hero section-padding-sm bg-soft">
+    <div class="container">
+        <span class="section-eyebrow">{{ plan_name }}</span>
+        <h1 class="section-title text-lg-start">Set up your subscription</h1>
+        <p class="lead text-muted mb-0" style="max-width: 40rem;">
+            £{{ monthly_price }}/month — monthly kitchen deep clean and safety check.
+            We’ll need the visit address, a contact number, and at least one email for the same-day photo report.
+        </p>
+    </div>
+</section>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="app-card card border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+
+                            <h2 class="h5 fw-bold mb-3">Who we visit</h2>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.contact_name.id_for_label }}">{{ form.contact_name.label }}</label>
+                                    {{ form.contact_name }}
+                                    {% if form.contact_name.errors %}<div class="text-danger small">{{ form.contact_name.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.contact_phone.id_for_label }}">{{ form.contact_phone.label }}</label>
+                                    {{ form.contact_phone }}
+                                    {% if form.contact_phone.errors %}<div class="text-danger small">{{ form.contact_phone.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.contact_email.id_for_label }}">{{ form.contact_email.label }}</label>
+                                    {{ form.contact_email }}
+                                    {% if form.contact_email.errors %}<div class="text-danger small">{{ form.contact_email.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <h2 class="h5 fw-bold mb-3">Visit address</h2>
+                            <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.address_line_1.id_for_label }}">Address line 1</label>
+                                    {{ form.address_line_1 }}
+                                    {% if form.address_line_1.errors %}<div class="text-danger small">{{ form.address_line_1.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.address_line_2.id_for_label }}">Address line 2 <span class="text-muted fw-normal">(optional)</span></label>
+                                    {{ form.address_line_2 }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.city.id_for_label }}">City / town</label>
+                                    {{ form.city }}
+                                    {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.postcode.id_for_label }}">Postcode</label>
+                                    {{ form.postcode }}
+                                    {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <h2 class="h5 fw-bold mb-1">Photo report emails</h2>
+                            <p class="text-muted small mb-3">Up to 3 emails. At least one is required — usually family or a carer.</p>
+                            <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.photo_email_1.id_for_label }}">{{ form.photo_email_1.label }}</label>
+                                    {{ form.photo_email_1 }}
+                                    {% if form.photo_email_1.errors %}<div class="text-danger small">{{ form.photo_email_1.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.photo_email_2.id_for_label }}">{{ form.photo_email_2.label }}</label>
+                                    {{ form.photo_email_2 }}
+                                    {% if form.photo_email_2.errors %}<div class="text-danger small">{{ form.photo_email_2.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.photo_email_3.id_for_label }}">{{ form.photo_email_3.label }}</label>
+                                    {{ form.photo_email_3 }}
+                                    {% if form.photo_email_3.errors %}<div class="text-danger small">{{ form.photo_email_3.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" for="{{ form.customer_notes.id_for_label }}">{{ form.customer_notes.label }}</label>
+                                {{ form.customer_notes }}
+                            </div>
+
+                            {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+                            {% endif %}
+
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <button type="submit" class="btn btn-primary btn-lg">Start {{ plan_name }} — £{{ monthly_price }}/mo</button>
+                                <a href="{% url 'website:kitchen_safe' %}" class="btn btn-outline-secondary">Back</a>
+                            </div>
+                            <p class="small text-muted mt-3 mb-0">
+                                Payment is by bank transfer for now. We’ll send payment details after you submit.
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

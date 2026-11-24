@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'accounts',
     'services',
     'bookings',
+    'subscriptions',
     'website',
     'panel',
     'audit',
@@ -229,13 +230,13 @@ if not DEBUG:
     USE_X_FORWARDED_HOST = True
 SITE_DESCRIPTION = os.environ.get(
     'SITE_DESCRIPTION',
-    'Professional oven and appliance cleaning across West Yorkshire. Book online for oven, hob '
-    'and extractor cleaning. Eco-friendly products, fully insured, transparent pricing.',
+    'Oven and appliance cleaning across Yorkshire. KITCHENSafe for elderly, vulnerable '
+    'households and tenancy changeovers. Safe to use straight after the clean.',
 )
 SITE_KEYWORDS = os.environ.get(
     'SITE_KEYWORDS',
-    'oven cleaning, appliance cleaning, oven cleaner, hob cleaning, extractor cleaning, '
-    'professional oven cleaning, West Yorkshire, book oven clean online',
+    'oven cleaning yorkshire, appliance cleaning yorkshire, kitchenSAFE, elderly kitchen cleaning, '
+    'vulnerable household cleaning, tenancy changeover clean, oven cleaner, book oven clean online',
 )
 SITE_LOCAL_AREA = os.environ.get('SITE_LOCAL_AREA', 'West Yorkshire')
 LEGAL_LAST_UPDATED = os.environ.get('LEGAL_LAST_UPDATED', '22 June 2025')
@@ -253,7 +254,7 @@ SERVICE_AREA_ENFORCED = os.environ.get('SERVICE_AREA_ENFORCED', 'True').lower() 
 )
 SITE_DEFAULT_SEO_TITLE = os.environ.get(
     'SITE_DEFAULT_SEO_TITLE',
-    'Oven & Appliance Cleaning West Yorkshire | Spot On Appliance Cleaning',
+    'Oven & Appliance Cleaning Yorkshire | Spot On Appliance Cleaning',
 )
 
 # System administrator accounts — cannot be deleted (comma-separated emails)

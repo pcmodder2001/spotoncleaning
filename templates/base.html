@@ -87,7 +87,7 @@
                 <div class="col-lg-4">
                     {% include 'includes/site_brand.html' with brand_class='site-brand-footer' %}
                     <p class="footer-tagline mb-3">{{ SITE_TAGLINE }}</p>
-                    <p class="footer-desc">Professional oven and appliance cleaning across {{ SITE_LOCAL_AREA }}. Book online or request a quote today.</p>
+                    <p class="footer-desc">Oven and appliance cleaning across Yorkshire. KITCHENSafe for elderly and vulnerable households, and tenancy changeovers.</p>
                 </div>
                 <div class="col-6 col-lg-2">
                     <h6>Main menu</h6>
@@ -98,6 +98,8 @@
                         <li><a href="{% url 'website:home' %}#reviews" class="text-decoration-none">Reviews</a></li>
                         <li><a href="{% url 'website:areas' %}" class="text-decoration-none">Areas we cover</a></li>
                         <li><a href="{% url 'website:property_partners' %}" class="text-decoration-none">Property partners</a></li>
+                        <li><a href="{% url 'website:kitchen_safe' %}" class="text-decoration-none">KITCHENSafe</a></li>
+
                         <li><a href="{% url 'website:faq' %}" class="text-decoration-none">FAQ</a></li>
                         <li><a href="{% url 'website:home' %}#how-we-clean" class="text-decoration-none">How we clean</a></li>
                         <li><a href="{% url 'website:home' %}#contact" class="text-decoration-none">Contact</a></li>
@@ -106,8 +108,12 @@
                 <div class="col-6 col-lg-3">
                     <h6>Our services</h6>
                     <ul class="list-unstyled footer-links">
-                        <li><a href="{% url 'website:home' %}#services" class="text-decoration-none">Oven cleaning</a></li>
+                        <li><a href="{% url 'website:home' %}#services" class="text-decoration-none">The Kitchen Reset</a></li>
+                        <li><a href="{% url 'website:home' %}#services" class="text-decoration-none">The Safe Home Package</a></li>
+                        <li><a href="{% url 'website:home' %}#individual-services" class="text-decoration-none">Single appliances</a></li>
+                        <li><a href="{% url 'website:kitchen_safe' %}" class="text-decoration-none">KITCHENSafe</a></li>
                         <li><a href="{% url 'bookings:create' %}" class="text-decoration-none">Book online</a></li>
+
                         <li><a href="{% url 'website:home' %}#how-we-clean" class="text-decoration-none">How we clean</a></li>
                         <li><a href="{% url 'website:privacy' %}" class="text-decoration-none">Privacy policy</a></li>
                         {% if public_site %}

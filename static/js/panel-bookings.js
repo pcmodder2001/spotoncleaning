@@ -718,14 +718,16 @@
       .then(function (response) { return response.json(); })
       .then(function (catalog) {
         const selected = new Set(booking.services.map(function (service) { return String(service.id); }));
+        const packages = catalog.services.filter(function (s) { return s.service_type === 'package'; });
         const ovens = catalog.services.filter(function (s) { return s.service_type === 'oven'; });
         const addons = catalog.services.filter(function (s) { return s.service_type === 'addon'; });
 
         function servicePickRow(service) {
           const isSelected = selected.has(String(service.id));
           const isOven = service.service_type === 'oven';
+          const isPackage = service.service_type === 'package';
           const pickClass = service.exclusive_group ? 'service-pick-exclusive' : 'service-pick-addon';
-          const icon = isOven ? 'bi-fire' : 'bi-plus-circle';
+          const icon = isPackage ? 'bi-house-heart' : (isOven ? 'bi-fire' : 'bi-plus-circle');
           const description = service.description
             ? `<small>${escapeHtml(service.description)}</small>`
             : `<small class="text-muted">${isOven ? 'Oven / cooker clean' : 'Optional add-on'}</small>`;
@@ -734,6 +736,7 @@
             <button type="button"
                     class="service-pick ${pickClass} panel-service-pick${isSelected ? ' selected' : ''}"
                     data-service-id="${service.id}"
+                    data-service-type="${escapeHtml(service.service_type || '')}"
                     data-exclusive-group="${escapeHtml(service.exclusive_group || '')}">
               <span class="service-pick-icon"><i class="bi ${icon}"></i></span>
               <span class="service-pick-info">
@@ -760,6 +763,7 @@
             <div class="panel-service-editor text-start">
               <p class="panel-service-editor-note">Tap to add or remove services. Pricing updates live — promo discounts recalculate when you save.</p>
               <div class="panel-service-editor-scroll">
+                ${serviceGroup('Home packages', '(or an oven clean)', packages)}
                 ${serviceGroup('Oven cleaning', '(select all that apply)', ovens)}
                 ${serviceGroup('Add-ons', '(optional)', addons)}
               </div>
@@ -814,6 +818,20 @@
                   btn.classList.add('selected');
                 } else {
                   btn.classList.toggle('selected');
+                }
+                const type = btn.dataset.serviceType;
+                if (type === 'package' && btn.classList.contains('selected')) {
+                  document.querySelectorAll('.panel-service-pick.selected').forEach(function (other) {
+                    if (other !== btn && (other.dataset.serviceType === 'oven' || other.dataset.serviceType === 'package')) {
+                      other.classList.remove('selected');
+                    }
+                  });
+                  btn.classList.add('selected');
+                }
+                if (type === 'oven' && btn.classList.contains('selected')) {
+                  document.querySelectorAll('.panel-service-pick[data-service-type="package"]').forEach(function (other) {
+                    other.classList.remove('selected');
+                  });
                 }
                 preview();
               });

@@ -47,6 +47,9 @@ ENQUIRY_CREATED = 'admin.enquiry_created'
 COVERAGE_AREA_UPDATED = 'admin.coverage_area_updated'
 COVERAGE_BOUNDARY_UPDATED = 'admin.coverage_boundary_updated'
 HOMEPAGE_OFFER_UPDATED = 'admin.homepage_offer_updated'
+SUBSCRIPTION_CREATED = 'subscription.created'
+SUBSCRIPTION_UPDATED = 'subscription.updated'
+SUBSCRIPTION_PAYMENT_RECORDED = 'subscription.payment_recorded'
 
 ACTION_LABELS = {
     AUTH_LOGIN: 'Logged in',
@@ -89,11 +92,15 @@ ACTION_LABELS = {
     COVERAGE_AREA_UPDATED: 'Updated service coverage area',
     COVERAGE_BOUNDARY_UPDATED: 'Updated editable service boundary',
     HOMEPAGE_OFFER_UPDATED: 'Updated homepage offer banner',
+    SUBSCRIPTION_CREATED: 'Created KITCHENSafe subscription',
+    SUBSCRIPTION_UPDATED: 'Updated KITCHENSafe subscription',
+    SUBSCRIPTION_PAYMENT_RECORDED: 'Recorded subscription payment',
 }
 
 CATEGORY_CHOICES = [
     ('auth', 'Authentication'),
     ('booking', 'Bookings'),
+    ('subscription', 'Subscriptions'),
     ('user', 'Users'),
     ('admin', 'Site admin'),
 ]
@@ -139,4 +146,7 @@ ACTION_CATEGORIES = {
     COVERAGE_AREA_UPDATED: 'admin',
     COVERAGE_BOUNDARY_UPDATED: 'admin',
     HOMEPAGE_OFFER_UPDATED: 'admin',
+    SUBSCRIPTION_CREATED: 'subscription',
+    SUBSCRIPTION_UPDATED: 'subscription',
+    SUBSCRIPTION_PAYMENT_RECORDED: 'subscription',
 }

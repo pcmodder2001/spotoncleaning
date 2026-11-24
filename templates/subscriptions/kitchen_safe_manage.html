@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage {{ plan_name }} | {{ SITE_NAME }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<section class="page-hero section-padding-sm bg-soft">
+    <div class="container">
+        <span class="section-eyebrow">Your subscription</span>
+        <h1 class="section-title text-lg-start">{{ plan_name }}</h1>
+        <p class="lead text-muted mb-0">
+            £{{ monthly_price }}/month —
+            <span class="badge {% if subscription.status == 'active' %}bg-success{% elif subscription.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ subscription.get_status_display }}
+            </span>
+        </p>
+    </div>
+</section>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="app-card card border-0 mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold mb-3">Summary</h2>
+                        <dl class="mb-0">
+                            <dt class="text-muted small">Person we visit</dt>
+                            <dd class="mb-3">{{ subscription.contact_name }}</dd>
+                            <dt class="text-muted small">Address</dt>
+                            <dd class="mb-3">{{ subscription.full_address }}</dd>
+                            <dt class="text-muted small">Photo report emails</dt>
+                            <dd class="mb-3">
+                                {% for email in subscription.photo_emails %}
+                                <div>{{ email }}</div>
+                                {% empty %}
+                                —
+                                {% endfor %}
+                            </dd>
+                            <dt class="text-muted small">Last payment</dt>
+                            <dd class="mb-0">
+                                {% if latest_payment %}
+                                £{{ latest_payment.amount }} on {{ latest_payment.payment_date|date:"d M Y" }}
+                                {% else %}
+                                <span class="text-muted">None recorded yet</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                {% if subscription.status == 'pending' %}
+                <div class="alert alert-warning small">
+                    Payment is by bank transfer. We’ll confirm details with you — once the first payment is recorded, your subscription becomes active.
+                </div>
+                {% endif %}
+                <p class="small text-muted mb-0">
+                    Need to pause or cancel? Email
+                    <a href="mailto:{{ SITE_EMAIL }}">{{ SITE_EMAIL }}</a>
+                    or call <a href="tel:{{ SITE_PHONE }}">{{ SITE_PHONE }}</a>.
+                </p>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="app-card card border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <h2 class="h5 fw-bold mb-3">Update your details</h2>
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+
+                            <h3 class="h6 fw-bold mb-3">Who we visit</h3>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.contact_name.id_for_label }}">{{ form.contact_name.label }}</label>
+                                    {{ form.contact_name }}
+                                    {% if form.contact_name.errors %}<div class="text-danger small">{{ form.contact_name.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.contact_phone.id_for_label }}">{{ form.contact_phone.label }}</label>
+                                    {{ form.contact_phone }}
+                                    {% if form.contact_phone.errors %}<div class="text-danger small">{{ form.contact_phone.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.contact_email.id_for_label }}">{{ form.contact_email.label }}</label>
+                                    {{ form.contact_email }}
+                                    {% if form.contact_email.errors %}<div class="text-danger small">{{ form.contact_email.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <h3 class="h6 fw-bold mb-3">Visit address</h3>
+                            <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.address_line_1.id_for_label }}">Address line 1</label>
+                                    {{ form.address_line_1 }}
+                                    {% if form.address_line_1.errors %}<div class="text-danger small">{{ form.address_line_1.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.address_line_2.id_for_label }}">Address line 2 <span class="text-muted fw-normal">(optional)</span></label>
+                                    {{ form.address_line_2 }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.city.id_for_label }}">City / town</label>
+                                    {{ form.city }}
+                                    {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.postcode.id_for_label }}">Postcode</label>
+                                    {{ form.postcode }}
+                                    {% if form.postcode.errors %}<div class="text-danger small">{{ form.postcode.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <h3 class="h6 fw-bold mb-1">Photo report emails</h3>
+                            <p class="text-muted small mb-3">Up to 3 emails. At least one is required.</p>
+                            <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.photo_email_1.id_for_label }}">{{ form.photo_email_1.label }}</label>
+                                    {{ form.photo_email_1 }}
+                                    {% if form.photo_email_1.errors %}<div class="text-danger small">{{ form.photo_email_1.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.photo_email_2.id_for_label }}">{{ form.photo_email_2.label }}</label>
+                                    {{ form.photo_email_2 }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.photo_email_3.id_for_label }}">{{ form.photo_email_3.label }}</label>
+                                    {{ form.photo_email_3 }}
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" for="{{ form.customer_notes.id_for_label }}">{{ form.customer_notes.label }}</label>
+                                {{ form.customer_notes }}
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Save changes</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

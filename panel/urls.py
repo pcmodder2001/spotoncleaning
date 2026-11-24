@@ -1,6 +1,16 @@
 from django.urls import path
 
-from . import audit_views, booking_api, coverage_views, followup_views, hr_views, promo_views, schedule_views, views
+from . import (
+    audit_views,
+    booking_api,
+    coverage_views,
+    followup_views,
+    hr_views,
+    promo_views,
+    schedule_views,
+    subscription_views,
+    views,
+)
 
 app_name = 'panel'
 
@@ -46,6 +56,12 @@ urlpatterns = [
     path('promos/', promo_views.promo_list_view, name='promo_list'),
     path('promos/<int:pk>/', promo_views.promo_detail_view, name='promo_detail'),
     path('follow-ups/', followup_views.followup_list_view, name='followup_list'),
+    path('subscriptions/', subscription_views.subscription_list_view, name='subscription_list'),
+    path(
+        'subscriptions/<int:pk>/',
+        subscription_views.subscription_detail_view,
+        name='subscription_detail',
+    ),
     path('audit/', audit_views.audit_log_view, name='audit_log'),
     path('enquiries/', views.enquiry_list_view, name='enquiry_list'),
     path('enquiries/<int:pk>/', views.enquiry_detail_view, name='enquiry_detail'),

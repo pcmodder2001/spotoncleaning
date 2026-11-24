@@ -391,6 +391,8 @@ def complete_account_from_followup_view(request):
 
 @login_required
 def dashboard_view(request):
+    from subscriptions.services import get_user_kitchen_safe_subscription
+
     today = timezone.localdate()
     booking_qs = Booking.objects.filter(user=request.user).select_related(
         'time_slot', 'promo_code',
@@ -407,6 +409,7 @@ def dashboard_view(request):
         'pending_count': bookings.filter(status=BookingStatus.PENDING).count(),
         'business_profile': get_business_profile(request.user),
         'property_count': request.user.properties.count() if request.user.is_business_account else 0,
+        'kitchen_safe_subscription': get_user_kitchen_safe_subscription(request.user),
     }
     return render(request, 'accounts/dashboard.html', context)
 
